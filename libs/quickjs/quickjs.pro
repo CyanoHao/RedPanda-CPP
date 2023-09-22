@@ -28,4 +28,6 @@ SOURCES += \
     quickjs/libbf.c
 
 HEADERS += \
-    quickjs/quickjs.h
+    quickjs/quickjs.h \
+    quickjs/quickjs-libc.h \
+    quickjs/quickjs.hpp

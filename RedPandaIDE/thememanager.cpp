@@ -23,9 +23,11 @@
 #include <QJsonObject>
 #include <QMetaEnum>
 #include <QMetaObject>
+#include <QStyleFactory>
 #include "utils.h"
 #include "settings.h"
 #include "systemconsts.h"
+#include "addon/runtime.h"
 
 ThemeManager::ThemeManager(QObject *parent) : QObject(parent),
     mUseCustomTheme(false)
@@ -39,11 +41,18 @@ PAppTheme ThemeManager::theme(const QString &themeName)
         prepareCustomeTheme();
     PAppTheme appTheme = std::make_shared<AppTheme>();
     QString themeDir;
-    if (mUseCustomTheme)
+    QString themeExtension;
+    ThemeType themeType;
+    if (mUseCustomTheme) {
         themeDir = pSettings->dirs().config(Settings::Dirs::DataType::Theme);
-    else
+        themeExtension = "json";
+        themeType = ThemeType::JSON;
+    } else {
         themeDir = pSettings->dirs().data(Settings::Dirs::DataType::Theme);
-    appTheme->load(QString("%1/%2.json").arg(themeDir, themeName));
+        themeExtension = "js";
+        themeType = ThemeType::ESModule;
+    }
+    appTheme->load(QString("%1/%2.%3").arg(themeDir, themeName, themeExtension), themeType);
     return appTheme;
 }
 
@@ -72,18 +81,25 @@ QList<PAppTheme> ThemeManager::getThemes()
 
     QList<PAppTheme> result;
     QString themeDir;
-    if (mUseCustomTheme)
+    QString themeExtension;
+    ThemeType themeType;
+    if (mUseCustomTheme) {
         themeDir = pSettings->dirs().config(Settings::Dirs::DataType::Theme);
-    else
+        themeExtension = "json";
+        themeType = ThemeType::JSON;
+    } else {
         themeDir = pSettings->dirs().data(Settings::Dirs::DataType::Theme);
+        themeExtension = "js";
+        themeType = ThemeType::ESModule;
+    }
     QDirIterator it(themeDir);
     while (it.hasNext()) {
         it.next();
         QFileInfo fileInfo = it.fileInfo();
-        if (fileInfo.suffix().compare("json", PATH_SENSITIVITY)==0) {
+        if (fileInfo.suffix().compare(themeExtension, PATH_SENSITIVITY)==0) {
             try {
                 PAppTheme appTheme = std::make_shared<AppTheme>();
-                appTheme->load(fileInfo.absoluteFilePath());
+                appTheme->load(fileInfo.absoluteFilePath(), themeType);
                 result.append(appTheme);
             } catch(FileError e) {
                 //just skip it
@@ -170,7 +186,7 @@ QPalette AppTheme::palette() const
     return pal;
 }
 
-void AppTheme::load(const QString &filename)
+void AppTheme::load(const QString &filename, ThemeType themeType)
 {
     QFile file(filename);
     if (!file.exists()) {
@@ -178,24 +194,46 @@ void AppTheme::load(const QString &filename)
                         .arg(filename));
     }
     if (file.open(QFile::ReadOnly)) {
+
         QByteArray content = file.readAll();
-        QJsonParseError error;
-        QJsonDocument doc(QJsonDocument::fromJson(content,&error));
-        if (error.error  != QJsonParseError::NoError) {
-            throw FileError(tr("Error in json file '%1':%2 : %3")
-                            .arg(filename)
-                            .arg(error.offset)
-                            .arg(error.errorString()));
+        QJsonObject obj;
+
+        if (themeType == ThemeType::JSON) {
+            QJsonParseError error;
+            QJsonDocument doc(QJsonDocument::fromJson(content,&error));
+            if (error.error != QJsonParseError::NoError) {
+                throw FileError(tr("Error in json file '%1':%2 : %3")
+                                    .arg(filename)
+                                    .arg(error.offset)
+                                    .arg(error.errorString()));
+            }
+            obj = doc.object();
+
+            // handle old-style localized name
+            QString oldNameKey = "name_" + pSettings->environment().language();
+            if (obj.contains(oldNameKey))
+                obj["name"] = obj[oldNameKey];
+
+            // handle old-style style and dark mode
+            if (!obj.contains("style")) {
+                if (obj["useQtFusionStyle"].toBool(true)) {
+                    if (obj["isDark"].toBool(false))
+                        obj["style"] = "RedPandaDarkFusion";
+                    else
+                        obj["style"] = "RedPandaLightFusion";
+                } else
+                    obj["style"] = QStyleFactory::keys().first();
+            }
+        } else if (themeType == ThemeType::ESModule) {
+            AddOn::ThemeRuntime runtime;
+            runtime.loadTheme(content, filename);
+            obj = runtime.getTheme();
         }
-        QJsonObject obj=doc.object();
+
         QFileInfo fileInfo(filename);
         mName = fileInfo.baseName();
         mDisplayName = obj["name"].toString();
-        QString localeName = obj["name_"+pSettings->environment().language()].toString();
-        if (!localeName.isEmpty())
-            mDisplayName = localeName;
-        mUseQtFusionStyle = obj["useQtFusionStyle"].toBool(true);
-        mIsDark = obj["isDark"].toBool(false);
+        mStyle = obj["style"].toString();
         mDefaultColorScheme = obj["default scheme"].toString();
         mDefaultIconSet = obj["default iconset"].toString();
         QJsonObject colors = obj["palette"].toObject();
@@ -213,6 +251,12 @@ void AppTheme::load(const QString &filename)
         throw FileError(tr("Can't open the theme file '%1' for read.")
                         .arg(filename));
     }
+}
+
+bool AppTheme::isSystemInDarkMode() {
+    // https://www.qt.io/blog/dark-mode-on-windows-11-with-qt-6.5
+    // compare the window color with the text color to determine whether the palette is dark or light
+    return initialPalette().color(QPalette::WindowText).lightness() > initialPalette().color(QPalette::Window).lightness();
 }
 
 // If you copy QPalette, default values stay at default, even if that default is different
@@ -269,12 +313,7 @@ void AppTheme::setDefaultColorScheme(const QString &newDefaultColorScheme)
     mDefaultColorScheme = newDefaultColorScheme;
 }
 
-bool AppTheme::useQtFusionStyle() const
+const QString &AppTheme::style() const
 {
-    return mUseQtFusionStyle;
-}
-
-bool AppTheme::isDark() const
-{
-    return mIsDark;
+    return mStyle;
 }

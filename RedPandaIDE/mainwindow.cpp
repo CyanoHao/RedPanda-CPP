@@ -902,15 +902,13 @@ void MainWindow::applySettings()
     themeManager.setUseCustomTheme(pSettings->environment().useCustomTheme());
     try {
         PAppTheme appTheme = themeManager.theme(pSettings->environment().theme());
-        if (appTheme->useQtFusionStyle()) {
-            if (appTheme->isDark())
-                QApplication::setStyle(new DarkFusionStyle());//app takes the onwership
-            else
-                QApplication::setStyle(new LightFusionStyle());//app takes the onwership
-        } else {
-            QString systemStyle = QStyleFactory::keys()[0]; // Breeze for KDE, etc.
-            QApplication::setStyle(systemStyle);
-        }
+        QString style = appTheme->style();
+        if (style == "RedPandaDarkFusion")
+            QApplication::setStyle(new DarkFusionStyle()); // app takes the onwership
+        else if (style == "RedPandaLightFusion")
+            QApplication::setStyle(new LightFusionStyle()); // app takes the onwership
+        else
+            QApplication::setStyle(style);
         qApp->setPalette(appTheme->palette());
         //fix for qstatusbar bug
         mFileEncodingStatus->setPalette(appTheme->palette());

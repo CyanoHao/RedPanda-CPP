@@ -22,6 +22,11 @@
 #include <QColor>
 #include <memory>
 
+enum class ThemeType {
+    JSON,
+    ESModule,
+};
+
 class AppTheme:public QObject {
     Q_OBJECT
 public:
@@ -78,10 +83,9 @@ public:
     QColor color(ColorRole role) const;
     QPalette palette() const;
 
-    void load(const QString& filename);
+    void load(const QString& filename, ThemeType themeType);
 
-    bool useQtFusionStyle() const;
-    bool isDark() const;
+    const QString &style() const;
 
     const QString &defaultColorScheme() const;
     void setDefaultColorScheme(const QString &newDefaultColorScheme);
@@ -93,14 +97,15 @@ public:
     const QString &defaultIconSet() const;
     void setDefaultIconSet(const QString &newDefaultIconSet);
 
+    static bool isSystemInDarkMode();
+
 private:
     static QPalette initialPalette();
 private:
     QHash<int,QColor> mColors;
     QString mName;
     QString mDisplayName;
-    bool mUseQtFusionStyle;
-    bool mIsDark;
+    QString mStyle;
     QString mDefaultColorScheme;
     QString mDefaultIconSet;
 };
