@@ -32,6 +32,7 @@ using std::vector;
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
+#include <QtGlobal>
 #define MAX_COMMAND_LENGTH 32768
 #define MAX_ERROR_LENGTH 2048
 
@@ -178,6 +179,7 @@ int main(int argc, char** argv) {
         fflush(stdin);
     }
 
+#ifndef Q_OS_ANDROID
     int BUF_SIZE=1024;
     char* pBuf=nullptr;
     int fd_shm = shm_open(sharedMemoryId,O_RDWR,S_IRWXU);
@@ -192,6 +194,7 @@ int main(int argc, char** argv) {
             pBuf = nullptr;
         }
     }
+#endif
 
     // Save starting timestamp
     auto starttime = std::chrono::high_resolution_clock::now();
@@ -206,6 +209,7 @@ int main(int argc, char** argv) {
     auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(difftime);
     double seconds = milliseconds.count()/1000.0;
 
+#ifndef Q_OS_ANDROID
     if (pBuf) {
         strcpy(pBuf,"FINISHED");
         munmap(pBuf,BUF_SIZE);
@@ -213,6 +217,7 @@ int main(int argc, char** argv) {
     if (fd_shm!=-1) {
         shm_unlink(sharedMemoryId);
     }
+#endif
 
     // Done? Print return value of executed program
     printf("\n--------------------------------");

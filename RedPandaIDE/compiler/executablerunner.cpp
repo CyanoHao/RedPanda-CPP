@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <sys/stat.h>        /* For mode constants */
 #include <fcntl.h>           /* For O_* constants */
+#include <errno.h>
 #endif
 
 
@@ -162,7 +163,10 @@ void ExecutableRunner::run()
             }
         }
     }
-#else
+#elif defined(Q_OS_ANDROID)
+    // dummy pointer to be used below
+    char *pBuf = nullptr;
+#else  // non-Android Unix
     int BUF_SIZE=1024;
     char* pBuf=nullptr;
     int fd_shm = shm_open(mShareMemoryId.toLocal8Bit().data(),O_RDWR | O_CREAT,S_IRWXU);
@@ -225,7 +229,7 @@ void ExecutableRunner::run()
                     hSharedMemory = INVALID_HANDLE_VALUE;
                     CloseHandle(hSharedMemory);
                 }
-#else
+#elif !defined(Q_OS_ANDROID)  // non-Android Unix
                 if (pBuf) {
                     munmap(pBuf,BUF_SIZE);
                     pBuf = nullptr;
@@ -245,7 +249,7 @@ void ExecutableRunner::run()
         UnmapViewOfFile(pBuf);
     if (hSharedMemory!=INVALID_HANDLE_VALUE && hSharedMemory!=NULL)
         CloseHandle(hSharedMemory);
-#else
+#elif !defined(Q_OS_ANDROID)  // non-Android Unix
     if (pBuf) {
         munmap(pBuf,BUF_SIZE);
     }

@@ -477,7 +477,7 @@ unix: {
     settingsdialog/formatterpathwidget.ui
 }
 
-linux: {
+linux:!android {
     # legacy glibc compatibility -- modern Unices have all components in `libc.so`
     LIBS += -lrt
 

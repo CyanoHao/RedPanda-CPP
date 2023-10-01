@@ -22,7 +22,7 @@ SOURCES += \
 }
 
 # macOS does not provide rt library, only use it for Linux
-linux: {
+linux:!android {
 LIBS+= \
     -lrt
 }
