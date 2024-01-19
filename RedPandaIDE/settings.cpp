@@ -1680,6 +1680,7 @@ Settings::CompilerSet::CompilerSet():
     mExecCharset{ENCODING_SYSTEM_DEFAULT},
     mStaticLink{false},
     mPersistInAutoFind{false},
+    mUseJsonDiagnostics{false},
     mPreprocessingSuffix{DEFAULT_PREPROCESSING_SUFFIX},
     mCompilationProperSuffix{DEFAULT_COMPILATION_SUFFIX},
     mAssemblingSuffix{DEFAULT_ASSEMBLING_SUFFIX},
@@ -1695,6 +1696,7 @@ Settings::CompilerSet::CompilerSet(const QString& compilerFolder, const QString&
     mExecCharset{ENCODING_SYSTEM_DEFAULT},
     mStaticLink{true},
     mPersistInAutoFind{false},
+    mUseJsonDiagnostics{false},
     mPreprocessingSuffix{DEFAULT_PREPROCESSING_SUFFIX},
     mCompilationProperSuffix{DEFAULT_COMPILATION_SUFFIX},
     mAssemblingSuffix{DEFAULT_ASSEMBLING_SUFFIX},
@@ -1761,6 +1763,7 @@ Settings::CompilerSet::CompilerSet(const Settings::CompilerSet &set):
     mExecCharset{set.mExecCharset},
     mStaticLink{set.mStaticLink},
     mPersistInAutoFind{set.mPersistInAutoFind},
+    mUseJsonDiagnostics{set.mUseJsonDiagnostics},
 
     mPreprocessingSuffix{set.mPreprocessingSuffix},
     mCompilationProperSuffix{set.mCompilationProperSuffix},
@@ -3085,6 +3088,16 @@ void Settings::CompilerSet::setStaticLink(bool newStaticLink)
     mStaticLink = newStaticLink;
 }
 
+bool Settings::CompilerSet::useJsonDiagnostics() const
+{
+    return mUseJsonDiagnostics;
+}
+
+void Settings::CompilerSet::setUseJsonDiagnostics(bool newUseJsonDiagnostics)
+{
+    mUseJsonDiagnostics = newUseJsonDiagnostics;
+}
+
 bool Settings::CompilerSet::useCustomCompileParams() const
 {
     return mUseCustomCompileParams;
@@ -3554,6 +3567,7 @@ void Settings::CompilerSets::saveSet(int index)
     mSettings->mSettings.setValue("customLinkParams", pSet->customLinkParams());
     mSettings->mSettings.setValue("AddCharset", pSet->autoAddCharsetParams());
     mSettings->mSettings.setValue("StaticLink", pSet->staticLink());
+    mSettings->mSettings.setValue("useJsonDiagnostics", pSet->useJsonDiagnostics());
     mSettings->mSettings.setValue("ExecCharset", pSet->execCharset());
     mSettings->mSettings.setValue("PersistInAutoFind", pSet->persistInAutoFind());
 
@@ -3644,6 +3658,7 @@ Settings::PCompilerSet Settings::CompilerSets::loadSet(int index)
     pSet->setAutoAddCharsetParams(mSettings->mSettings.value("AddCharset", true).toBool());
     pSet->setStaticLink(mSettings->mSettings.value("StaticLink", false).toBool());
     pSet->setPersistInAutoFind(mSettings->mSettings.value("PersistInAutoFind", false).toBool());
+    pSet->setUseJsonDiagnostics(mSettings->mSettings.value("useJsonDiagnostics", false).toBool());
 
     pSet->setExecCharset(mSettings->mSettings.value("ExecCharset", ENCODING_SYSTEM_DEFAULT).toString());
     if (pSet->execCharset().isEmpty()) {

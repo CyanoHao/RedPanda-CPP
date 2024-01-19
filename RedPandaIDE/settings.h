@@ -1433,6 +1433,8 @@ public:
         bool staticLink() const;
         void setStaticLink(bool newStaticLink);
 
+        bool useJsonDiagnostics() const;
+        void setUseJsonDiagnostics(bool newUseJsonDiagnostics);
 
         static int charToValue(char valueChar);
         static char valueToChar(int val);
@@ -1523,6 +1525,7 @@ public:
         QString mExecCharset;
         bool mStaticLink;
         bool mPersistInAutoFind;
+        bool mUseJsonDiagnostics;
 
         QString mPreprocessingSuffix;
         QString mCompilationProperSuffix;

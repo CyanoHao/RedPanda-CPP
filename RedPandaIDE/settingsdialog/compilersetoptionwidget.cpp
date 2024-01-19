@@ -96,6 +96,7 @@ static void loadCompilerSetSettings(Settings::PCompilerSet pSet, Ui::CompilerSet
     ui->chkAutoAddCharset->setChecked(pSet->autoAddCharsetParams());
     ui->chkStaticLink->setChecked(pSet->staticLink());
     ui->chkPersistInAutoFind->setChecked(pSet->persistInAutoFind());
+    ui->chkUseJsonDiagnostics->setChecked(pSet->useJsonDiagnostics());
     //rest tabs in the options widget
 
     ui->optionTabs->resetUI(pSet,pSet->compileOptions());
@@ -242,6 +243,7 @@ void CompilerSetOptionWidget::saveCurrentCompilerSet()
     pSet->setAutoAddCharsetParams(ui->chkAutoAddCharset->isChecked());
     pSet->setStaticLink(ui->chkStaticLink->isChecked());
     pSet->setPersistInAutoFind(ui->chkPersistInAutoFind->isChecked());
+    pSet->setUseJsonDiagnostics(ui->chkUseJsonDiagnostics->isChecked());
 
     pSet->setCCompiler(ui->txtCCompiler->text().trimmed());
     pSet->setCppCompiler(ui->txtCppCompiler->text().trimmed());

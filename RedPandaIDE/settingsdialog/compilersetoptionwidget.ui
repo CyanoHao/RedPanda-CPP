@@ -169,7 +169,13 @@
        <item>
         <widget class="QCheckBox" name="chkPersistInAutoFind">
          <property name="text">
-          <string>Survive auto-finds</string>
+          <string>Survive auto-finds</string></property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="chkUseJsonDiagnostics">
+         <property name="text">
+          <string>Use machine-readable diagnostics instead of human-readable ones</string>
          </property>
         </widget>
        </item>
