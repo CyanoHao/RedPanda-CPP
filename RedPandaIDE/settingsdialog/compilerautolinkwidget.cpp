@@ -19,6 +19,7 @@
 #include "../mainwindow.h"
 #include "../settings.h"
 #include "../iconsmanager.h"
+#include "utils.h"
 
 #include <QMessageBox>
 
@@ -112,8 +113,12 @@ QVariant AutolinkModel::data(const QModelIndex &index, int role) const
         switch(index.column()) {
         case 0:
             return link->header;
-        case 2:
-            return link->linkOption;
+        case 2: {
+            QStringList escaped;
+            for (const QString& o:link->linkOption)
+                escaped.append(escapeArgument(o, false));
+            return escaped.join(' ');
+        }
         }
     } else if (role == Qt::CheckStateRole && index.column()==1) {
         int row = index.row();
@@ -169,7 +174,7 @@ bool AutolinkModel::setData(const QModelIndex &index, const QVariant &value, int
             //we must create a new link, becasue mList may share link pointer with the autolink manger
             PAutolink newLink = std::make_shared<Autolink>();
             newLink->header = link->header;
-            newLink->linkOption = s;
+            newLink->linkOption = splitProcessCommand(s);
             mLinks[row]=newLink;
             mWidget->setSettingsChanged();
             return true;

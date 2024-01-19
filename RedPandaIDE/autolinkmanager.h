@@ -25,7 +25,7 @@
 
 struct Autolink {
     QString header;
-    QString linkOption;
+    QStringList linkOption;
     bool execUseUTF8;
 };
 using PAutolink = std::shared_ptr<Autolink>;
@@ -38,7 +38,7 @@ public:
     void load();
     void save();
     void setLink(const QString& header,
-                 const QString& linkOption,
+                 const QStringList& linkOption,
                  bool execUseUTF8);
     void removeLink(const QString& header);
     const QMap<QString,PAutolink>& links() const;

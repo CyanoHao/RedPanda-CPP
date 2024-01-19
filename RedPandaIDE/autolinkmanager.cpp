@@ -21,7 +21,9 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonValue>
 #include "systemconsts.h"
+#include "utils.h"
 
 AutolinkManager* pAutolinkManager;
 
@@ -106,7 +108,7 @@ void AutolinkManager::save()
     }
 }
 
-void AutolinkManager::setLink(const QString &header, const QString &linkOption, bool execUseUTF8)
+void AutolinkManager::setLink(const QString &header, const QStringList &linkOption, bool execUseUTF8)
 {
     PAutolink link = mLinks.value(header,PAutolink());
     if (link) {
@@ -137,7 +139,10 @@ QJsonArray AutolinkManager::toJson()
     foreach (const QString& header, mLinks.keys()){
         QJsonObject autolink;
         autolink["header"]=header;
-        autolink["links"]=mLinks[header]->linkOption;
+        QJsonArray links;
+        for (const QString& link : mLinks[header]->linkOption)
+            links.append(link);
+        autolink["links"] = links;
         autolink["execUseUTF8"]=mLinks[header]->execUseUTF8;
         result.append(autolink);
     }
@@ -149,6 +154,13 @@ void AutolinkManager::fromJson(QJsonArray json)
     clear();
     for (int i=0;i<json.size();i++) {
         QJsonObject obj = json[i].toObject();
-        setLink(obj["header"].toString(),obj["links"].toString(),obj["execUseUTF8"].toBool());
+        QJsonValue jLinks = obj["links"];
+        QStringList links;
+        if (jLinks.isArray())
+            for (const QJsonValue& link : jLinks.toArray())
+                links.append(link.toString());
+        else if (jLinks.isString())
+            links = splitProcessCommand(jLinks.toString());
+        setLink(obj["header"].toString(), links, obj["execUseUTF8"].toBool());
     }
 }

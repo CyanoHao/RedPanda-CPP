@@ -1,31 +1,51 @@
 [
     {
         "header": "fmt/core.h",
-        "links": "-lfmt"
+        "links": [
+            "-lfmt"
+        ]
     },
     {
         "header": "math.h",
-        "links": "-lm"
+        "links": [
+            "-lm"
+        ]
     },
     {
         "execUseUTF8": true,
         "header": "raylib.h",
-        "links": "-lraylib -lGL -lm -lpthread -ldl -lrt -lX11"
+        "links": [
+            "-lraylib",
+            "-lGL",
+            "-lm",
+            "-lpthread",
+            "-ldl",
+            "-lrt",
+            "-lX11"
+        ]
     },
     {
         "header": "rdrawing.h",
-        "links": "-lrdrawing"
+        "links": [
+            "-lrdrawing"
+        ]
     },
     {
         "header": "rturtle.h",
-        "links": "-lrturtle"
+        "links": [
+            "-lrturtle"
+        ]
     },
     {
         "header": "thread",
-        "links": "-lpthread"
+        "links": [
+            "-lpthread"
+        ]
     },
     {
         "header": "threads.h",
-        "links": "-lpthread"
+        "links": [
+            "-lpthread"
+        ]
     }
 ]
