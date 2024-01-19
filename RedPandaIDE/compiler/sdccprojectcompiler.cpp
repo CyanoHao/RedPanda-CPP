@@ -149,15 +149,14 @@ void SDCCProjectCompiler::writeMakeDefines(QFile &file)
     LinkObjects = LinkObjects.trimmed();
 
 
-    // Get list of applicable flags
-    QString cCompileArguments = getCCompileArguments(mOnlyCheckSyntax);
-    QString libraryArguments = getLibraryArguments(FileType::Project);
-    QString cIncludeArguments = getCIncludeArguments() + " " + getProjectIncludeArguments();
+    QStringList cCompileArguments_ = getCCompileArguments(mOnlyCheckSyntax);
+    if (cCompileArguments_.contains("-g3"))
+        cCompileArguments_ << "-D__DEBUG__";
 
-    if (cCompileArguments.indexOf(" -g3")>=0
-            || cCompileArguments.startsWith("-g3")) {
-        cCompileArguments += " -D__DEBUG__";
-    }
+    // Get list of applicable flags
+    QString cCompileArguments = dumpArgumentsForMakefile(cCompileArguments_);
+    QString libraryArguments = dumpArgumentsForMakefile(getLibraryArguments(FileType::Project));
+    QString cIncludeArguments = dumpArgumentsForMakefile(getCIncludeArguments() + getProjectIncludeArguments());
 
     writeln(file,"CC       = " + extractFileName(compilerSet()->CCompiler()));
     writeln(file,QString("PACKIHX  = ") + PACKIHX_PROGRAM);
@@ -173,14 +172,11 @@ void SDCCProjectCompiler::writeMakeDefines(QFile &file)
     writeln(file,"CLEANOBJ  = " + cleanObjects +
               + " " + genMakePath1(extractRelativePath(mProject->makeFileName(), mProject->executable())));
 #endif
-    libraryArguments.replace('\\', '/');
     writeln(file,"LIBS     = " + libraryArguments);
-    cIncludeArguments.replace('\\', '/');
     writeln(file,"INCS     = " + cIncludeArguments);
     writeln(file,"IHX      = " + genMakePath1(extractRelativePath(mProject->makeFileName(), changeFileExt(mProject->executable(), SDCC_IHX_SUFFIX))));
     writeln(file,"BIN      = " + genMakePath1(extractRelativePath(mProject->makeFileName(), mProject->executable())));
     //writeln(file,"ENCODINGS = -finput-charset=utf-8 -fexec-charset='+GetSystemCharsetName);
-    cCompileArguments.replace('\\', '/');
     writeln(file,"CFLAGS   = $(INCS) " + cCompileArguments);
     writeln(file, QString("RM       = ") + CLEAN_PROGRAM );
 
@@ -323,39 +319,42 @@ bool SDCCProjectCompiler::prepareForCompile()
     QString parallelParam;
     if (mProject->options().allowParallelBuilding) {
         if (mProject->options().parellelBuildingJobs==0) {
-            parallelParam = " --jobs";
+            parallelParam = "--jobs";
         } else {
-            parallelParam = QString(" -j%1").arg(mProject->options().parellelBuildingJobs);
+            parallelParam = QString("-j%1").arg(mProject->options().parellelBuildingJobs);
         }
     }
 
+    QString makefile = 
+            extractRelativePath(mProject->directory(), mProject->makeFileName());
+    QStringList cleanArgs{
+        "-f",
+        makefile,
+        "clean",
+    };
+    QStringList makeAllArgs{
+        parallelParam,
+        "-f",
+        makefile,
+        "all",
+    };
     if (onlyClean()) {
-        mArguments = QString(" %1 -f \"%2\" clean").arg(parallelParam,
-                                                        extractRelativePath(
-                                                            mProject->directory(),
-                                                            mProject->makeFileName()));
+        mArguments = cleanArgs;
     } else if (mRebuild) {
-        mArguments = QString("  -f \"%1\" clean").arg(extractRelativePath(
-                                                            mProject->directory(),
-                                                            mProject->makeFileName()));
-        mExtraCompilersList.append(mCompiler);
-        mExtraOutputFilesList.append("");
-        mExtraArgumentsList.append(QString(" %1 -f \"%2\" all").arg(parallelParam,
-                                                            extractRelativePath(
-                                                            mProject->directory(),
-                                                            mProject->makeFileName())));
+        mArguments = cleanArgs;
+        mExtraCompilersList << mCompiler;
+        mExtraOutputFilesList << "";
+        mExtraArgumentsList << makeAllArgs;
     } else {
-        mArguments = QString(" %1 -f \"%2\" all").arg(parallelParam,
-                                                      extractRelativePath(
-                                                      mProject->directory(),
-                                                      mProject->makeFileName()));
+        mArguments = makeAllArgs;
     }
     mDirectory = mProject->directory();
 
     log(tr("Processing makefile:"));
     log("--------");
     log(tr("- makefile processer: %1").arg(mCompiler));
-    log(tr("- Command: %1 %2").arg(extractFileName(mCompiler)).arg(mArguments));
+    QString command = dumpCommandForLog(mCompiler, mArguments);
+    log(tr("- Command: %1").arg(command));
     log("");
 
     return true;
