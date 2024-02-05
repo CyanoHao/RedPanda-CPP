@@ -32,16 +32,20 @@
 #include "widgets/customdisablediconengine.h"
 #include <QApplication>
 
-IconsManager* pIconsManager;
+std::unique_ptr<IconsManager> pIconsManager;
 
 IconsManager::IconsManager(QObject *parent) : QObject(parent)
 {
     mDefaultIconPixmap = std::make_shared<QPixmap>();
-    mIconSetTemplate = "%1/%2/%3/";
     mMakeDisabledIconDarker = false;
 }
 
-void IconsManager::updateEditorGuttorIcons(const QString& iconSet,int size)
+SvgIconsManager::SvgIconsManager(QObject *parent) : IconsManager(parent)
+{
+    mIconSetTemplate = "%1/%2/%3/";
+}
+
+void SvgIconsManager::updateEditorGuttorIcons(const QString& iconSet,int size)
 {
     QString iconFolder = mIconSetTemplate.arg( iconSetsFolder(),iconSet,"editor");
     updateMakeDisabledIconDarker(iconSet);
@@ -52,7 +56,7 @@ void IconsManager::updateEditorGuttorIcons(const QString& iconSet,int size)
     mIconPixmaps.insert(GUTTER_BOOKMARK, createSVGIcon(iconFolder+"bookmark.svg",size,size));
 }
 
-void IconsManager::updateParserIcons(const QString &iconSet, int size)
+void SvgIconsManager::updateParserIcons(const QString &iconSet, int size)
 {
     QString iconFolder = mIconSetTemplate.arg( iconSetsFolder(),iconSet,"classparser");
     updateMakeDisabledIconDarker(iconSet);
@@ -79,7 +83,7 @@ void IconsManager::updateParserIcons(const QString &iconSet, int size)
 
 }
 
-void IconsManager::updateActionIcons(const QString& iconSet, int size)
+void SvgIconsManager::updateActionIcons(const QString& iconSet, int size)
 {
     QString iconFolder = mIconSetTemplate.arg(iconSetsFolder(),iconSet,"actions");
     updateMakeDisabledIconDarker(iconSet);
@@ -178,7 +182,7 @@ void IconsManager::updateActionIcons(const QString& iconSet, int size)
 
 }
 
-void IconsManager::updateFileSystemIcons(const QString &iconSet, int size)
+void SvgIconsManager::updateFileSystemIcons(const QString &iconSet, int size)
 {
     QString iconFolder = mIconSetTemplate.arg( iconSetsFolder(),iconSet,"filesystem");
     updateMakeDisabledIconDarker(iconSet);
@@ -347,14 +351,14 @@ QPixmap IconsManager::getPixmapForStatement(PStatement statement)
     return QPixmap();
 }
 
-const QString IconsManager::iconSetsFolder() const
+const QString SvgIconsManager::iconSetsFolder() const
 {
     if (mIconSetsFolder.isEmpty())
         return pSettings->dirs().data(Settings::Dirs::DataType::IconSet);
     return mIconSetsFolder;
 }
 
-void IconsManager::setIconSetsFolder(const QString &newIconSetsFolder)
+void SvgIconsManager::setIconSetsFolder(const QString &newIconSetsFolder)
 {
     mIconSetsFolder = newIconSetsFolder;
 }

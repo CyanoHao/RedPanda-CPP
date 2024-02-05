@@ -193,10 +193,10 @@ public:
     };
     explicit IconsManager(QObject *parent = nullptr);
 
-    void updateEditorGuttorIcons(const QString& iconSet, int size);
-    void updateParserIcons(const QString& iconSet, int size);
-    void updateActionIcons(const QString& iconSet, int size);
-    void updateFileSystemIcons(const QString& iconSet, int size);
+    virtual void updateEditorGuttorIcons(const QString& iconSet, int size) = 0;
+    virtual void updateParserIcons(const QString& iconSet, int size) = 0;
+    virtual void updateActionIcons(const QString& iconSet, int size) = 0;
+    virtual void updateFileSystemIcons(const QString& iconSet, int size) = 0;
 
     PPixmap getPixmap(IconName iconName) const;
 
@@ -205,30 +205,62 @@ public:
     void setIcon(QToolButton* btn, IconName iconName) const;
     void setIcon(QPushButton* btn, IconName iconName) const;
 
-    PPixmap createSVGIcon(const QString& filename, int width, int height);
     const QSize &actionIconSize() const;
 
     void prepareCustomIconSet(const QString &customIconSet);
 
     QPixmap getPixmapForStatement(PStatement statement);
 
-    const QString iconSetsFolder() const;
-    void setIconSetsFolder(const QString &newIconSetsFolder);
-
     QList<PIconSet> listIconSets();
-private:
+protected:
     void updateMakeDisabledIconDarker(const QString& iconset);
 signals:
     void actionIconsUpdated();
-private:
+protected:
     QMap<IconName,PPixmap> mIconPixmaps;
     PPixmap mDefaultIconPixmap;
     QSize mActionIconSize;
-    QString mIconSetTemplate;
-    QString mIconSetsFolder;
 
     bool mMakeDisabledIconDarker;
 };
 
-extern IconsManager* pIconsManager;
+extern std::unique_ptr<IconsManager> pIconsManager;
+
+class SvgIconsManager : public IconsManager
+{
+    Q_OBJECT
+public:
+    SvgIconsManager(QObject *parent = nullptr);
+
+    void updateEditorGuttorIcons(const QString& iconSet, int size) override;
+    void updateParserIcons(const QString& iconSet, int size) override;
+    void updateActionIcons(const QString& iconSet, int size) override;
+    void updateFileSystemIcons(const QString& iconSet, int size) override;
+
+    const QString iconSetsFolder() const;
+    void setIconSetsFolder(const QString &newIconSetsFolder);
+
+private:
+    PPixmap createSVGIcon(const QString& filename, int width, int height);
+
+private:
+    QString mIconSetTemplate;
+    QString mIconSetsFolder;
+};
+
+class FontIconsManager : public IconsManager
+{
+    Q_OBJECT
+public:
+    FontIconsManager(QObject *parent = nullptr);
+
+    void updateEditorGuttorIcons(const QString& iconSet, int size) override;
+    void updateParserIcons(const QString& iconSet, int size) override;
+    void updateActionIcons(const QString& iconSet, int size) override;
+    void updateFileSystemIcons(const QString& iconSet, int size) override;
+
+private:
+    PPixmap createFontIcon(const QString& fontName, int size, const QString& text);
+};
+
 #endif // ICONSMANAGER_H
