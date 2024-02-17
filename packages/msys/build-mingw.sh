@@ -5,20 +5,34 @@ set -euxo pipefail
 REDPANDA_MINGW_VERSION="11.4.0-r0"
 FILENAME_MINGW_VERSION="11.4"
 
-_BIT=""
+if [[ ! -v MSYSTEM ]]; then
+  echo "This script must be run from MSYS2 shell"
+  exit 1
+fi
+
+case $MSYSTEM in
+  MINGW32|CLANG32)
+    _NSIS_ARCH=x86
+    _BIT=32
+    ;;
+  MINGW64|UCRT64|CLANG64)
+    _NSIS_ARCH=x64
+    _BIT=64
+    ;;
+  *)
+    echo "This script must be run from one of following MSYS2 shells:"
+    echo "  - MINGW32/CLANG32"
+    echo "  - MINGW64/UCRT64/CLANG64"
+    exit 1
+    ;;
+esac
+
 _CLEAN=0
 _COMPILER=1
-_HOST_MINGW=""
-_NSIS="/c/Program Files (x86)/NSIS/makensis.exe"
-_QT_INSTALL="/c/Qt"
-_REDPANDA_QT=""
+_SKIP_DEPS_CHECK=0
 _7Z_REPACK=1
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --arch)
-      _BIT="$2"
-      shift 2
-      ;;
     --clean)
       _CLEAN=1
       shift
@@ -27,21 +41,9 @@ while [[ $# -gt 0 ]]; do
       _COMPILER=0
       shift
       ;;
-    --host-mingw)
-      _HOST_MINGW="$2"
-      shift 2
-      ;;
-    --nsis)
-      _NSIS="$2"
-      shift 2
-      ;;
-    --qt-install)
-      _QT_INSTALL="$2"
-      shift 2
-      ;;
-    --redpanda-qt)
-      _REDPANDA_QT="$2"
-      shift 2
+    --skip-deps-check)
+      _SKIP_DEPS_CHECK=1
+      shift
       ;;
     --no-7z)
       _7Z_REPACK=0
@@ -54,29 +56,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-case "$_BIT" in
-  32)
-    _NSIS_ARCH="x86"
-    _DISPLAY_ARCH="x86_winxp"
-    _REQUIRED_WINDOWS_BUILD="2600"
-    _REQUIRED_WINDOWS_NAME="Windows XP"
-    ;;
-  64)
-    _NSIS_ARCH="x64"
-    _DISPLAY_ARCH="x64_ws2003"
-    _REQUIRED_WINDOWS_BUILD="3790"
-    _REQUIRED_WINDOWS_NAME="Windows Server 2003"
-    ;;
-  *)
-    echo "Please specify --arch 32 or --arch 64"
-    exit 1
-    ;;
-esac
-
-[[ -z $_HOST_MINGW ]] && _HOST_MINGW="$_QT_INSTALL/Tools/mingw810_$_BIT"
-[[ -z $_REDPANDA_QT ]] && _REDPANDA_QT="$_QT_INSTALL/5.6.4/mingw81_$_BIT-redpanda"
-_QMAKE="$_REDPANDA_QT/bin/qmake.exe"
-_HOST_GXX="$_HOST_MINGW/bin/g++.exe"
+_QMAKE="$MINGW_PREFIX/qt5-static/bin/qmake"
+_NSIS="/mingw32/bin/makensis"
 
 _MINGW_DIR="mingw$_BIT"
 _MINGW_ARCHIVE="mingw$_BIT-$REDPANDA_MINGW_VERSION.7z"
@@ -84,8 +65,8 @@ _MINGW_URL="https://github.com/redpanda-cpp/toolchain-win32-mingw-xp/releases/do
 
 _SRCDIR="$PWD"
 _ASSETSDIR="$PWD/assets"
-_BUILDDIR="$TEMP/redpanda-xp-$_BIT-build"
-_PKGDIR="$TEMP/redpanda-xp-$_BIT-pkg"
+_BUILDDIR="$TEMP/redpanda-mingw-$MSYSTEM-build"
+_PKGDIR="$TEMP/redpanda-mingw-$MSYSTEM-pkg"
 _DISTDIR="$PWD/dist"
 
 # _REDPANDA_VERSION=$(sed -nr -e '/APP_VERSION\s*=/ s/APP_VERSION\s*=\s*(([0-9]+\.)*[0-9]+)\s*/\1/p' "$_SRCDIR"/Red_Panda_CPP.pro)
@@ -97,30 +78,33 @@ _DISTDIR="$PWD/dist"
 _REDPANDA_VERSION="2.9900"
 
 if [[ $_COMPILER -eq 1 ]]; then
-  _FINALNAME="redpanda-cpp-$_REDPANDA_VERSION-$_DISPLAY_ARCH-mingw$FILENAME_MINGW_VERSION"
+  _FINALNAME="redpanda-cpp-$_REDPANDA_VERSION-$_NSIS_ARCH-mingw$FILENAME_MINGW_VERSION"
 else
-  _FINALNAME="redpanda-cpp-$_REDPANDA_VERSION-$_DISPLAY_ARCH-none"
+  _FINALNAME="redpanda-cpp-$_REDPANDA_VERSION-$_NSIS_ARCH-none"
 fi
 
-function check-toolchain() {
-  if [[ ! -x $_QMAKE ]]; then
-    echo "Qt not found: $_REDPANDA_QT."
-    echo "Please download from https://github.com/redpanda-cpp/qtbase-5.6 and extract to /c/Qt,"
-    echo "or specify --redpanda-qt </path/to/qt/prefix>"
-    exit 1
-  fi
-  if [[ ! -x $_HOST_GXX ]]; then
-    echo "MinGW not found: $_HOST_MINGW."
-    echo "Please install mingw-w64 to default location or specify --host-mingw </path/to/mingw>"
-    exit 1
-  fi
-  if [[ ! -x $_NSIS ]]; then 
-    echo "NSIS not found: $_NSIS."
-    echo "Please install NSIS to default location or specify --nsis </path/to/makensis.exe>"
-    exit 1
-  fi
-
-  export PATH="$_HOST_MINGW/bin:$PATH"
+function check-deps() {
+  # MSYS2’s `pacman -Q` is 100x slower than Arch Linux. Allow skipping the check.
+  [[ $_SKIP_DEPS_CHECK -eq 1 ]] && return
+  case $MSYSTEM in
+    MINGW32|MINGW64|UCRT64)
+      local compiler=gcc
+      ;;
+    CLANG32|CLANG64|CLANGARM64)
+      local compiler=clang
+      ;;
+  esac
+  local deps=(
+    $MINGW_PACKAGE_PREFIX-{$compiler,make,qt5-static}
+    mingw-w64-i686-nsis
+  )
+  [[ _7Z_REPACK -eq 1 ]] && deps+=("$MINGW_PACKAGE_PREFIX-7zip")
+  for dep in "${deps[@]}"; do
+    pacman -Q "$dep" >/dev/null 2>&1 || (
+      echo "Missing dependency: $dep"
+      exit 1
+    )
+  done
 }
 
 function prepare-dirs() {
@@ -143,7 +127,7 @@ function build() {
 
   cp "$_SRCDIR"/packages/msys/{main.nsi,lang.nsh} "$_PKGDIR"
   if [[ $_COMPILER -eq 1 ]]; then
-    [[ -d "$_PKGDIR/$_MINGW_DIR" ]] || 7z x "$_ASSETSDIR/$_MINGW_ARCHIVE" -o"$_PKGDIR"
+    [[ -d "$_PKGDIR/$_MINGW_DIR" ]] || bsdtar -C "$_PKGDIR" -xf "$_ASSETSDIR/$_MINGW_ARCHIVE"
   fi
   popd
 }
@@ -155,9 +139,9 @@ function package() {
   "$_NSIS" \
     -DVERSION="$_REDPANDA_VERSION" \
     -DARCH="$_NSIS_ARCH" \
-    -DDISPLAY_ARCH="$_DISPLAY_ARCH" \
-    -DREQUIRED_WINDOWS_BUILD="$_REQUIRED_WINDOWS_BUILD" \
-    -DREQUIRED_WINDOWS_NAME="$_REQUIRED_WINDOWS_NAME" \
+    -DDISPLAY_ARCH="$_NSIS_ARCH" \
+    -DREQUIRED_WINDOWS_BUILD="7600" \
+    -DREQUIRED_WINDOWS_NAME="Windows 7" \
     -DFINALNAME="$_FINALNAME.exe" \
     "${components[@]}" \
     main.nsi
@@ -174,7 +158,7 @@ function dist() {
   [[ $_7Z_REPACK -eq 1 ]] && cp "$_PKGDIR/$_FINALNAME.7z" "$_DISTDIR" || true
 }
 
-check-toolchain
+check-deps
 prepare-dirs
 download-assets
 build

@@ -102,6 +102,15 @@ local record Config
     customLinkParams: {string} | nil
 end
 
+local function contains(t: {string}, e: string): boolean
+    for _, v in ipairs(t) do
+        if v == e then
+            return true
+        end
+    end
+    return false
+end
+
 local function generateConfig(
     nameGen: (function (arch: string, profile: string): string),
     programs: Programs,
@@ -398,18 +407,11 @@ global function main(): CompilerHint
         table.insert(noSearch, llvmOrgBinDir)
     end
 
-    if appArch == "x86_64" then
+    checkAndAddClang()
+    if contains(supportedAppArches, "x86_64") then
         checkAndAddMingw("x86_64")
-        checkAndAddMingw("i386")
-        checkAndAddClang()
-    elseif appArch == "arm64" then
-        checkAndAddClang()
-        checkAndAddMingw("x86_64")
-        checkAndAddMingw("i386")
-    else
-        checkAndAddMingw("i386")
-        checkAndAddClang()
     end
+    checkAndAddMingw("i386")
 
     local result = {
         compilerList = compilerList,
