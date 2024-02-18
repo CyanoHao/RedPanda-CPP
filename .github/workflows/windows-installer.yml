@@ -1,0 +1,146 @@
+name: Windows Installer
+
+on: [push, pull_request]
+
+jobs:
+  mingw:
+    name: MinGW
+    strategy:
+      matrix:
+        msystem: [MINGW32, MINGW64]
+        include:
+          - msystem: MINGW32
+            packagePrefix: mingw-w64-i686
+          - msystem: MINGW64
+            packagePrefix: mingw-w64-x86_64
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.msystem }}
+          update: true
+          install: |
+            ${{ matrix.packagePrefix }}-gcc
+            ${{ matrix.packagePrefix }}-make
+            ${{ matrix.packagePrefix }}-qt5-static
+            ${{ matrix.packagePrefix }}-7zip
+            mingw-w64-i686-nsis
+
+      - name: Build
+        run: |
+          ./packages/msys/build-mingw.sh --skip-deps-check
+          ./packages/msys/build-mingw.sh --skip-deps-check --no-compiler
+
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: MinGW - msystem=${{ matrix.msystem }}
+          path: dist/*
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
+          draft: true
+
+  llvm:
+    name: LLVM
+    strategy:
+      matrix:
+        msystem: [UCRT64]
+        include:
+          - msystem: UCRT64
+            packagePrefix: mingw-w64-ucrt-x86_64
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.msystem }}
+          update: true
+          install: |
+            ${{ matrix.packagePrefix }}-gcc
+            ${{ matrix.packagePrefix }}-make
+            ${{ matrix.packagePrefix }}-qt5-static
+            mingw-w64-i686-nsis
+
+      - name: Build
+        run: |
+          ./packages/msys/build-llvm.sh --skip-deps-check
+          ./packages/msys/build-llvm.sh --skip-deps-check --unified
+
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: LLVM - msystem=${{ matrix.msystem }}
+          path: dist/*
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
+          draft: true
+
+  xp:
+    name: XP
+    strategy:
+      matrix:
+        arch: [32, 64]
+    runs-on: windows-2019
+    defaults:
+      run:
+        shell: bash
+    env:
+      _MINGW_TOOLCHAIN: /c/Qt/Tools/mingw810_${{ matrix.arch }}
+      _QT_INSTALL_PREFIX: /c/Qt/5.6.4/mingw81_${{ matrix.arch }}-redpanda
+      _REDPANDA_QT_BUILD: "20240116.0"
+      _REDPANDA_QT_ARCHIVE: qt5.6.4-mingw81_${{ matrix.arch }}-redpanda.7z
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup toolchain
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '5.15.2'
+          host: windows
+          target: desktop
+          arch: win${{ matrix.arch }}_mingw81
+          archives: qtbase
+          tools: tools_mingw,qt.tools.win${{ matrix.arch }}_mingw810
+          dir: C:/
+
+      - name: Setup Qt
+        run: |
+          curl -LO https://github.com/redpanda-cpp/qtbase-5.6/releases/download/$_REDPANDA_QT_BUILD/$_REDPANDA_QT_ARCHIVE
+          7z x $_REDPANDA_QT_ARCHIVE -oC:/Qt
+
+      - name: Build
+        run: |
+          ./packages/msys/build-xp.sh --arch ${{ matrix.arch }}
+          ./packages/msys/build-xp.sh --arch ${{ matrix.arch }} --no-compiler
+
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: XP - arch=${{ matrix.arch }}
+          path: dist/*
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
+          draft: true
