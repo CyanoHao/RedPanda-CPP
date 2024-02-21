@@ -20,6 +20,8 @@
 #include "../settings.h"
 
 #include <QMessageBox>
+#include <QVersionNumber>
+#include <QSysInfo>
 #include <windows.h>
 #include <shlwapi.h>
 
@@ -28,14 +30,19 @@ EnvironmentFileAssociationWidget::EnvironmentFileAssociationWidget(const QString
     ui(new Ui::EnvironmentFileAssociationWidget)
 {
     ui->setupUi(this);
-    mModel.addItem("C Source File","c",1);
-    mModel.addItem("C++ Source File","cpp",2);
-    mModel.addItem("C++ Source File","cxx",2);
-    mModel.addItem("C++ Source File","cc",2);
-    mModel.addItem("C/C++ Header File","h",3);
-    mModel.addItem("C++ Header File","hpp",4);
-    mModel.addItem("C++ Header File","hxx",4);
-    mModel.addItem("Red Panda C++ Project File","dev",5);
+    mModel.addItem("C/C++ Source File", "c", ".c/.C", 1);
+    mModel.addItem("C++ Source File", "cc", ".cc", 2);
+    mModel.addItem("C++ Source File", "cp", ".cp", 2);
+    mModel.addItem("C++ Source File", "cpp", ".cpp", 2);
+    mModel.addItem("C++ Source File", "cxx", ".cxx", 2);
+    mModel.addItem("C++ Source File", "c++", ".c++", 2);
+    mModel.addItem("C/C++ Header File", "h", ".h/.H", 3);
+    mModel.addItem("C++ Header File", "hp", ".hp", 4);
+    mModel.addItem("C++ Header File", "hpp", ".hpp", 4);
+    mModel.addItem("C++ Header File", "hxx", ".hxx", 4);
+    mModel.addItem("C++ Header File", "h++", ".h++", 4);
+    mModel.addItem("C++ Header File", "tcc", ".tcc", 4);
+    mModel.addItem("Red Panda C++ Project File", "dev", ".dev", 5);
     QItemSelectionModel* m = ui->lstFileTypes->selectionModel();
     ui->lstFileTypes->setModel(&mModel);
     delete m;
@@ -43,6 +50,18 @@ EnvironmentFileAssociationWidget::EnvironmentFileAssociationWidget(const QString
             [this](){
         setSettingsChanged();
     });
+
+    QVersionNumber currentVersion = QVersionNumber::fromString(QSysInfo::kernelVersion());
+    // Windows 8, unable to manage default app
+    if (currentVersion >= QVersionNumber(6, 2)) {
+        // ui->groupDefaultApp->setVisible(false);
+    } else {
+        ui->groupDefaultAppWin8->setVisible(false);
+        // Windows Vista, system UI preferred
+        if (currentVersion < QVersionNumber(6, 0)) {
+            ui->lblDefaultAppVista->setVisible(false);
+        }
+    }
 }
 
 EnvironmentFileAssociationWidget::~EnvironmentFileAssociationWidget()
@@ -72,7 +91,7 @@ FileAssociationModel::FileAssociationModel(QObject *parent) : QAbstractListModel
 
 }
 
-void FileAssociationModel::addItem(const QString &name, const QString &suffix, int icon)
+void FileAssociationModel::addItem(const QString &name, const QString &extension, const QString &displaySuffix, int icon)
 {
     beginInsertRows(QModelIndex(), mItems.count(), mItems.count());
     PFileAssociationItem item = std::make_shared<FileAssociationItem>();

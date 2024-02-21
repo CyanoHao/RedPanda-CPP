@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGroupBox" name="groupBox_2">
+    <widget class="QGroupBox" name="groupOpenEachFileIn">
      <property name="title">
       <string>Open Each File In</string>
      </property>
@@ -40,12 +40,25 @@
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>File Types:</string>
+      <string>File Association</string>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <layout class="QVBoxLayout" name="verticalLayout_5">
       <item>
-       <widget class="QListView" name="lstFileTypes">
-        <property name="alternatingRowColors">
+       <widget class="QCheckBox" name="cbRegisterFileAssociation">
+        <property name="text">
+         <string>Register user-wide file associations</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblSystemFileAssociation">
+        <property name="text">
+         <string>To manage system-wide file association, re-run Red Panda C++ installer.</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+        <property name="wordWrap">
          <bool>true</bool>
         </property>
        </widget>
@@ -54,16 +67,50 @@
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Just check or uncheck for which file types Red Panda C++ wil be registered as the default application to open them ... </string>
+    <widget class="QGroupBox" name="groupDefaultApp">
+     <property name="title">
+      <string>Default Application</string>
      </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
+     <layout class="QVBoxLayout" name="verticalLayout_3">
+      <item>
+       <widget class="QListView" name="lstFileTypes">
+        <property name="alternatingRowColors">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblDefaultAppVista">
+        <property name="text">
+         <string>Managing default application in “Default programs” is preferred since Windows Vista.
+Search and open “Default programs” in Start menu.</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupDefaultAppWin8">
+     <property name="title">
+      <string>Default Application</string>
      </property>
-     <property name="wordWrap">
-      <bool>true</bool>
-     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_4">
+      <item>
+       <widget class="QLabel" name="lblSetDefaultProgram">
+        <property name="text">
+         <string>Only Windows itself can managing default application since Windows 8.
+To change default application, search and open “Default apps” in Start menu.</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
   </layout>

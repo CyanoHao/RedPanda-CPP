@@ -38,7 +38,7 @@ class FileAssociationModel:public QAbstractListModel {
     Q_OBJECT
 public:
     explicit FileAssociationModel(QObject* parent = nullptr);
-    void addItem(const QString& name, const QString& suffix, int icon);
+    void addItem(const QString& name, const QString& extension, const QString &displaySuffix, int icon);
     void updateAssociationStates();
     void saveAssociations();
 signals:
