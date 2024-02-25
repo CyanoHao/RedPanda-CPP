@@ -44,6 +44,14 @@ option("libexecdir")
     end
     add_defines('LIBEXECDIR="$(libexecdir)"')
 
+option("windows-sandbox")
+    set_default(false)
+    if is_os("windows") then
+        set_showmenu(true)
+    else
+        set_showmenu(false)
+    end
+
 -- feature flags
 
 option("lua-addon")
@@ -197,6 +205,9 @@ if has_config("vcs") then
         includes("tools/redpanda-git-askpass")
     end
 end
+if has_config("windows-sandbox") then
+    includes("tools/windows-sandbox-configurator")
+end
 
 target("resources")
     set_kind("phony")
@@ -243,4 +254,10 @@ target("resources")
 
     if is_os("windows") then
         add_installfiles("platform/windows/qt.conf", {prefixdir = "bin"})
+    end
+
+    -- sandbox integration
+
+    if has_config("windows-sandbox") then
+        add_installfiles("platform/windows/sandbox/SetupIntegration.ps1", {prefixdir = "bin"})
     end
