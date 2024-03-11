@@ -662,12 +662,17 @@ void Settings::Editor::setHighlightMathingBraces(bool newHighlightMathingBraces)
 
 bool Settings::Editor::enableLigaturesSupport() const
 {
-    return mEnableLigaturesSupport;
+    return mUnicodeSupportLevel >= UnicodeSupportLevel::Contextual;
 }
 
-void Settings::Editor::setEnableLigaturesSupport(bool newEnableLigaturesSupport)
+UnicodeSupportLevel Settings::Editor::unicodeSupportLevel() const
 {
-    mEnableLigaturesSupport = newEnableLigaturesSupport;
+    return mUnicodeSupportLevel;
+}
+
+void Settings::Editor::setUnicodeSupportLevel(UnicodeSupportLevel newUnicodeSupportLevel)
+{
+    mUnicodeSupportLevel = newUnicodeSupportLevel;
 }
 
 QStringList Settings::Editor::fontFamilies() const
@@ -1348,7 +1353,7 @@ void Settings::Editor::doSave()
     saveValue("font_families", mFontFamilies);
     saveValue("font_size", mFontSize);
     saveValue("line_spacing",mLineSpacing);
-    saveValue("enable_ligatures_support", mEnableLigaturesSupport);
+    saveValue("unicode_support_level", int(mUnicodeSupportLevel));
     saveValue("force_fixed_font_width", mForceFixedFontWidth);
 
     saveValue("show_leading_spaces", mShowLeadingSpaces);
@@ -1477,6 +1482,8 @@ void Settings::Editor::doLoad()
     mRightEdgeLineColor = colorValue("right_edge_line_color",Qt::yellow);
 
     //Editor font
+    int level = intValue("unicode_support_level", int(UnicodeSupportLevel::FullCodePoint));
+    mUnicodeSupportLevel = static_cast<UnicodeSupportLevel>(level);
     QStringList fontFamilies = stringListValue("font_families", QStringList());
     if (fontFamilies.empty()) {
         // backward compatibility: try old font settings
@@ -1488,7 +1495,7 @@ void Settings::Editor::doLoad()
             fontFamilies.append(nonAsciiFontName);
 
         if (fontFamilies.empty())
-            mFontFamilies = defaultEditorFonts(UnicodeSupportLevel::FullCodePoint);
+            mFontFamilies = defaultEditorFonts(mUnicodeSupportLevel);
         else {
             fontFamilies.append("Red Panda Control");
             mFontFamilies = fontFamilies;
@@ -1498,13 +1505,10 @@ void Settings::Editor::doLoad()
     }
     mFontSize = intValue("font_size",12);
     mLineSpacing = doubleValue("line_spacing",1.1);
-    mForceFixedFontWidth = boolValue("force_fixed_font_width", isCjk());
-    // if (mForceFixedFontWidth)
-    //     mEnableLigaturesSupport = false;
-    // else
-    //     mEnableLigaturesSupport = boolValue("enable_ligatures_support", !isZhJa);
-    mEnableLigaturesSupport = boolValue("enable_ligatures_support", false);
-
+    if (mUnicodeSupportLevel < UnicodeSupportLevel::Contextual)
+        mForceFixedFontWidth = boolValue("force_fixed_font_width", isCjk());
+    else
+        mForceFixedFontWidth = false;
 
     mShowLeadingSpaces = boolValue("show_leading_spaces", false);
     mShowTrailingSpaces = boolValue("show_trailing_spaces", false);

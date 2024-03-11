@@ -57,6 +57,8 @@ public:
     explicit EditorFontWidget(const QString& name, const QString& group, QWidget *parent = nullptr);
     ~EditorFontWidget();
 
+private:
+    UnicodeSupportLevel selectedLevel() const;
 
 private slots:
     void on_chkGutterOnlyMonospacedFonts_stateChanged(int arg1);
@@ -65,6 +67,10 @@ private slots:
     void on_btnMoveFontUp_clicked();
     void on_btnMoveFontDown_clicked();
     void on_btnResetFonts_clicked();
+    void on_rbUnicodeFullCodePoint_toggled(bool checked);
+    void on_rbUnicodeContextual_toggled(bool checked);
+    void on_rbUnicodeGrapheme_toggled(bool checked);
+    void on_rbUnicodeBidirectional_toggled(bool checked);
 
     // void on_chkLigature_toggled(bool checked);
 

@@ -353,7 +353,9 @@ public:
         void setHighlightMathingBraces(bool newHighlightMathingBraces);
 
         bool enableLigaturesSupport() const;
-        void setEnableLigaturesSupport(bool newEnableLigaturesSupport);
+
+        UnicodeSupportLevel unicodeSupportLevel() const;
+        void setUnicodeSupportLevel(UnicodeSupportLevel newUnicodeSupportLevel);
 
         QStringList fontFamilies() const;
         void setFontFamilies(const QStringList &newFontFamilies);
@@ -451,7 +453,7 @@ public:
         QStringList mFontFamilies;
         int mFontSize;
         double mLineSpacing;
-        bool mEnableLigaturesSupport;
+        UnicodeSupportLevel mUnicodeSupportLevel;
         bool mForceFixedFontWidth;
 
         bool mShowLeadingSpaces;

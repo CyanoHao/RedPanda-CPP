@@ -123,11 +123,26 @@ EditorFontWidget::EditorFontWidget(const QString& name, const QString& group, QW
     QItemSelectionModel *m = ui->lstFontList->selectionModel();
     ui->lstFontList->setModel(&mModel);
     delete m;
+
+    // not yet implemented
+    // ui->rbUnicodeGrapheme->setVisible(false);
+    // ui->rbUnicodeBidirectional->setVisible(false);
 }
 
 EditorFontWidget::~EditorFontWidget()
 {
     delete ui;
+}
+
+UnicodeSupportLevel EditorFontWidget::selectedLevel() const
+{
+    if (ui->rbUnicodeContextual->isChecked())
+        return UnicodeSupportLevel::Contextual;
+    if (ui->rbUnicodeGrapheme->isChecked())
+        return UnicodeSupportLevel::Grapheme;
+    if (ui->rbUnicodeBidirectional->isChecked())
+        return UnicodeSupportLevel::Bidirectional;
+    return UnicodeSupportLevel::FullCodePoint;
 }
 
 void EditorFontWidget::on_chkGutterOnlyMonospacedFonts_stateChanged(int)
@@ -170,7 +185,37 @@ void EditorFontWidget::on_btnMoveFontDown_clicked()
 
 void EditorFontWidget::on_btnResetFonts_clicked()
 {
-    mModel.updateFonts(defaultEditorFonts(UnicodeSupportLevel::FullCodePoint));
+    mModel.updateFonts(defaultEditorFonts(selectedLevel()));
+}
+
+void EditorFontWidget::on_rbUnicodeFullCodePoint_toggled(bool checked)
+{
+    if (checked)
+        ui->chkForceFixedFontWidth->setEnabled(true);
+}
+
+void EditorFontWidget::on_rbUnicodeContextual_toggled(bool checked)
+{
+    if (checked) {
+        ui->chkForceFixedFontWidth->setChecked(false);
+        ui->chkForceFixedFontWidth->setEnabled(false);
+    }
+}
+
+void EditorFontWidget::on_rbUnicodeGrapheme_toggled(bool checked)
+{
+    if (checked) {
+        ui->chkForceFixedFontWidth->setChecked(false);
+        ui->chkForceFixedFontWidth->setEnabled(false);
+    }
+}
+
+void EditorFontWidget::on_rbUnicodeBidirectional_toggled(bool checked)
+{
+    if (checked) {
+        ui->chkForceFixedFontWidth->setChecked(false);
+        ui->chkForceFixedFontWidth->setEnabled(false);
+    }
 }
 
 void EditorFontWidget::doLoad()
@@ -182,7 +227,23 @@ void EditorFontWidget::doLoad()
 
     ui->spinFontSize->setValue(pSettings->editor().fontSize());
     ui->spinLineSpacing->setValue(pSettings->editor().lineSpacing());
-    ui->chkLigature->setChecked(pSettings->editor().enableLigaturesSupport());
+
+    switch (pSettings->editor().unicodeSupportLevel()) {
+    case UnicodeSupportLevel::Contextual:
+        ui->rbUnicodeContextual->setChecked(true);
+        break;
+    case UnicodeSupportLevel::Grapheme:
+        ui->rbUnicodeGrapheme->setChecked(true);
+        break;
+    case UnicodeSupportLevel::Bidirectional:
+        ui->rbUnicodeBidirectional->setChecked(true);
+        break;
+    case UnicodeSupportLevel::FullCodePoint:
+    default:
+        ui->rbUnicodeFullCodePoint->setChecked(true);
+        break;
+    }
+
     ui->chkForceFixedFontWidth->setChecked(pSettings->editor().forceFixedFontWidth());
     ui->chkLeadingSpaces->setChecked(pSettings->editor().showLeadingSpaces());
     ui->chkInnerSpaces->setChecked(pSettings->editor().showInnerSpaces());
@@ -210,7 +271,7 @@ void EditorFontWidget::doSave()
     pSettings->editor().setFontSize(ui->spinFontSize->value());
     pSettings->editor().setLineSpacing(ui->spinLineSpacing->value());
 
-    pSettings->editor().setEnableLigaturesSupport(ui->chkLigature->isChecked());
+    pSettings->editor().setUnicodeSupportLevel(selectedLevel());
     pSettings->editor().setForceFixedFontWidth(ui->chkForceFixedFontWidth->isChecked());
     pSettings->editor().setShowLeadingSpaces(ui->chkLeadingSpaces->isChecked());
     pSettings->editor().setShowInnerSpaces(ui->chkInnerSpaces->isChecked());
