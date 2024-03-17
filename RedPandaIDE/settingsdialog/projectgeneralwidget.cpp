@@ -16,7 +16,7 @@
  */
 #include "projectgeneralwidget.h"
 #include "ui_projectgeneralwidget.h"
-#include "../project.h"
+#include "project/project.h"
 #include "../mainwindow.h"
 #include "settings.h"
 #include "../systemconsts.h"
@@ -50,11 +50,11 @@ void ProjectGeneralWidget::refreshIcon()
 
 void ProjectGeneralWidget::doLoad()
 {
-    std::shared_ptr<Project> project = pMainWindow->project();
+    std::shared_ptr<DevCppProject> project = pMainWindow->project();
     if (!project)
         return;
 #ifdef ENABLE_SDCC
-    bool isMicroControllerProject = (project->options().type==ProjectType::MicroController);
+    bool isMicroControllerProject = (project->options().type==DevCppProjectType::MicroController);
 #else
     bool isMicroControllerProject = false;
 #endif
@@ -122,7 +122,7 @@ void ProjectGeneralWidget::doLoad()
 
 void ProjectGeneralWidget::doSave()
 {
-    std::shared_ptr<Project> project = pMainWindow->project();
+    std::shared_ptr<DevCppProject> project = pMainWindow->project();
     if (!project)
         return;
     project->setName(ui->txtName->text().trimmed());
@@ -134,7 +134,7 @@ void ProjectGeneralWidget::doSave()
     }
 
     int row = std::max(0,ui->lstType->currentRow());
-    project->options().type = static_cast<ProjectType>(row);
+    project->options().type = static_cast<DevCppProjectType>(row);
 
     project->options().isCpp = ui->cbDefaultCpp->isChecked();
     project->options().supportXPThemes = ui->cbSupportXPTheme->isChecked();

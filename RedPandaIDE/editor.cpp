@@ -53,7 +53,7 @@
 #include "debugger/debugger.h"
 #include "editorlist.h"
 #include <QDebug>
-#include "project.h"
+#include "project/project.h"
 #include <qt_utils/charsetinfo.h>
 
 QHash<ParserLanguage,std::weak_ptr<CppParser>> Editor::mSharedParsers;
@@ -65,7 +65,7 @@ Editor::Editor(QWidget *parent):
 
 Editor::Editor(QWidget *parent, const QString& filename,
                   const QByteArray& encoding,
-                  Project* pProject, bool isNew,
+                  DevCppProject* pProject, bool isNew,
                   QTabWidget* parentPageControl):
   QSynEdit{parent},
   mInited{false},
@@ -4584,7 +4584,7 @@ void Editor::setUseCppSyntax(bool newUseCppSyntax)
     mUseCppSyntax = newUseCppSyntax;
 }
 
-void Editor::setProject(Project *pProject)
+void Editor::setProject(DevCppProject *pProject)
 {
     if (mProject == pProject)
         return;

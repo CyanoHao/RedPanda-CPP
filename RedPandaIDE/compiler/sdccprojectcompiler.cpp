@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "sdccprojectcompiler.h"
-#include "../project.h"
+#include "project/project.h"
 #include "compilermanager.h"
 #include "../systemconsts.h"
 #include "qt_utils/utils.h"
@@ -24,7 +24,7 @@
 
 #include <QDir>
 
-SDCCProjectCompiler::SDCCProjectCompiler(std::shared_ptr<Project> project):
+SDCCProjectCompiler::SDCCProjectCompiler(std::shared_ptr<DevCppProject> project):
     ProjectCompiler(project)
 {
 }

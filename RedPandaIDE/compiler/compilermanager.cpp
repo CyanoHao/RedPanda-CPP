@@ -16,7 +16,7 @@
  */
 #include "compilermanager.h"
 #include "filecompiler.h"
-#include "../project.h"
+#include "project/project.h"
 #ifdef ENABLE_SDCC
 #include "sdccfilecompiler.h"
 #include "sdccprojectcompiler.h"
@@ -117,7 +117,7 @@ void CompilerManager::compile(const QString& filename, const QByteArray& encodin
     }
 }
 
-void CompilerManager::compileProject(std::shared_ptr<Project> project, bool rebuild)
+void CompilerManager::compileProject(std::shared_ptr<DevCppProject> project, bool rebuild)
 {
     if (!pSettings->compilerSets().defaultSet()) {
         QMessageBox::critical(pMainWindow,
@@ -149,7 +149,7 @@ void CompilerManager::compileProject(std::shared_ptr<Project> project, bool rebu
     }
 }
 
-void CompilerManager::cleanProject(std::shared_ptr<Project> project)
+void CompilerManager::cleanProject(std::shared_ptr<DevCppProject> project)
 {
     if (!pSettings->compilerSets().defaultSet()) {
         QMessageBox::critical(pMainWindow,
@@ -183,7 +183,7 @@ void CompilerManager::cleanProject(std::shared_ptr<Project> project)
     }
 }
 
-void CompilerManager::buildProjectMakefile(std::shared_ptr<Project> project)
+void CompilerManager::buildProjectMakefile(std::shared_ptr<DevCppProject> project)
 {
     if (!pSettings->compilerSets().defaultSet()) {
         QMessageBox::critical(pMainWindow,
@@ -202,7 +202,7 @@ void CompilerManager::buildProjectMakefile(std::shared_ptr<Project> project)
     }
 }
 
-void CompilerManager::checkSyntax(const QString &filename, const QByteArray& encoding, const QString &content, std::shared_ptr<Project> project)
+void CompilerManager::checkSyntax(const QString &filename, const QByteArray& encoding, const QString &content, std::shared_ptr<DevCppProject> project)
 {
     if (!pSettings->compilerSets().defaultSet()) {
         QMessageBox::critical(pMainWindow,
@@ -501,10 +501,10 @@ void CompilerManager::onSyntaxCheckIssue(PCompileIssue issue)
         mSyntaxCheckIssueCount++;
 }
 
-ProjectCompiler *CompilerManager::createProjectCompiler(std::shared_ptr<Project> project)
+ProjectCompiler *CompilerManager::createProjectCompiler(std::shared_ptr<DevCppProject> project)
 {
 #ifdef ENABLE_SDCC
-    if (project->options().type==ProjectType::MicroController)
+    if (project->options().type==DevCppProjectType::MicroController)
         return new SDCCProjectCompiler(project);
     else
 #endif

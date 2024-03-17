@@ -18,7 +18,7 @@
 #include "ui_projectmakefilewidget.h"
 #include "compilersetdirectorieswidget.h"
 #include "../mainwindow.h"
-#include "../project.h"
+#include "project/project.h"
 #include "../widgets/custommakefileinfodialog.h"
 #include "../iconsmanager.h"
 #include "../systemconsts.h"

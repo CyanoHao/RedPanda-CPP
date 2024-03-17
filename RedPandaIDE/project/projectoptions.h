@@ -31,14 +31,6 @@ enum class ProjectClassBrowserType {
     WholeProject
 };
 
-enum class ProjectType {
-    GUI=0,
-    Console=1,
-    StaticLib=2,
-    DynamicLib=3,
-    MicroController=4,
-};
-
 struct ProjectVersionInfo{
     explicit ProjectVersionInfo();
     int major;
@@ -60,46 +52,7 @@ struct ProjectVersionInfo{
     bool syncProduct;
 };
 
-struct ProjectOptions{
-    explicit ProjectOptions();
-    ProjectType type;
-    int version;
-    QString compilerCmd;
-    QString cppCompilerCmd;
-    QString linkerCmd;
-    QString resourceCmd;
-    QStringList binDirs;
-    QStringList includeDirs;
-    QStringList libDirs;
-    QString privateResource;
-    QStringList resourceIncludes;
-    QStringList makeIncludes;
-    bool isCpp;
-    QString icon;
-    QString exeOutput;
-    QString objectOutput;
-    QString logOutput;
-    bool logOutputEnabled;
-    bool useCustomMakefile;
-    QString customMakefile;
-    bool usePrecompiledHeader;
-    QString precompiledHeader;
-    bool overrideOutput;
-    QString overridenOutput;
-    QString hostApplication;
-    bool includeVersionInfo;
-    bool supportXPThemes;
-    int compilerSet;
-    QMap<QString,QString> compilerOptions;
-    ProjectVersionInfo versionInfo;
-    QString cmdLineArgs;
-    bool staticLink;
-    bool addCharset;
-    QByteArray execEncoding;
-    QByteArray encoding;
-    ProjectModelType modelType;
-    ProjectClassBrowserType classBrowserType;
-    bool allowParallelBuilding;
-    int parellelBuildingJobs;
+struct ProjectOptionsBase {
 };
+
 #endif // PROJECTOPTIONS_H

@@ -22,7 +22,7 @@
 #include "../editorlist.h"
 #include <qsynedit/searcher/basicsearcher.h>
 #include <qsynedit/searcher/regexsearcher.h>
-#include "../project.h"
+#include "project/project.h"
 #include "../settings.h"
 #include "../systemconsts.h"
 #include <QMessageBox>

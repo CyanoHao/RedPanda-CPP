@@ -67,7 +67,7 @@ class CPUDialog;
 class QPlainTextEdit;
 class SearchInFileDialog;
 class SearchDialog;
-class Project;
+class DevCppProject;
 struct ProjectModelNode;
 class ProjectUnit;
 class ColorSchemeItem;
@@ -203,7 +203,7 @@ public:
     CaretList &caretList();
     void updateCaretActions();
 
-    std::shared_ptr<Project> project();
+    std::shared_ptr<DevCppProject> project();
 
     const std::shared_ptr<QHash<StatementKind, std::shared_ptr<ColorSchemeItem> > > &statementColors() const;
 
@@ -878,7 +878,7 @@ private:
     bool mClosingProject;
     QElapsedTimer mParserTimer;
     QFileSystemWatcher mFileSystemWatcher;
-    std::shared_ptr<Project> mProject;
+    std::shared_ptr<DevCppProject> mProject;
     Qt::DockWidgetArea mMessagesDockLocation;
 
     std::shared_ptr<CodeCompletionPopup> mCompletionPopup;

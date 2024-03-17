@@ -21,7 +21,7 @@
 #include <mainwindow.h>
 #include <QFileInfo>
 #include "settings.h"
-#include "project.h"
+#include "project/project.h"
 #include "systemconsts.h"
 #include "visithistorymanager.h"
 #include <QApplication>
@@ -43,7 +43,7 @@ EditorList::EditorList(QTabWidget* leftPageWidget,
 }
 
 Editor* EditorList::newEditor(const QString& filename, const QByteArray& encoding,
-                 Project *pProject, bool newFile,
+                 DevCppProject *pProject, bool newFile,
                  QTabWidget* page) {
     QTabWidget * parentPageControl = nullptr;
     if (page == nullptr)

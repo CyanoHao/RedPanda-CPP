@@ -21,12 +21,12 @@
 #include <QObject>
 #include <QFile>
 
-class Project;
+class DevCppProject;
 class SDCCProjectCompiler : public ProjectCompiler
 {
     Q_OBJECT
 public:
-    SDCCProjectCompiler(std::shared_ptr<Project> project);
+    SDCCProjectCompiler(std::shared_ptr<DevCppProject> project);
     SDCCProjectCompiler(const SDCCProjectCompiler&)=delete;
     SDCCProjectCompiler& operator=(const SDCCProjectCompiler&)=delete;
     void buildMakeFile();

@@ -20,7 +20,7 @@
 #include <QDialog>
 #include <QListWidget>
 #include <QTabBar>
-#include "projecttemplate.h"
+#include "project/projecttemplate.h"
 
 namespace Ui {
 class NewProjectDialog;

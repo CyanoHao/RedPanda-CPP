@@ -18,7 +18,7 @@
 #define PROJECTFILESWIDGET_H
 
 #include <QWidget>
-#include "../project.h"
+#include "project/project.h"
 #include "settingswidget.h"
 
 namespace Ui {

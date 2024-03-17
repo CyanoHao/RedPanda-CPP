@@ -22,7 +22,7 @@
 #include <QWidget>
 #include "utils.h"
 
-class Project;
+class DevCppProject;
 class Editor;
 class EditorList : public QObject
 {
@@ -40,7 +40,7 @@ public:
                         QWidget* panel, QObject* parent = nullptr);
 
     Editor* newEditor(const QString& filename, const QByteArray& encoding,
-                     Project *pProject, bool newFile,
+                     DevCppProject *pProject, bool newFile,
                      QTabWidget* page=nullptr);
 
     Editor* getEditor(int index=-1, QTabWidget* tabsWidget=nullptr) const;

@@ -19,7 +19,7 @@
 
 #include <QAbstractItemModel>
 #include "parser/cppparser.h"
-#include "../projectoptions.h"
+#include "project/projectoptions.h"
 
 struct ClassBrowserNode {
     ClassBrowserNode* parent;

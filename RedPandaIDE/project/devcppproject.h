@@ -14,195 +14,84 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef PROJECT_H
-#define PROJECT_H
+#ifndef DEVCPPPROJECT_H
+#define DEVCPPPROJECT_H
 
-#include <QAbstractItemModel>
-#include <QHash>
-#include <QSet>
-#include <QSortFilterProxyModel>
-#include <memory>
+#include "project.h"
 #include "projectoptions.h"
-#include "utils.h"
 
-class Project;
-class Editor;
-class CppParser;
-class EditorList;
-class QFileSystemWatcher;
-
-enum ProjectModelNodeType {
-    DUMMY_HEADERS_FOLDER,
-    DUMMY_SOURCES_FOLDER,
-    DUMMY_OTHERS_FOLDER,
-    Folder,
-    File
+enum class DevCppProjectType {
+    GUI=0,
+    Console=1,
+    StaticLib=2,
+    DynamicLib=3,
+    MicroController=4,
 };
 
-struct ProjectModelItemRecord {
-    ProjectModelNodeType type;
-    QString fullPath;
+enum class DevCppProjectBuildBackend {
+    DevCppMakefile = 0,
+    FullyExpandedMakefile = 1,
+    BuiltInScheduler = 2,
 };
 
-class ProjectUnit;
-
-struct ProjectModelNode;
-using PProjectModelNode = std::shared_ptr<ProjectModelNode>;
-struct ProjectModelNode {
-    QString text;
-    std::weak_ptr<ProjectModelNode> parent;
-    bool isUnit;
-    std::weak_ptr<ProjectUnit> pUnit;
-    int priority;
-    QList<PProjectModelNode>  children;
-    ProjectModelNodeType folderNodeType;
-    int level;
+struct DevCppProjectOptions: public ProjectOptionsBase {
+    explicit DevCppProjectOptions();
+    DevCppProjectType type;
+    DevCppProjectBuildBackend buildBackend;
+    int version;
+    QString compilerCmd;
+    QString cppCompilerCmd;
+    QString linkerCmd;
+    QString resourceCmd;
+    QStringList binDirs;
+    QStringList includeDirs;
+    QStringList libDirs;
+    QString privateResource;
+    QStringList resourceIncludes;
+    QStringList makeIncludes;
+    bool isCpp;
+    QString icon;
+    QString exeOutput;
+    QString objectOutput;
+    QString logOutput;
+    bool logOutputEnabled;
+    bool useCustomMakefile;
+    QString customMakefile;
+    bool usePrecompiledHeader;
+    QString precompiledHeader;
+    bool overrideOutput;
+    QString overridenOutput;
+    QString hostApplication;
+    bool includeVersionInfo;
+    bool supportXPThemes;
+    int compilerSet;
+    QMap<QString,QString> compilerOptions;
+    ProjectVersionInfo versionInfo;
+    QString cmdLineArgs;
+    bool staticLink;
+    bool addCharset;
+    QByteArray execEncoding;
+    QByteArray encoding;
+    ProjectModelType modelType;
+    ProjectClassBrowserType classBrowserType;
+    bool allowParallelBuilding;
+    int parellelBuildingJobs;
 };
 
-struct ProjectEditorLayout {
-    QString filename;
-    int topLine;
-    int left;
-    int caretX;
-    int caretY;
-    int order;
-    bool isFocused;
-    bool isOpen;
-};
-
-using PProjectEditorLayout = std::shared_ptr<ProjectEditorLayout>;
-
-class ProjectUnit {
-
-public:
-    explicit ProjectUnit(Project* parent);
-    Project* parent() const;
-    const QString &fileName() const;
-    void setFileName(QString newFileName);
-    const QString &folder() const;
-    void setFolder(const QString &newFolder);
-    bool compile() const;
-    void setCompile(bool newCompile);
-    bool compileCpp() const;
-    void setCompileCpp(bool newCompileCpp);
-    bool overrideBuildCmd() const;
-    void setOverrideBuildCmd(bool newOverrideBuildCmd);
-    const QString &buildCmd() const;
-    void setBuildCmd(const QString &newBuildCmd);
-    bool link() const;
-    void setLink(bool newLink);
-    int priority() const;
-    void setPriority(int newPriority);
-    const QByteArray &encoding() const;
-    void setEncoding(const QByteArray &newEncoding);
-
-    PProjectModelNode &node();
-    void setNode(const PProjectModelNode &newNode);
-
-//    bool FileMissing() const;
-//    void setFileMissing(bool newDontSave);
-
-    void setNew(bool newNew);
-
-    const QByteArray &realEncoding() const;
-    void setRealEncoding(const QByteArray &newRealEncoding);
-
-private:
-    Project* mParent;
-    QString mFileName;
-    QString mFolder;
-    bool mNew;
-    bool mCompile;
-    bool mCompileCpp;
-    bool mOverrideBuildCmd;
-    QString mBuildCmd;
-    bool mLink;
-    int mPriority;
-    QByteArray mEncoding;
-    QByteArray mRealEncoding;
-    PProjectModelNode mNode;
-//    bool mFileMissing;
-};
-
-using PProjectUnit = std::shared_ptr<ProjectUnit>;
-
-class GitRepository;
-class CustomFileIconProvider;
-class ProjectModel : public QAbstractItemModel {
-    Q_OBJECT
-public:
-    explicit ProjectModel(Project* project, QObject* parent=nullptr);
-    ~ProjectModel();
-    void beginUpdate();
-    void endUpdate();
-private:
-    Project* mProject;
-    int mUpdateCount;
-    CustomFileIconProvider* mIconProvider;
-
-
-    // QAbstractItemModel interface
-public:
-    QModelIndex index(int row, int column, const QModelIndex &parent) const override;
-    QModelIndex parent(const QModelIndex &child) const override;
-    int rowCount(const QModelIndex &parent) const override;
-    int columnCount(const QModelIndex &parent) const override;
-    QVariant data(const QModelIndex &index, int role) const override;
-    Qt::ItemFlags flags(const QModelIndex &index) const override;
-    bool setData(const QModelIndex &index, const QVariant &value, int role) override;
-    void refreshIcon(const QModelIndex& index, bool update=true);
-    void refreshIcon(const QString& filename);
-    void refreshIcons();
-    void refreshNodeIconRecursive(PProjectModelNode node);
-
-    QModelIndex getNodeIndex(ProjectModelNode *node) const;
-    QModelIndex getParentIndex(ProjectModelNode * node) const;
-
-    QModelIndex rootIndex() const;
-
-private:
-
-    // QAbstractItemModel interface
-public:
-    bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const override;
-    Qt::DropActions supportedDropActions() const override;
-    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) override;
-    QMimeData *mimeData(const QModelIndexList &indexes) const override;
-    Project *project() const;
-    CustomFileIconProvider *iconProvider() const;
-
-    // QAbstractItemModel interface
-public:
-    bool insertRows(int row, int count, const QModelIndex &parent) override;
-    bool removeRows(int row, int count, const QModelIndex &parent) override;
-};
-
-class ProjectModelSortFilterProxy : public QSortFilterProxyModel
-{
-    Q_OBJECT
-
-public:
-    explicit ProjectModelSortFilterProxy(QObject *parent = nullptr);
-    // QSortFilterProxyModel interface
-protected:
-    bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const override;
-};
-
-class ProjectTemplate;
-class Project : public QObject
+class DevCppProject : public BuiltInProjectBase
 {
     Q_OBJECT
 public:
-    explicit Project(const QString& filename, const QString& name,
+    explicit DevCppProject(const QString& filename, const QString& name,
                      EditorList* editorList,
                      QFileSystemWatcher* fileSystemWatcher,
                      QObject *parent = nullptr);
 
-    static std::shared_ptr<Project> load(const QString& filename,
+    static std::shared_ptr<DevCppProject> load(const QString& filename,
                                     EditorList* editorList,
                                     QFileSystemWatcher* fileSystemWatcher,
                                     QObject *parent = nullptr);
-    static std::shared_ptr<Project> create(const QString& filename,
+    static std::shared_ptr<DevCppProject> create(const QString& filename,
                                            const QString& name,
                                            EditorList* editorList,
                                            QFileSystemWatcher* fileSystemWatcher,
@@ -210,9 +99,9 @@ public:
                                            bool useCpp,
                                            QObject *parent = nullptr);
 
-    ~Project();
-    QString directory() const;
-    QString executable() const;
+    ~DevCppProject();
+
+    QString executable() const override;
     QString makeFileName();
     QString xmakeFileName();
     bool unitsModifiedSince(const QDateTime& time);
@@ -280,7 +169,7 @@ public:
 
     const PProjectModelNode &rootNode() const;
 
-    ProjectOptions &options();
+    DevCppProjectOptions &options();
 
     ProjectModel* model() ;
 
@@ -305,11 +194,6 @@ signals:
     void modifyChanged(bool value);
 
 private:
-    QString relativePath(const QString& filename);
-    QStringList relativePaths(const QStringList& files);
-    QString absolutePath(const QString& filename);
-    QStringList absolutePaths(const QStringList& files);
-
     bool internalRemoveUnit(PProjectUnit& unit, bool doClose, bool removeFile);
     PProjectUnit internalAddUnit(const QString& inFileName,
                 PProjectModelNode parentNode);
@@ -343,14 +227,8 @@ private:
     void updateCompilerSetting();
 
 private:
-    QHash<QString,PProjectUnit> mUnits;
-    ProjectOptions mOptions;
-    QString mFilename;
-    QString mName;
+    DevCppProjectOptions mOptions;
     bool mModified;
-    QStringList mFolders;
-    std::shared_ptr<CppParser> mParser;
-    PProjectModelNode mRootNode;
 
     QHash<ProjectModelNodeType, PProjectModelNode> mSpecialNodes;
     QHash<QString, PProjectModelNode> mFileSystemFolderNodes;
@@ -361,4 +239,4 @@ private:
     QFileSystemWatcher* mFileSystemWatcher;
 };
 
-#endif // PROJECT_H
+#endif // DEVCPPPROJECT_H

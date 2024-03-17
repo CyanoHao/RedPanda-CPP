@@ -24,7 +24,7 @@
 #include <QProgressDialog>
 #include <QTextCodec>
 #include "syntaxermanager.h"
-#include "project.h"
+#include "project/project.h"
 
 CppRefacter::CppRefacter(QObject *parent) : QObject(parent)
 {
@@ -54,7 +54,7 @@ bool CppRefacter::findOccurence(Editor *editor, const QSynedit::BufferCoord &pos
     if (statement->scope == StatementScope::Local) {
         doFindOccurenceInEditor(statement,editor,editor->parser());
     } else {
-        std::shared_ptr<Project> project = pMainWindow->project();
+        std::shared_ptr<DevCppProject> project = pMainWindow->project();
         if (editor->inProject() && project) {
             doFindOccurenceInProject(statement,project,editor->parser());
         } else {
@@ -69,7 +69,7 @@ bool CppRefacter::findOccurence(const QString &statementFullname, SearchFileScop
 {
     PCppParser parser;
     Editor * editor=nullptr;
-    std::shared_ptr<Project> project;
+    std::shared_ptr<DevCppProject> project;
     if (scope == SearchFileScope::currentFile) {
         editor = pMainWindow->editorList()->getEditor();
         if (!editor)
@@ -176,7 +176,7 @@ void CppRefacter::doFindOccurenceInEditor(PStatement statement , Editor *editor,
     }
 }
 
-void CppRefacter::doFindOccurenceInProject(PStatement statement, std::shared_ptr<Project> project, const PCppParser &parser)
+void CppRefacter::doFindOccurenceInProject(PStatement statement, std::shared_ptr<DevCppProject> project, const PCppParser &parser)
 {
     PSearchResults results = pMainWindow->searchResultModel()->addSearchResults(
                 statement->command,

@@ -17,7 +17,7 @@
 #include "projectcompileparamaterswidget.h"
 #include "ui_projectcompileparamaterswidget.h"
 #include "../mainwindow.h"
-#include "../project.h"
+#include "project/project.h"
 #include "../iconsmanager.h"
 #include "utils.h"
 #include "utils/escape.h"

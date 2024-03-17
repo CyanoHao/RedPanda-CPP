@@ -22,7 +22,7 @@
 #include "../common.h"
 #include "../parser/cppparser.h"
 
-class Project;
+class DevCppProject;
 class Compiler : public QThread
 {
     Q_OBJECT
@@ -41,8 +41,8 @@ public:
     bool isRebuild() const;
     void setRebuild(bool isRebuild);
 
-    const std::shared_ptr<Project> &project() const;
-    void setProject(const std::shared_ptr<Project> &newProject);
+    const std::shared_ptr<DevCppProject> &project() const;
+    void setProject(const std::shared_ptr<DevCppProject> &newProject);
 
     PCppParser parser() const;
 
@@ -102,7 +102,7 @@ protected:
     QString mFilename;
     QString mDirectory;
     bool mRebuild;
-    std::shared_ptr<Project> mProject;
+    std::shared_ptr<DevCppProject> mProject;
     bool mSetLANG;
     PCppParser mParserForFile;
     bool mForceEnglishOutput;

@@ -34,7 +34,7 @@ ProjectFilesWidget::~ProjectFilesWidget()
 
 void ProjectFilesWidget::doLoad()
 {
-    std::shared_ptr<Project> project = pMainWindow->project();
+    std::shared_ptr<DevCppProject> project = pMainWindow->project();
     if (!project)
         return;
     copyUnits();
@@ -86,7 +86,7 @@ PProjectUnit ProjectFilesWidget::currentUnit()
 
 void ProjectFilesWidget::copyUnits()
 {
-    std::shared_ptr<Project> project = pMainWindow->project();
+    std::shared_ptr<DevCppProject> project = pMainWindow->project();
     if (!project)
         return;
     mUnits.clear();

@@ -14,41 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "project.h"
-#include "editor.h"
-#include "utils.h"
-#include "systemconsts.h"
-#include "editorlist.h"
-#include <parser/cppparser.h>
-#include "utils.h"
-#include "qt_utils/charsetinfo.h"
-#include "projecttemplate.h"
-#include "systemconsts.h"
-#include "iconsmanager.h"
+#include "devcppproject.h"
 
-#include <QFileSystemWatcher>
-#include <QDir>
-#include <QFileDialog>
 #include <QFileInfo>
-#include <QMessageBox>
-#include <QTextCodec>
-#include <QMessageBox>
-#include <QDirIterator>
-#include <QMimeDatabase>
-#include <QDesktopServices>
-#include <QJsonObject>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include "customfileiconprovider.h"
-#include <QMimeData>
-#include "settings.h"
-#include "vcs/gitrepository.h"
 
-Project::Project(const QString &filename, const QString &name,
+DevCppProject::DevCppProject(const QString &filename, const QString &name,
                  EditorList* editorList,
                  QFileSystemWatcher* fileSystemWatcher,
                  QObject *parent) :
-    QObject(parent),
+    ProjectBase(parent),
     mName(name),
     mModified(false),
     mModel(this),
@@ -64,9 +38,9 @@ Project::Project(const QString &filename, const QString &name,
     mFileSystemWatcher->addPath(directory());
 }
 
-std::shared_ptr<Project> Project::load(const QString &filename, EditorList *editorList, QFileSystemWatcher *fileSystemWatcher, QObject *parent)
+std::shared_ptr<DevCppProject> DevCppProject::load(const QString &filename, EditorList *editorList, QFileSystemWatcher *fileSystemWatcher, QObject *parent)
 {
-    std::shared_ptr<Project> project=std::make_shared<Project>(filename,
+    std::shared_ptr<DevCppProject> project=std::make_shared<DevCppProject>(filename,
                                                                "",
                                                                editorList,
                                                                fileSystemWatcher,
@@ -77,13 +51,13 @@ std::shared_ptr<Project> Project::load(const QString &filename, EditorList *edit
     return project;
 }
 
-std::shared_ptr<Project> Project::create(
+std::shared_ptr<DevCppProject> DevCppProject::create(
         const QString &filename, const QString &name,
         EditorList *editorList, QFileSystemWatcher *fileSystemWatcher,
         const std::shared_ptr<ProjectTemplate> pTemplate,
         bool useCpp,  QObject *parent)
 {
-    std::shared_ptr<Project> project=std::make_shared<Project>(filename,
+    std::shared_ptr<DevCppProject> project=std::make_shared<DevCppProject>(filename,
                                                                name,
                                                                editorList,
                                                                fileSystemWatcher,
@@ -94,7 +68,7 @@ std::shared_ptr<Project> Project::create(
     ini.SetValue("Project","name", toByteArray(project->mName));
     project->mParser->setEnabled(false);
     if (!project->assignTemplate(pTemplate,useCpp))
-        return std::shared_ptr<Project>();
+        return std::shared_ptr<DevCppProject>();
     resetCppParser(project->mParser, project->mOptions.compilerSet);
 
     project->mModified = true;
@@ -102,7 +76,7 @@ std::shared_ptr<Project> Project::create(
     return project;
 }
 
-Project::~Project()
+DevCppProject::~DevCppProject()
 {
     mFileSystemWatcher->removePath(directory());
     mEditorList->beginUpdate();
@@ -117,13 +91,7 @@ Project::~Project()
     mEditorList->endUpdate();
 }
 
-QString Project::directory() const
-{
-    QFileInfo fileInfo(mFilename);
-    return fileInfo.absolutePath();
-}
-
-QString Project::executable() const
+QString DevCppProject::executable() const
 {
     QString exeFileName;
     if (mOptions.overrideOutput && !mOptions.overridenOutput.isEmpty()) {
@@ -131,7 +99,7 @@ QString Project::executable() const
     } else {
         switch(mOptions.type) {
 #ifdef ENABLE_SDCC
-        case ProjectType::MicroController: {
+        case DevCppProjectType::MicroController: {
             Settings::PCompilerSet pSet=pSettings->compilerSets().getSet(mOptions.compilerSet);
             if (pSet)
                 exeFileName = changeFileExt(extractFileName(mFilename),pSet->executableSuffix());
@@ -140,12 +108,12 @@ QString Project::executable() const
             }
             break;
 #endif
-        case ProjectType::StaticLib:
+        case DevCppProjectType::StaticLib:
             exeFileName = changeFileExt(extractFileName(mFilename),STATIC_LIB_EXT);
             if (!exeFileName.startsWith("lib"))
                 exeFileName = "lib" + exeFileName;
             break;
-        case ProjectType::DynamicLib:
+        case DevCppProjectType::DynamicLib:
             exeFileName = changeFileExt(extractFileName(mFilename),DYNAMIC_LIB_EXT);
             if (!exeFileName.startsWith("lib"))
                 exeFileName = "lib" + exeFileName;
@@ -165,7 +133,7 @@ QString Project::executable() const
     return exeDir.filePath(exeFileName);
 }
 
-QString Project::makeFileName()
+QString DevCppProject::makeFileName()
 {
     if (mOptions.useCustomMakefile)
         return mOptions.customMakefile;
@@ -173,12 +141,12 @@ QString Project::makeFileName()
         return QDir(directory()).filePath(MAKEFILE_NAME);
 }
 
-QString Project::xmakeFileName()
+QString DevCppProject::xmakeFileName()
 {
     return QDir(directory()).filePath(XMAKEFILE_NAME);
 }
 
-bool Project::unitsModifiedSince(const QDateTime& time)
+bool DevCppProject::unitsModifiedSince(const QDateTime& time)
 {
     foreach(const PProjectUnit& unit, mUnits) {
         QFileInfo info(unit->fileName());
@@ -193,12 +161,12 @@ bool Project::unitsModifiedSince(const QDateTime& time)
     return false;
 }
 
-bool Project::modified() const
+bool DevCppProject::modified() const
 {
     return mModified;
 }
 
-bool Project::modifiedSince(const QDateTime &time)
+bool DevCppProject::modifiedSince(const QDateTime &time)
 {
     if (modified())
         return true;
@@ -206,7 +174,7 @@ bool Project::modifiedSince(const QDateTime &time)
     return (info.lastModified()>time);
 }
 
-void Project::open()
+void DevCppProject::open()
 {
     mModel.beginUpdate();
     auto action = finally([this]{
@@ -285,7 +253,7 @@ void Project::open()
 //    }
 //}
 
-void Project::setModified(bool value)
+void DevCppProject::setModified(bool value)
 {
     if (mModified!=value) {
         mModified=value;
@@ -293,7 +261,7 @@ void Project::setModified(bool value)
     }
 }
 
-PProjectModelNode Project::makeNewFolderNode(
+PProjectModelNode DevCppProject::makeNewFolderNode(
         const QString &folderName, PProjectModelNode newParent,
         ProjectModelNodeType nodeType,int priority)
 {
@@ -315,7 +283,7 @@ PProjectModelNode Project::makeNewFolderNode(
     return node;
 }
 
-PProjectModelNode Project::makeNewFileNode(PProjectUnit unit,int priority, PProjectModelNode newParent)
+PProjectModelNode DevCppProject::makeNewFileNode(PProjectUnit unit,int priority, PProjectModelNode newParent)
 {
     PProjectModelNode node = std::make_shared<ProjectModelNode>();
     if (!newParent) {
@@ -337,7 +305,7 @@ PProjectModelNode Project::makeNewFileNode(PProjectUnit unit,int priority, PProj
     return node;
 }
 
-PProjectModelNode Project::makeProjectNode()
+PProjectModelNode DevCppProject::makeProjectNode()
 {
     PProjectModelNode node = std::make_shared<ProjectModelNode>();
     node->text = mName;
@@ -347,7 +315,7 @@ PProjectModelNode Project::makeProjectNode()
     return node;
 }
 
-PProjectUnit Project::newUnit(PProjectModelNode parentNode, const QString& customFileName)
+PProjectUnit DevCppProject::newUnit(PProjectModelNode parentNode, const QString& customFileName)
 {
     // Select folder to add unit to
     if (!parentNode)
@@ -371,7 +339,7 @@ PProjectUnit Project::newUnit(PProjectModelNode parentNode, const QString& custo
     return newUnit;
 }
 
-Editor* Project::openUnit(PProjectUnit& unit, bool forceOpen) {
+Editor* DevCppProject::openUnit(PProjectUnit& unit, bool forceOpen) {
 
     if (!unit->fileName().isEmpty() && fileExists(unit->fileName())) {
         if (getFileType(unit->fileName())==FileType::Other) {
@@ -403,7 +371,7 @@ Editor* Project::openUnit(PProjectUnit& unit, bool forceOpen) {
     return nullptr;
 }
 
-Editor *Project::openUnit(PProjectUnit &unit, const PProjectEditorLayout &layout)
+Editor *DevCppProject::openUnit(PProjectUnit &unit, const PProjectEditorLayout &layout)
 {
     if (!unit->fileName().isEmpty() && fileExists(unit->fileName())) {
         if (getFileType(unit->fileName())==FileType::Other) {
@@ -434,21 +402,21 @@ Editor *Project::openUnit(PProjectUnit &unit, const PProjectEditorLayout &layout
     return nullptr;
 }
 
-Editor *Project::unitEditor(const PProjectUnit &unit) const
+Editor *DevCppProject::unitEditor(const PProjectUnit &unit) const
 {
     if (!unit)
         return nullptr;
     return mEditorList->getOpenedEditorByFilename(unit->fileName());
 }
 
-Editor *Project::unitEditor(const ProjectUnit *unit) const
+Editor *DevCppProject::unitEditor(const ProjectUnit *unit) const
 {
     if (!unit)
         return nullptr;
     return mEditorList->getOpenedEditorByFilename(unit->fileName());
 }
 
-QList<PProjectUnit> Project::unitList()
+QList<PProjectUnit> DevCppProject::unitList()
 {
     QList<PProjectUnit> units;
     foreach(PProjectUnit unit, mUnits) {
@@ -457,7 +425,7 @@ QList<PProjectUnit> Project::unitList()
     return units;
 }
 
-QStringList Project::unitFiles()
+QStringList DevCppProject::unitFiles()
 {
     QStringList units;
     foreach(PProjectUnit unit, mUnits) {
@@ -466,7 +434,7 @@ QStringList Project::unitFiles()
     return units;
 }
 
-void Project::rebuildNodes()
+void DevCppProject::rebuildNodes()
 {
     mModel.beginUpdate();
     // Delete everything
@@ -511,7 +479,7 @@ void Project::rebuildNodes()
     mModel.endUpdate();
 }
 
-bool Project::removeUnit(PProjectUnit& unit, bool doClose , bool removeFile)
+bool DevCppProject::removeUnit(PProjectUnit& unit, bool doClose , bool removeFile)
 {
     bool result=internalRemoveUnit(unit,doClose,removeFile);
 
@@ -521,7 +489,7 @@ bool Project::removeUnit(PProjectUnit& unit, bool doClose , bool removeFile)
     return result;
 }
 
-bool Project::internalRemoveUnit(PProjectUnit& unit, bool doClose , bool removeFile)
+bool DevCppProject::internalRemoveUnit(PProjectUnit& unit, bool doClose , bool removeFile)
 {
     if (!unit)
         return false;
@@ -583,7 +551,7 @@ bool Project::internalRemoveUnit(PProjectUnit& unit, bool doClose , bool removeF
     return true;
 }
 
-bool Project::removeFolder(PProjectModelNode node)
+bool DevCppProject::removeFolder(PProjectModelNode node)
 {
     mModel.beginUpdate();
     auto action = finally([this]{
@@ -605,7 +573,7 @@ bool Project::removeFolder(PProjectModelNode node)
     return true;
 }
 
-void Project::resetParserProjectFiles()
+void DevCppProject::resetParserProjectFiles()
 {
     mParser->clearProjectFiles();
     mParser->clearProjectIncludePaths();
@@ -619,7 +587,7 @@ void Project::resetParserProjectFiles()
     }
 }
 
-void Project::saveAll()
+void DevCppProject::saveAll()
 {
     if (!saveUnits())
         return;
@@ -630,7 +598,7 @@ void Project::saveAll()
     setModified(false);
 }
 
-void Project::saveLayout()
+void DevCppProject::saveLayout()
 {
     if (!fileExists(directory()))
         return;
@@ -696,7 +664,7 @@ void Project::saveLayout()
     }
 }
 
-void Project::renameUnit(PProjectUnit& unit, const QString &newFileName)
+void DevCppProject::renameUnit(PProjectUnit& unit, const QString &newFileName)
 {
     if (!unit)
         return;
@@ -730,7 +698,7 @@ void Project::renameUnit(PProjectUnit& unit, const QString &newFileName)
     emit nodeRenamed();
 }
 
-bool Project::saveUnits()
+bool DevCppProject::saveUnits()
 {
     if (!fileExists(directory()))
         return false;
@@ -798,25 +766,25 @@ bool Project::saveUnits()
     return true;
 }
 
-PProjectUnit Project::findUnit(const QString &filename)
+PProjectUnit DevCppProject::findUnit(const QString &filename)
 {
     return mUnits.value(filename,PProjectUnit());
 }
 
-PProjectUnit Project::findUnit(const Editor *editor)
+PProjectUnit DevCppProject::findUnit(const Editor *editor)
 {
     if (!editor)
         return PProjectUnit();
     return findUnit(editor->filename());
 }
 
-void Project::associateEditor(Editor *editor)
+void DevCppProject::associateEditor(Editor *editor)
 {
     PProjectUnit unit = findUnit(editor);
     associateEditorToUnit(editor,unit);
 }
 
-void Project::associateEditorToUnit(Editor *editor, PProjectUnit unit)
+void DevCppProject::associateEditorToUnit(Editor *editor, PProjectUnit unit)
 {
     if (!unit) {
         if (editor)
@@ -873,7 +841,7 @@ void Project::associateEditorToUnit(Editor *editor, PProjectUnit unit)
 //    return true;
 //}
 
-bool Project::setCompileOption(const QString &key, const QString &value)
+bool DevCppProject::setCompileOption(const QString &key, const QString &value)
 {
     Settings::PCompilerSet pSet = pSettings->compilerSets().getSet(mOptions.compilerSet);
     if (!pSet)
@@ -886,12 +854,12 @@ bool Project::setCompileOption(const QString &key, const QString &value)
     return true;
 }
 
-QString Project::getCompileOption(const QString &key) const
+QString DevCppProject::getCompileOption(const QString &key) const
 {
     return mOptions.compilerOptions.value(key,"");
 }
 
-void Project::updateFolders()
+void DevCppProject::updateFolders()
 {
     mFolders.clear();
     updateFolderNode(mRootNode);
@@ -905,7 +873,7 @@ void Project::updateFolders()
     setModified(true);
 }
 
-PProjectModelNode Project::pointerToNode(ProjectModelNode *p, PProjectModelNode parent)
+PProjectModelNode DevCppProject::pointerToNode(ProjectModelNode *p, PProjectModelNode parent)
 {
     if (!p)
         return PProjectModelNode();
@@ -924,7 +892,7 @@ PProjectModelNode Project::pointerToNode(ProjectModelNode *p, PProjectModelNode 
     return PProjectModelNode();
 }
 
-void Project::setCompilerSet(int compilerSetIndex)
+void DevCppProject::setCompilerSet(int compilerSetIndex)
 {
     if (mOptions.compilerSet != compilerSetIndex) {
         mOptions.compilerSet = compilerSetIndex;
@@ -933,7 +901,7 @@ void Project::setCompilerSet(int compilerSetIndex)
     }
 }
 
-bool Project::assignTemplate(const std::shared_ptr<ProjectTemplate> aTemplate, bool useCpp)
+bool DevCppProject::assignTemplate(const std::shared_ptr<ProjectTemplate> aTemplate, bool useCpp)
 {
     if (!aTemplate) {
         return false;
@@ -1037,7 +1005,7 @@ bool Project::assignTemplate(const std::shared_ptr<ProjectTemplate> aTemplate, b
     return true;
 }
 
-bool Project::saveAsTemplate(const QString &templateFolder,
+bool DevCppProject::saveAsTemplate(const QString &templateFolder,
                              const QString& name,
                              const QString& description,
                              const QString& category)
@@ -1152,7 +1120,7 @@ bool Project::saveAsTemplate(const QString &templateFolder,
     return true;
 }
 
-void Project::setEncoding(const QByteArray &encoding)
+void DevCppProject::setEncoding(const QByteArray &encoding)
 {
     if (encoding!=mOptions.encoding) {
         mOptions.encoding=encoding;
@@ -1168,7 +1136,7 @@ void Project::setEncoding(const QByteArray &encoding)
     }
 }
 
-void Project::saveOptions()
+void DevCppProject::saveOptions()
 {
     if (!fileExists(directory()))
         return;
@@ -1254,7 +1222,7 @@ void Project::saveOptions()
     ini.SaveFile(mFilename.toLocal8Bit());
 }
 
-PProjectModelNode Project::addFolder(PProjectModelNode parentFolder,const QString &s)
+PProjectModelNode DevCppProject::addFolder(PProjectModelNode parentFolder,const QString &s)
 {
     QString fullPath;
     QString path = getNodePath(parentFolder);
@@ -1276,7 +1244,7 @@ PProjectModelNode Project::addFolder(PProjectModelNode parentFolder,const QStrin
     return PProjectModelNode();
 }
 
-PProjectUnit Project::addUnit(const QString &inFileName, PProjectModelNode parentNode)
+PProjectUnit DevCppProject::addUnit(const QString &inFileName, PProjectModelNode parentNode)
 {
     PProjectUnit newUnit=internalAddUnit(inFileName, parentNode);
     if (newUnit) {
@@ -1285,7 +1253,7 @@ PProjectUnit Project::addUnit(const QString &inFileName, PProjectModelNode paren
     return newUnit;
 }
 
-PProjectUnit Project::internalAddUnit(const QString &inFileName, PProjectModelNode parentNode)
+PProjectUnit DevCppProject::internalAddUnit(const QString &inFileName, PProjectModelNode parentNode)
 {
     // Don't add if it already exists
     if (fileAlreadyExists(inFileName)) {
@@ -1355,12 +1323,12 @@ PProjectUnit Project::internalAddUnit(const QString &inFileName, PProjectModelNo
     return newUnit;
 }
 
-QString Project::folder()
+QString DevCppProject::folder()
 {
     return extractFileDir(filename());
 }
 
-void Project::buildPrivateResource()
+void DevCppProject::buildPrivateResource()
 {
     int comp = 0;
     foreach (const PProjectUnit& unit,mUnits) {
@@ -1471,14 +1439,14 @@ void Project::buildPrivateResource()
                        .arg(mOptions.versionInfo.release)
                        .arg(mOptions.versionInfo.build));
         switch(mOptions.type) {
-        case ProjectType::GUI:
-        case ProjectType::Console:
+        case DevCppProjectType::GUI:
+        case DevCppProjectType::Console:
             contents.append("FILETYPE VFT_APP");
             break;
-        case ProjectType::StaticLib:
+        case DevCppProjectType::StaticLib:
             contents.append("FILETYPE VFT_STATIC_LIB");
             break;
-        case ProjectType::DynamicLib:
+        case DevCppProjectType::DynamicLib:
             contents.append("FILETYPE VFT_DLL");
             break;
         }
@@ -1623,7 +1591,7 @@ void Project::buildPrivateResource()
     stringsToFile(contents,hFile);
 }
 
-void Project::checkProjectFileForUpdate(SimpleIni &ini)
+void DevCppProject::checkProjectFileForUpdate(SimpleIni &ini)
 {
     bool cnvt = false;
     int uCount = ini.GetLongValue("Project","UnitCount", 0);
@@ -1673,7 +1641,7 @@ void Project::checkProjectFileForUpdate(SimpleIni &ini)
                     QMessageBox::Ok);
 }
 
-void Project::closeUnit(PProjectUnit& unit)
+void DevCppProject::closeUnit(PProjectUnit& unit)
 {
     saveLayout();
     Editor * editor = unitEditor(unit);
@@ -1682,7 +1650,7 @@ void Project::closeUnit(PProjectUnit& unit)
     }
 }
 
-void Project::createFolderNodes()
+void DevCppProject::createFolderNodes()
 {
     for (int idx=0;idx<mFolders.count();idx++) {
         PProjectModelNode node = mRootNode;
@@ -1720,7 +1688,7 @@ static void addFolderRecursively(QSet<QString>& folders, QString folder) {
     addFolderRecursively(folders, parentFolder);
 }
 
-void Project::createFileSystemFolderNodes()
+void DevCppProject::createFileSystemFolderNodes()
 {
     QSet<QString> headerFolders;
     QSet<QString> sourceFolders;
@@ -1764,7 +1732,7 @@ void Project::createFileSystemFolderNodes()
     mSpecialNodes.insert(ProjectModelNodeType::DUMMY_OTHERS_FOLDER,node);
 }
 
-void Project::createFileSystemFolderNode(
+void DevCppProject::createFileSystemFolderNode(
         ProjectModelNodeType folderType,
         const QString &folderName,
         PProjectModelNode parent,
@@ -1784,7 +1752,7 @@ void Project::createFileSystemFolderNode(
     }
 }
 
-PProjectUnit Project::doAutoOpen()
+PProjectUnit DevCppProject::doAutoOpen()
 {
     QHash<QString,PProjectEditorLayout> layouts = loadLayout();
 
@@ -1819,7 +1787,7 @@ PProjectUnit Project::doAutoOpen()
     return PProjectUnit();
 }
 
-bool Project::fileAlreadyExists(const QString &s)
+bool DevCppProject::fileAlreadyExists(const QString &s)
 {
     foreach (const PProjectUnit& unit, mUnits) {
         if (unit->fileName() == s)
@@ -1828,7 +1796,7 @@ bool Project::fileAlreadyExists(const QString &s)
     return false;
 }
 
-PProjectModelNode Project::findFileSystemFolderNode(const QString &folderPath, ProjectModelNodeType nodeType)
+PProjectModelNode DevCppProject::findFileSystemFolderNode(const QString &folderPath, ProjectModelNodeType nodeType)
 {
     PProjectModelNode node = mFileSystemFolderNodes.value(QString("%1/%2").arg((int)nodeType).arg(folderPath),
                                                           PProjectModelNode());
@@ -1867,7 +1835,7 @@ PProjectModelNode Project::findFileSystemFolderNode(const QString &folderPath, P
     return mRootNode;
 }
 
-PProjectModelNode Project::getCustomeFolderNodeFromName(const QString &name)
+PProjectModelNode DevCppProject::getCustomeFolderNodeFromName(const QString &name)
 {
     int index = mFolders.indexOf(name);
     if (index>=0) {
@@ -1876,7 +1844,7 @@ PProjectModelNode Project::getCustomeFolderNodeFromName(const QString &name)
     return mRootNode;
 }
 
-QString Project::getNodePath(PProjectModelNode node)
+QString DevCppProject::getNodePath(PProjectModelNode node)
 {
     QString result;
     if (!node)
@@ -1896,7 +1864,7 @@ QString Project::getNodePath(PProjectModelNode node)
     return result;
 }
 
-PProjectModelNode Project::getParentFileSystemFolderNode(const QString &filename)
+PProjectModelNode DevCppProject::getParentFileSystemFolderNode(const QString &filename)
 {
     QFileInfo fileInfo(filename);
     ProjectModelNodeType folderNodeType;
@@ -1910,7 +1878,7 @@ PProjectModelNode Project::getParentFileSystemFolderNode(const QString &filename
     return findFileSystemFolderNode(fileInfo.absolutePath(),folderNodeType);
 }
 
-void Project::incrementBuildNumber()
+void DevCppProject::incrementBuildNumber()
 {
     mOptions.versionInfo.build++;
     mOptions.versionInfo.fileVersion = QString("%1.%2.%3.%4")
@@ -1923,7 +1891,7 @@ void Project::incrementBuildNumber()
     saveOptions();
 }
 
-QHash<QString, PProjectEditorLayout> Project::loadLayout()
+QHash<QString, PProjectEditorLayout> DevCppProject::loadLayout()
 {
     QHash<QString,PProjectEditorLayout> layouts;
     QString jsonFilename = changeFileExt(filename(), "layout");
@@ -1959,7 +1927,7 @@ QHash<QString, PProjectEditorLayout> Project::loadLayout()
     return layouts;
 }
 
-void Project::loadOptions(SimpleIni& ini)
+void DevCppProject::loadOptions(SimpleIni& ini)
 {
     mName = fromByteArray(ini.GetValue("Project","name", ""));
     QString icon = fromByteArray(ini.GetValue("Project", "icon", ""));
@@ -1980,7 +1948,7 @@ void Project::loadOptions(SimpleIni& ini)
                                      QMessageBox::Ok);
         }
 
-        mOptions.type = static_cast<ProjectType>(ini.GetLongValue("Project", "type", 0));
+        mOptions.type = static_cast<DevCppProjectType>(ini.GetLongValue("Project", "type", 0));
         // ;CONFIG_LINE; is used in olded version config files (<2.17)
         // keep it for compatibility
         mOptions.compilerCmd = fromByteArray(ini.GetValue("Project", "Compiler", "")).replace(";CONFIG_LINE;","\n");
@@ -2164,7 +2132,7 @@ void Project::loadOptions(SimpleIni& ini)
     }
 }
 
-void Project::loadUnitLayout(Editor *e)
+void DevCppProject::loadUnitLayout(Editor *e)
 {
     if (!e)
         return;
@@ -2180,55 +2148,12 @@ void Project::loadUnitLayout(Editor *e)
     }
 }
 
-QString Project::relativePath(const QString &filename)
-{
-    QString appPath = includeTrailingPathDelimiter(pSettings->dirs().appDir());
-    QString projectPath = includeTrailingPathDelimiter(directory());
-    if (filename.startsWith(appPath) && !filename.startsWith(projectPath)) {
-        return "%APP_PATH%/"+filename.mid(appPath.length());
-    }
-    QDir projectDir(directory());
-    QDir grandparentDir(projectDir.absoluteFilePath("../../"));
-    QString grandparentPath=grandparentDir.absolutePath();
-    if (grandparentDir.exists()
-            && filename.startsWith(grandparentPath))
-        return extractRelativePath(directory(),filename);
-    return filename;
-}
-
-QStringList Project::relativePaths(const QStringList &files)
-{
-    QStringList lst;
-    foreach(const QString& file,files) {
-        lst.append(relativePath(file));
-    }
-    return lst;
-}
-
-QString Project::absolutePath(const QString &filename)
-{
-    QString appSuffix = "%APP_PATH%/";
-    if (filename.startsWith(appSuffix)) {
-        return includeTrailingPathDelimiter(pSettings->dirs().appDir()) + filename.mid(appSuffix.length());
-    }
-    return generateAbsolutePath(directory(),filename);
-}
-
-QStringList Project::absolutePaths(const QStringList &files)
-{
-    QStringList lst;
-    foreach(const QString& file,files) {
-        lst.append(absolutePath(file));
-    }
-    return lst;
-}
-
-PCppParser Project::cppParser()
+PCppParser DevCppProject::cppParser()
 {
     return mParser;
 }
 
-void Project::removeFolderRecurse(PProjectModelNode node)
+void DevCppProject::removeFolderRecurse(PProjectModelNode node)
 {
     if (!node)
         return ;
@@ -2253,7 +2178,7 @@ void Project::removeFolderRecurse(PProjectModelNode node)
     }
 }
 
-void Project::updateFolderNode(PProjectModelNode node)
+void DevCppProject::updateFolderNode(PProjectModelNode node)
 {
     for (int i=0;i<node->children.count();i++){
         PProjectModelNode child = node->children[i];
@@ -2264,7 +2189,7 @@ void Project::updateFolderNode(PProjectModelNode node)
     }
 }
 
-void Project::updateCompilerSetting()
+void DevCppProject::updateCompilerSetting()
 {
     Settings::PCompilerSet defaultSet = pSettings->compilerSets().getSet(mOptions.compilerSet);
     if (defaultSet) {
@@ -2275,12 +2200,12 @@ void Project::updateCompilerSetting()
     }
 }
 
-QFileSystemWatcher *Project::fileSystemWatcher() const
+QFileSystemWatcher *DevCppProject::fileSystemWatcher() const
 {
     return mFileSystemWatcher;
 }
 
-QString Project::fileSystemNodeFolderPath(const PProjectModelNode &node)
+QString DevCppProject::fileSystemNodeFolderPath(const PProjectModelNode &node)
 {
     QString result;
     if (node != mRootNode) {
@@ -2294,7 +2219,7 @@ QString Project::fileSystemNodeFolderPath(const PProjectModelNode &node)
     return result;
 }
 
-QStringList Project::binDirs()
+QStringList DevCppProject::binDirs()
 {
     QStringList lst = options().binDirs;
     Settings::PCompilerSet compilerSet = pSettings->compilerSets().getSet(options().compilerSet);
@@ -2304,7 +2229,7 @@ QStringList Project::binDirs()
     return lst;
 }
 
-void Project::renameFolderNode(PProjectModelNode node, const QString newName)
+void DevCppProject::renameFolderNode(PProjectModelNode node, const QString newName)
 {
     if (!node)
         return;
@@ -2316,17 +2241,17 @@ void Project::renameFolderNode(PProjectModelNode node, const QString newName)
     emit nodeRenamed();
 }
 
-EditorList *Project::editorList() const
+EditorList *DevCppProject::editorList() const
 {
     return mEditorList;
 }
 
-ProjectModelType Project::modelType() const
+ProjectModelType DevCppProject::modelType() const
 {
     return mOptions.modelType;
 }
 
-void Project::setModelType(ProjectModelType type)
+void DevCppProject::setModelType(ProjectModelType type)
 {
     if (type!=mOptions.modelType) {
         mOptions.modelType = type;
@@ -2334,27 +2259,27 @@ void Project::setModelType(ProjectModelType type)
     }
 }
 
-ProjectOptions &Project::options()
+DevCppProjectOptions &DevCppProject::options()
 {
     return mOptions;
 }
 
-ProjectModel *Project::model()
+ProjectModel *DevCppProject::model()
 {
     return &mModel;
 }
 
-const PProjectModelNode &Project::rootNode() const
+const PProjectModelNode &DevCppProject::rootNode() const
 {
     return mRootNode;
 }
 
-const QString &Project::name() const
+const QString &DevCppProject::name() const
 {
     return mName;
 }
 
-void Project::setName(const QString &newName)
+void DevCppProject::setName(const QString &newName)
 {
     if (newName != mName) {
         mName = newName;
@@ -2363,682 +2288,7 @@ void Project::setName(const QString &newName)
     }
 }
 
-const QString &Project::filename() const
+const QString &DevCppProject::filename() const
 {
     return mFilename;
-}
-
-ProjectUnit::ProjectUnit(Project* parent)
-{
-    mNode = nullptr;
-    mParent = parent;
-//    mFileMissing = false;
-    mPriority=0;
-    mNew = true;
-    mEncoding=ENCODING_PROJECT;
-    mRealEncoding="";
-}
-
-Project *ProjectUnit::parent() const
-{
-    return mParent;
-}
-
-const QString &ProjectUnit::fileName() const
-{
-    return mFileName;
-}
-
-void ProjectUnit::setFileName(QString newFileName)
-{
-    newFileName = QFileInfo(newFileName).absoluteFilePath();
-    if (mFileName != newFileName) {
-        mFileName = newFileName;
-        if (mNode) {
-            mNode->text = extractFileName(mFileName);
-        }
-    }
-}
-
-void ProjectUnit::setNew(bool newNew)
-{
-    mNew = newNew;
-}
-
-const QByteArray &ProjectUnit::realEncoding() const
-{
-    return mRealEncoding;
-}
-
-void ProjectUnit::setRealEncoding(const QByteArray &newRealEncoding)
-{
-    mRealEncoding = newRealEncoding;
-}
-
-const QString &ProjectUnit::folder() const
-{
-    return mFolder;
-}
-
-void ProjectUnit::setFolder(const QString &newFolder)
-{
-    mFolder = newFolder;
-}
-
-bool ProjectUnit::compile() const
-{
-    return mCompile;
-}
-
-void ProjectUnit::setCompile(bool newCompile)
-{
-    mCompile = newCompile;
-}
-
-bool ProjectUnit::compileCpp() const
-{
-    return mCompileCpp;
-}
-
-void ProjectUnit::setCompileCpp(bool newCompileCpp)
-{
-    mCompileCpp = newCompileCpp;
-}
-
-bool ProjectUnit::overrideBuildCmd() const
-{
-    return mOverrideBuildCmd;
-}
-
-void ProjectUnit::setOverrideBuildCmd(bool newOverrideBuildCmd)
-{
-    mOverrideBuildCmd = newOverrideBuildCmd;
-}
-
-const QString &ProjectUnit::buildCmd() const
-{
-    return mBuildCmd;
-}
-
-void ProjectUnit::setBuildCmd(const QString &newBuildCmd)
-{
-    mBuildCmd = newBuildCmd;
-}
-
-bool ProjectUnit::link() const
-{
-    return mLink;
-}
-
-void ProjectUnit::setLink(bool newLink)
-{
-    mLink = newLink;
-}
-
-int ProjectUnit::priority() const
-{
-    return mPriority;
-}
-
-void ProjectUnit::setPriority(int newPriority)
-{
-    if (mPriority!=newPriority) {
-        mPriority = newPriority;
-        if (mNode)
-            mNode->priority = mPriority;
-    }
-}
-
-const QByteArray &ProjectUnit::encoding() const
-{
-    return mEncoding;
-}
-
-void ProjectUnit::setEncoding(const QByteArray &newEncoding)
-{
-    if (mEncoding != newEncoding) {
-        Editor * editor=mParent->unitEditor(this);
-        if (editor) {
-            editor->setEncodingOption(newEncoding);
-        }
-        mEncoding = newEncoding;
-    }
-}
-
-PProjectModelNode &ProjectUnit::node()
-{
-    return mNode;
-}
-
-void ProjectUnit::setNode(const PProjectModelNode &newNode)
-{
-    mNode = newNode;
-}
-
-//bool ProjectUnit::FileMissing() const
-//{
-//    return mFileMissing;
-//}
-
-//void ProjectUnit::setFileMissing(bool newDontSave)
-//{
-//    mFileMissing = newDontSave;
-//}
-
-ProjectModel::ProjectModel(Project *project, QObject *parent):
-    QAbstractItemModel(parent),
-    mProject(project)
-{
-    mUpdateCount = 0;
-    //delete in the destructor
-    mIconProvider = new CustomFileIconProvider();
-}
-
-ProjectModel::~ProjectModel()
-{
-    delete mIconProvider;
-}
-
-void ProjectModel::beginUpdate()
-{
-    if (mUpdateCount==0) {
-        beginResetModel();
-    }
-    mUpdateCount++;
-}
-
-void ProjectModel::endUpdate()
-{
-    mUpdateCount--;
-    if (mUpdateCount==0) {
-        mIconProvider->setRootFolder(mProject->folder());
-        endResetModel();
-    }
-}
-
-CustomFileIconProvider *ProjectModel::iconProvider() const
-{
-    return mIconProvider;
-}
-
-bool ProjectModel::insertRows(int row, int count, const QModelIndex &parent)
-{
-    beginInsertRows(parent,row,row+count-1);
-    endInsertRows();
-    return true;
-}
-
-bool ProjectModel::removeRows(int row, int count, const QModelIndex &parent)
-{
-    beginRemoveRows(parent,row,row+count-1);
-    if (!parent.isValid())
-        return false;
-    ProjectModelNode* parentNode = static_cast<ProjectModelNode*>(parent.internalPointer());
-    if (!parentNode)
-        return false;
-
-    parentNode->children.removeAt(row);
-
-    endRemoveRows();
-    return true;
-}
-
-Project *ProjectModel::project() const
-{
-    return mProject;
-}
-
-QModelIndex ProjectModel::index(int row, int column, const QModelIndex &parent) const
-{
-    if (!parent.isValid()) {
-        return createIndex(row,column,mProject->rootNode().get());
-    }
-    ProjectModelNode* parentNode = static_cast<ProjectModelNode*>(parent.internalPointer());
-    if (!parentNode) {
-        return QModelIndex();
-    }
-    if (row<0 || row>=parentNode->children.count())
-        return QModelIndex();
-    return createIndex(row,column,parentNode->children[row].get());
-}
-
-QModelIndex ProjectModel::parent(const QModelIndex &child) const
-{
-    if (!child.isValid())
-        return QModelIndex();
-    ProjectModelNode * node = static_cast<ProjectModelNode*>(child.internalPointer());
-    if (!node)
-        return QModelIndex();
-    return getParentIndex(node);
-}
-
-int ProjectModel::rowCount(const QModelIndex &parent) const
-{
-    if (!parent.isValid())
-        return 1;
-    ProjectModelNode* p = static_cast<ProjectModelNode*>(parent.internalPointer());
-    if (p) {
-        return p->children.count();
-    } else {
-        return mProject->rootNode()->children.count();
-    }
-}
-
-int ProjectModel::columnCount(const QModelIndex &) const
-{
-    return 1;
-}
-
-QVariant ProjectModel::data(const QModelIndex &index, int role) const
-{
-    if (!index.isValid())
-        return QVariant();
-    ProjectModelNode* p = static_cast<ProjectModelNode*>(index.internalPointer());
-    if (!p)
-        return QVariant();
-    if (role == Qt::DisplayRole) {
-#ifdef ENABLE_VCS
-        if (p == mProject->rootNode().get()) {
-            QString branch;
-            if (mIconProvider->VCSRepository()->hasRepository(branch))
-                return QString("%1 [%2]").arg(p->text,branch);
-        }
-#endif
-        return p->text;
-    } else if (role==Qt::EditRole) {
-        return p->text;
-    } else if (role == Qt::DecorationRole) {
-        QIcon icon;
-        if (p->isUnit) {
-            PProjectUnit unit = p->pUnit.lock();
-            if (unit)
-                icon = mIconProvider->icon(unit->fileName());
-        } else {
-            if (p == mProject->rootNode().get()) {
-#ifdef ENABLE_VCS
-                QString branch;
-                if (mIconProvider->VCSRepository()->hasRepository(branch))
-                    icon = pIconsManager->getIcon(IconsManager::FILESYSTEM_GIT);
-#endif
-            } else {
-                switch(p->folderNodeType) {
-                case ProjectModelNodeType::DUMMY_HEADERS_FOLDER:
-                    icon = pIconsManager->getIcon(IconsManager::FILESYSTEM_HEADERS_FOLDER);
-                    break;
-                case ProjectModelNodeType::DUMMY_SOURCES_FOLDER:
-                    icon = pIconsManager->getIcon(IconsManager::FILESYSTEM_SOURCES_FOLDER);
-                    break;
-                default:
-                    icon = pIconsManager->getIcon(IconsManager::FILESYSTEM_FOLDER);
-                }
-            }
-            if (icon.isNull())
-                icon = mIconProvider->icon(QFileIconProvider::Folder);
-        }
-        return icon;
-    }
-    return QVariant();
-}
-
-Qt::ItemFlags ProjectModel::flags(const QModelIndex &index) const
-{
-    if (!index.isValid())
-        return Qt::NoItemFlags;
-    ProjectModelNode* p = static_cast<ProjectModelNode*>(index.internalPointer());
-    if (!p)
-        return Qt::NoItemFlags;
-    if (p==mProject->rootNode().get())
-        return Qt::ItemIsEnabled | Qt::ItemIsDropEnabled | Qt::ItemIsEditable;
-    if (mProject && mProject->modelType() == ProjectModelType::FileSystem) {
-        Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-        if (p->isUnit)
-            flags.setFlag(Qt::ItemIsEditable);
-        return flags;
-    } else {
-        Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsEditable | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled;
-        if (!p->isUnit) {
-            flags.setFlag(Qt::ItemIsDropEnabled);
-            flags.setFlag(Qt::ItemIsDragEnabled,false);
-        }
-        return flags;
-    }
-}
-
-bool ProjectModel::setData(const QModelIndex &index, const QVariant &value, int role)
-{
-    if (!index.isValid())
-        return false;
-    ProjectModelNode* p = static_cast<ProjectModelNode*>(index.internalPointer());
-    PProjectModelNode node = mProject->pointerToNode(p);
-    if (!node)
-        return false;
-    if (role == Qt::EditRole) {
-        if (node == mProject->rootNode()) {
-            QString newName = value.toString().trimmed();
-            if (newName.isEmpty())
-                return false;
-            mProject->setName(newName);
-            emit dataChanged(index,index);
-            return true;
-        }
-        PProjectUnit unit = node->pUnit.lock();
-        if (unit) {
-            //change unit name
-
-            QString newName = value.toString().trimmed();
-            if (newName.isEmpty())
-                return false;
-            if (newName ==  node->text)
-                return false;
-            QString oldName = unit->fileName();
-            QString curDir = extractFilePath(oldName);
-            newName = generateAbsolutePath(curDir,newName);
-            // Only continue if the user says so...
-            if (fileExists(newName) && newName.compare(oldName, PATH_SENSITIVITY)!=0) {
-                // don't remove when changing case for example
-                if (QMessageBox::question(nullptr,
-                                          tr("File exists"),
-                                          tr("File '%1' already exists. Delete it now?")
-                                          .arg(newName),
-                                          QMessageBox::Yes | QMessageBox::No,
-                                          QMessageBox::No) == QMessageBox::Yes) {
-                    // Close the target file...
-                    Editor * e=mProject->editorList()->getOpenedEditorByFilename(newName);
-                    if (e)
-                        mProject->editorList()->closeEditor(e);
-
-                    // Remove it from the current project...
-                    PProjectUnit unit = mProject->findUnit(newName);
-                    if (unit) {
-                        mProject->removeUnit(unit,false);
-                    }
-
-                    // All references to the file are removed. Delete the file from disk
-                    if (!QFile::remove(newName)) {
-                        QMessageBox::critical(nullptr,
-                                              tr("Remove failed"),
-                                              tr("Failed to remove file '%1'")
-                                              .arg(newName),
-                                              QMessageBox::Ok);
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
-            }
-            // Target filename does not exist anymore. Do a rename
-            // change name in project file first (no actual file renaming on disk)
-            //save old file, if it is opened;
-            // remove old file from monitor list
-            mProject->fileSystemWatcher()->removePath(oldName);
-
-            if (!QFile::rename(oldName,newName)) {
-                QMessageBox::critical(nullptr,
-                                      tr("Rename failed"),
-                                      tr("Failed to rename file '%1' to '%2'")
-                                      .arg(oldName,newName),
-                                      QMessageBox::Ok);
-                return false;
-            }
-            mProject->renameUnit(unit,newName);
-
-            // Add new filename to file minitor
-            mProject->fileSystemWatcher()->addPath(newName);
-
-            mProject->saveAll();
-
-            return true;
-        } else {
-            //change folder name
-            QString newName = value.toString().trimmed();
-            if (newName.isEmpty())
-                return false;
-            if (newName ==  node->text)
-                return false;
-            mProject->renameFolderNode(node,newName);
-
-            emit dataChanged(index,index);
-
-            mProject->saveAll();
-            return true;
-        }
-
-    }
-    return false;
-}
-
-void ProjectModel::refreshIcon(const QModelIndex &index, bool update)
-{
-    if (!index.isValid())
-        return;
-    if (update)
-        mIconProvider->update();
-    QVector<int> roles;
-    roles.append(Qt::DecorationRole);
-    emit dataChanged(index,index, roles);
-}
-
-void ProjectModel::refreshIcon(const QString &filename)
-{
-    PProjectUnit unit=mProject->findUnit(filename);
-    if (!unit)
-        return;
-    PProjectModelNode node=unit->node();
-    QModelIndex index = getNodeIndex(node.get());
-    refreshIcon(index);
-}
-
-void ProjectModel::refreshIcons()
-{
-    mIconProvider->update();
-    mProject->rootNode();
-}
-
-void ProjectModel::refreshNodeIconRecursive(PProjectModelNode node)
-{
-    QModelIndex index=getNodeIndex(node.get());
-    refreshIcon(index,false);
-    foreach( PProjectModelNode child, node->children) {
-        refreshNodeIconRecursive(child);
-    }
-}
-
-QModelIndex ProjectModel::getNodeIndex(ProjectModelNode *node) const
-{
-    if (!node)
-        return QModelIndex();
-    PProjectModelNode parent = node->parent.lock();
-    if (!parent) // root node
-        return createIndex(0,0,node);
-    int row = -1;
-    for (int i=0;i<parent->children.count();i++) {
-        const PProjectModelNode& pNode=parent->children[i];
-        if (pNode.get()==node) {
-            row = i;
-        }
-    }
-    if (row<0)
-        return QModelIndex();
-    return createIndex(row,0,node);
-}
-
-QModelIndex ProjectModel::getParentIndex(ProjectModelNode * node) const
-{
-    PProjectModelNode parent = node->parent.lock();
-    if (!parent) // root node
-        return QModelIndex();
-    PProjectModelNode grand = parent->parent.lock();
-    if (!grand) {
-        return createIndex(0,0,parent.get());
-    }
-
-    int row = grand->children.indexOf(parent);
-    if (row<0)
-        return QModelIndex();
-    return createIndex(row,0,parent.get());
-}
-
-QModelIndex ProjectModel::rootIndex() const
-{
-    return getNodeIndex(mProject->rootNode().get());
-}
-
-bool ProjectModel::canDropMimeData(const QMimeData * data, Qt::DropAction action, int /*row*/, int /*column*/, const QModelIndex &parent) const
-{
-
-    if (!data || action != Qt::MoveAction)
-        return false;
-    if (!parent.isValid())
-        return false;
-    // check if the format is supported
-    QStringList types = mimeTypes();
-    if (types.isEmpty())
-        return false;
-    QString format = types.at(0);
-    if (!data->hasFormat(format))
-        return false;
-
-    QModelIndex idx = parent;
-//    if (row >= rowCount(parent) || row < 0) {
-//        return false;
-//    } else {
-//        idx= index(row,column,parent);
-//    }
-    ProjectModelNode* p= static_cast<ProjectModelNode*>(idx.internalPointer());
-    PProjectModelNode node = mProject->pointerToNode(p);
-    if (node->isUnit)
-        return false;
-    QByteArray encoded = data->data(format);
-    QDataStream stream(&encoded, QIODevice::ReadOnly);
-    while (!stream.atEnd()) {
-        qint32 r, c;
-        quintptr v;
-        stream >> r >> c >> v;
-        ProjectModelNode* droppedPointer= (ProjectModelNode*)(v);
-        PProjectModelNode droppedNode = mProject->pointerToNode(droppedPointer);
-        PProjectModelNode oldParent = droppedNode->parent.lock();
-        if (oldParent == node)
-            return false;
-    }
-    return true;
-}
-
-Qt::DropActions ProjectModel::supportedDropActions() const
-{
-    return Qt::MoveAction;
-}
-
-bool ProjectModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int /*row*/, int /*column*/, const QModelIndex &parent)
-{
-    // check if the action is supported
-    if (!data || action != Qt::MoveAction)
-        return false;
-    // check if the format is supported
-    QStringList types = mimeTypes();
-    if (types.isEmpty())
-        return false;
-    QString format = types.at(0);
-    if (!data->hasFormat(format))
-        return false;
-
-    if (!parent.isValid())
-        return false;
-    ProjectModelNode* p= static_cast<ProjectModelNode*>(parent.internalPointer());
-    PProjectModelNode node = mProject->pointerToNode(p);
-
-    QByteArray encoded = data->data(format);
-    QDataStream stream(&encoded, QIODevice::ReadOnly);
-    QVector<int> rows,cols;
-    QVector<intptr_t> pointers;
-    while (!stream.atEnd()) {
-        qint32 r, c;
-        quintptr v;
-        stream >> r >> c >> v;
-        rows.append(r);
-        cols.append(c);
-        pointers.append(v);
-    }
-    for (int i=pointers.count()-1;i>=0;i--) {
-        int r = rows[i];
-        intptr_t v = pointers[i];
-        ProjectModelNode* droppedPointer= (ProjectModelNode*)(v);
-        PProjectModelNode droppedNode = mProject->pointerToNode(droppedPointer);
-        PProjectModelNode oldParent = droppedNode->parent.lock();
-        if (oldParent) {
-            QModelIndex oldParentIndex = getNodeIndex(oldParent.get());
-            beginRemoveRows(oldParentIndex,r,r);
-            oldParent->children.removeAt(r);
-            endRemoveRows();
-        }
-        QModelIndex newParentIndex = getNodeIndex(node.get());
-        beginInsertRows(newParentIndex,node->children.count(),node->children.count());
-        droppedNode->parent = node;
-        node->children.append(droppedNode);
-        if (droppedNode->isUnit) {
-            PProjectUnit unit = droppedNode->pUnit.lock();
-            unit->setFolder(mProject->getNodePath(node));
-        }
-        endInsertRows();
-        mProject->saveAll();
-        return true;
-    }
-
-    return false;
-}
-
-QMimeData *ProjectModel::mimeData(const QModelIndexList &indexes) const
-{
-    if (indexes.count() <= 0)
-        return nullptr;
-    QStringList types = mimeTypes();
-    if (types.isEmpty())
-        return nullptr;
-    QMimeData *data = new QMimeData();
-    QString format = types.at(0);
-    QByteArray encoded;
-    QDataStream stream(&encoded, QIODevice::WriteOnly);
-    QModelIndexList::ConstIterator it = indexes.begin();
-    QList<QUrl> urls;
-    for (; it != indexes.end(); ++it) {
-        stream << (qint32)((*it).row()) << (qint32)((*it).column()) << (quintptr)((*it).internalPointer());
-        ProjectModelNode* p = static_cast<ProjectModelNode*>((*it).internalPointer());
-        if (p && p->isUnit) {
-            PProjectUnit unit = p->pUnit.lock();
-            if (unit)
-                urls.append(QUrl::fromLocalFile(unit->fileName()));
-        }
-    }
-    if (!urls.isEmpty())
-        data->setUrls(urls);
-    data->setData(format, encoded);
-    return data;
-}
-
-ProjectModelSortFilterProxy::ProjectModelSortFilterProxy(QObject *parent):
-    QSortFilterProxyModel(parent)
-{
-
-}
-
-bool ProjectModelSortFilterProxy::lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const
-{
-    if (!sourceModel())
-        return false;
-    ProjectModelNode* pLeft=nullptr;
-    if (source_left.isValid())
-        pLeft = static_cast<ProjectModelNode*>(source_left.internalPointer());
-    ProjectModelNode* pRight=nullptr;
-    if (source_right.isValid())
-        pRight = static_cast<ProjectModelNode*>(source_right.internalPointer());
-    if (!pLeft)
-        return true;
-    if (!pRight)
-        return false;
-    if (!pLeft->isUnit && pRight->isUnit)
-        return true;
-    if (pLeft->isUnit && !pRight->isUnit)
-        return false;
-    if (pLeft->priority!=pRight->priority)
-        return pLeft->priority>pRight->priority;
-    return QString::compare(pLeft->text, pRight->text)<0;
 }

@@ -140,9 +140,11 @@ SOURCES += \
     problems/freeprojectsetformat.cpp \
     problems/ojproblemset.cpp \
     problems/problemcasevalidator.cpp \
-    project.cpp \
-    projectoptions.cpp \
-    projecttemplate.cpp \
+    project/compilationdatabaseproject.cpp \
+    project/devcppproject.cpp \
+    project/project.cpp \
+    project/projectoptions.cpp \
+    project/projecttemplate.cpp \
     settingsdialog/compilerautolinkwidget.cpp \
     settingsdialog/debuggeneralwidget.cpp \
     settingsdialog/editorautosavewidget.cpp \
@@ -274,9 +276,11 @@ HEADERS += \
     problems/freeprojectsetformat.h \
     problems/ojproblemset.h \
     problems/problemcasevalidator.h \
-    project.h \
-    projectoptions.h \
-    projecttemplate.h \
+    project/compilationdatabaseproject.h \
+    project/devcppproject.h \
+    project/project.h \
+    project/projectoptions.h \
+    project/projecttemplate.h \
     settingsdialog/compilerautolinkwidget.h \
     settingsdialog/debuggeneralwidget.h \
     settingsdialog/editorautosavewidget.h \

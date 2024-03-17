@@ -17,7 +17,7 @@
 #include "projectoutputwidget.h"
 #include "ui_projectoutputwidget.h"
 #include "../mainwindow.h"
-#include "../project.h"
+#include "project/project.h"
 #include "../iconsmanager.h"
 #include "../systemconsts.h"
 

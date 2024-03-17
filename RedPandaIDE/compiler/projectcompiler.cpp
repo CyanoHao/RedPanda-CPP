@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "projectcompiler.h"
-#include "../project.h"
+#include "project/project.h"
 #include "compilermanager.h"
 #include "../systemconsts.h"
 #include "qt_utils/charsetinfo.h"
@@ -27,7 +27,7 @@
 
 #include <QDir>
 
-ProjectCompiler::ProjectCompiler(std::shared_ptr<Project> project):
+ProjectCompiler::ProjectCompiler(std::shared_ptr<DevCppProject> project):
     Compiler("",false),
     mOnlyClean(false)
 {
@@ -40,10 +40,10 @@ void ProjectCompiler::buildMakeFile()
     if (mProject->options().useCustomMakefile && !mProject->options().customMakefile.isEmpty())
         return;
     switch(mProject->options().type) {
-    case ProjectType::StaticLib:
+    case DevCppProjectType::StaticLib:
         createStaticMakeFile();
         break;
-    case ProjectType::DynamicLib:
+    case DevCppProjectType::DynamicLib:
         createDynamicMakeFile();
         break;
     default:
@@ -285,7 +285,7 @@ void ProjectCompiler::writeMakeDefines(QFile &file)
     };
 
     // This needs to be put in before the clean command.
-    if (mProject->options().type == ProjectType::DynamicLib) {
+    if (mProject->options().type == DevCppProjectType::DynamicLib) {
         QString outputFileDir = extractFilePath(mProject->executable());
         QString outputFilename = extractFileName(mProject->executable());
         QString libOutputFile;
@@ -338,7 +338,7 @@ void ProjectCompiler::writeMakeClean(QFile &file)
         target += ' ' + escapeArgumentForMakefileRecipe(pch, false);
     }
 
-    if (mProject->options().type == ProjectType::DynamicLib) {
+    if (mProject->options().type == DevCppProjectType::DynamicLib) {
         target +=" $(DEF) $(STATIC)";
     }
     writeln(file, QString("\t-$(RM) %1 > %2 2>&1").arg(target,NULL_FILE));

@@ -114,7 +114,7 @@ void ProjectTemplate::readTemplateFile(const QString &fileName)
     mIconInfo=fromByteArray(mIni->GetValue("Template", "IconInfo", ""));
 
     mOptions.icon = mIni->GetValue("Project", "Icon", "");
-    mOptions.type = static_cast<ProjectType>(mIni->GetLongValue("Project", "Type", 0)); // default = gui
+    mOptions.type = static_cast<DevCppProjectType>(mIni->GetLongValue("Project", "Type", 0)); // default = gui
     mOptions.includeDirs = fromByteArray(mIni->GetValue("Project", "Includes", "")).split(";",
 #if QT_VERSION >= QT_VERSION_CHECK(5,15,0)
           Qt::SkipEmptyParts
@@ -235,12 +235,12 @@ void ProjectTemplate::setName(const QString &newName)
     mName = newName;
 }
 
-const ProjectOptions &ProjectTemplate::options() const
+const DevCppProjectOptions &ProjectTemplate::options() const
 {
     return mOptions;
 }
 
-void ProjectTemplate::setOptions(const ProjectOptions &newOptions)
+void ProjectTemplate::setOptions(const DevCppProjectOptions &newOptions)
 {
     mOptions = newOptions;
 }

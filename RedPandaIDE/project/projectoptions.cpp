@@ -38,9 +38,9 @@ ProjectVersionInfo::ProjectVersionInfo()
     syncProduct = true;
 }
 
-ProjectOptions::ProjectOptions()
+DevCppProjectOptions::DevCppProjectOptions()
 {
-    type = ProjectType::GUI;
+    type = DevCppProjectType::GUI;
     version = 3;
     isCpp = false;
     logOutputEnabled = false;

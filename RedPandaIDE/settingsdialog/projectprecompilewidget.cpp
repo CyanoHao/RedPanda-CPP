@@ -17,7 +17,7 @@
 #include "projectprecompilewidget.h"
 #include "ui_projectprecompilewidget.h"
 #include "../mainwindow.h"
-#include "../project.h"
+#include "project/project.h"
 #include "../iconsmanager.h"
 
 #include <QFileDialog>

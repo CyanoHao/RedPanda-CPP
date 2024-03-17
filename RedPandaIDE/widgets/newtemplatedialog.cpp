@@ -1,7 +1,7 @@
 #include "newtemplatedialog.h"
 #include "ui_newtemplatedialog.h"
 #include "../settings.h"
-#include "../projecttemplate.h"
+#include "project/projecttemplate.h"
 #include "../systemconsts.h"
 
 #include <QFile>

@@ -34,7 +34,7 @@
 #include "../parser/cppparser.h"
 #include "../autolinkmanager.h"
 #include "qt_utils/charsetinfo.h"
-#include "../project.h"
+#include "project/project.h"
 
 #define COMPILE_PROCESS_END "---//END//----"
 
@@ -599,7 +599,7 @@ QStringList Compiler::getLibraryArguments(FileType fileType)
     }
 
     if (mProject) {
-        if (mProject->options().type == ProjectType::GUI) {
+        if (mProject->options().type == DevCppProjectType::GUI) {
             result << "-mwindows";
         }
 
@@ -802,12 +802,12 @@ void Compiler::getParserForFile(const QString &filename)
     }
 }
 
-const std::shared_ptr<Project> &Compiler::project() const
+const std::shared_ptr<DevCppProject> &Compiler::project() const
 {
     return mProject;
 }
 
-void Compiler::setProject(const std::shared_ptr<Project> &newProject)
+void Compiler::setProject(const std::shared_ptr<DevCppProject> &newProject)
 {
     mProject = newProject;
 }

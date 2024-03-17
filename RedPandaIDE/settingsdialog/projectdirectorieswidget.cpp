@@ -17,7 +17,7 @@
 #include "projectdirectorieswidget.h"
 #include "ui_projectdirectorieswidget.h"
 #include "compilersetdirectorieswidget.h"
-#include "../project.h"
+#include "project/project.h"
 #include "../mainwindow.h"
 
 ProjectDirectoriesWidget::ProjectDirectoriesWidget(const QString &name, const QString &group, QWidget *parent) :

@@ -27,8 +27,8 @@
 #include "widgets/cpudialog.h"
 #include "widgets/filepropertiesdialog.h"
 #include "widgets/filenameeditdelegate.h"
-#include "project.h"
-#include "projecttemplate.h"
+#include "project/project.h"
+#include "project/projecttemplate.h"
 #include "widgets/newprojectdialog.h"
 #include <qt_utils/charsetinfo.h>
 #include "widgets/aboutdialog.h"
@@ -838,8 +838,8 @@ void MainWindow::updateCompileActions(const Editor *e)
             }
             if (forProject) {
                 canCompile = true;
-                canRun = (mProject->options().type !=ProjectType::DynamicLib)
-                        && (mProject->options().type !=ProjectType::StaticLib);
+                canRun = (mProject->options().type !=DevCppProjectType::DynamicLib)
+                        && (mProject->options().type !=DevCppProjectType::StaticLib);
                 canDebug = set->canDebug() && canRun;
                 if (e) {
                     FileType fileType = getFileType(e->filename());
@@ -1645,7 +1645,7 @@ Editor* MainWindow::openFile(QString filename, bool activate, QTabWidget* page)
         bool inProject = (mProject && unit);
         QByteArray encoding = unit ? unit->encoding() :
                                      (pSettings->editor().autoDetectFileEncoding()? ENCODING_AUTO_DETECT : pSettings->editor().defaultEncoding());
-        Project * pProject = (inProject?mProject.get():nullptr);
+        DevCppProject * pProject = (inProject?mProject.get():nullptr);
         if (pProject && encoding==ENCODING_PROJECT)
             encoding=pProject->options().encoding;
         editor = mEditorList->newEditor(filename,encoding,
@@ -1714,7 +1714,7 @@ void MainWindow::openProject(QString filename, bool openFiles)
 
     // Only update class browser once
     mClassBrowserModel.beginUpdate();
-    mProject = Project::load(filename,mEditorList,&mFileSystemWatcher);
+    mProject = DevCppProject::load(filename,mEditorList,&mFileSystemWatcher);
     updateProjectView();
     ui->projectView->expand(
                 mProjectProxyModel->mapFromSource(
@@ -2429,7 +2429,7 @@ void MainWindow::debug()
             }
         }
         // Did we choose a host application for our DLL?
-        if (mProject->options().type == ProjectType::DynamicLib) {
+        if (mProject->options().type == DevCppProjectType::DynamicLib) {
             if (mProject->options().hostApplication.isEmpty()) {
                 QMessageBox::critical(this,
                                       tr("Host applcation missing"),
@@ -2460,7 +2460,7 @@ void MainWindow::debug()
         mDebugger->deleteInvalidProjectBreakpoints(unitFiles);
         bool inferiorHasSymbols { true };
         QString inferior { filePath };
-        if (mProject->options().type == ProjectType::DynamicLib) {
+        if (mProject->options().type == DevCppProjectType::DynamicLib) {
             inferior=mProject->options().hostApplication;
             inferiorHasSymbols = false;
         }
@@ -3354,7 +3354,7 @@ void MainWindow::loadLastOpens()
         bool inProject = (mProject && unit);
         QByteArray encoding = unit ? unit->encoding() :
                                      (pSettings->editor().autoDetectFileEncoding()? ENCODING_AUTO_DETECT : pSettings->editor().defaultEncoding());
-        Project* pProject = (inProject?mProject.get():nullptr);
+        DevCppProject* pProject = (inProject?mProject.get():nullptr);
         if (pProject && encoding==ENCODING_PROJECT)
             encoding=pProject->options().encoding;
         Editor * editor = mEditorList->newEditor(editorFilename, encoding, pProject,false,page);
@@ -5422,7 +5422,7 @@ void MainWindow::updateProjectView()
         if (mProjectProxyModel->sourceModel()!=mProject->model()) {
             mProjectProxyModel->setSourceModel(mProject->model());
             mProjectProxyModel->sort(0);
-            connect(mProject.get(), &Project::nodeRenamed,
+            connect(mProject.get(), &DevCppProject::nodeRenamed,
                     this, &MainWindow::onProjectViewNodeRenamed);
 //                    this, &MainWindow::invalidateProjectProxyModel);
 //            connect(mProject->model(), &ProjectModel::rowsInserted,
@@ -7005,7 +7005,7 @@ void MainWindow::on_tblBreakpoints_doubleClicked(const QModelIndex &index)
     }
 }
 
-std::shared_ptr<Project> MainWindow::project()
+std::shared_ptr<DevCppProject> MainWindow::project()
 {
     return mProject;
 }
@@ -7129,7 +7129,7 @@ void MainWindow::on_actionNew_Project_triggered()
             }
         }
 
-        mProject = Project::create(s,dialog.getProjectName(),
+        mProject = DevCppProject::create(s,dialog.getProjectName(),
                                              mEditorList,
                                              &mFileSystemWatcher,
                                    dialog.getTemplate(),dialog.isCppProject());
@@ -7748,11 +7748,11 @@ QString MainWindow::switchHeaderSourceTarget(Editor *editor)
 
 void MainWindow::setupSlotsForProject()
 {
-    connect(mProject.get(), &Project::unitAdded,
+    connect(mProject.get(), &DevCppProject::unitAdded,
             this, &MainWindow::onProjectUnitAdded);
-    connect(mProject.get(), &Project::unitRemoved,
+    connect(mProject.get(), &DevCppProject::unitRemoved,
             this, &MainWindow::onProjectUnitRemoved);
-    connect(mProject.get(), &Project::unitRenamed,
+    connect(mProject.get(), &DevCppProject::unitRenamed,
             this, &MainWindow::onProjectUnitRenamed);
 }
 

@@ -17,7 +17,7 @@
 #include "projectcompilerwidget.h"
 #include "ui_projectcompilerwidget.h"
 #include "../settings.h"
-#include "../project.h"
+#include "project/project.h"
 #include "../mainwindow.h"
 #include <qt_utils/charsetinfo.h>
 #include <QMessageBox>
@@ -120,7 +120,7 @@ void ProjectCompilerWidget::init()
 
 void ProjectCompilerWidget::on_cbCompilerSet_currentIndexChanged(int index)
 {
-    std::shared_ptr<Project> project = pMainWindow->project();
+    std::shared_ptr<DevCppProject> project = pMainWindow->project();
     auto action = finally([this]{
         this->refreshOptions();
     });
@@ -130,7 +130,7 @@ void ProjectCompilerWidget::on_cbCompilerSet_currentIndexChanged(int index)
     Settings::PCompilerSet pSet=pSettings->compilerSets().getSet(index);
 #ifdef ENABLE_SDCC
     if (pSet) {
-        if (project->options().type==ProjectType::MicroController) {
+        if (project->options().type==DevCppProjectType::MicroController) {
             if (pSet->compilerType()!=CompilerType::SDCC) {
                 QMessageBox::information(this,
                                          tr("Wrong Compiler Type"),

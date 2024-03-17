@@ -24,7 +24,7 @@
 #include "../common.h"
 
 class Runner;
-class Project;
+class DevCppProject;
 class Compiler;
 class ProjectCompiler;
 struct OJProblem;
@@ -44,10 +44,10 @@ public:
     bool running();
 
     void compile(const QString& filename, const QByteArray& encoding, bool rebuild, CppCompileType compileType);
-    void compileProject(std::shared_ptr<Project> project, bool rebuild);
-    void cleanProject(std::shared_ptr<Project> project);
-    void buildProjectMakefile(std::shared_ptr<Project> project);
-    void checkSyntax(const QString&filename, const QByteArray& encoding, const QString& content, std::shared_ptr<Project> project);
+    void compileProject(std::shared_ptr<DevCppProject> project, bool rebuild);
+    void cleanProject(std::shared_ptr<DevCppProject> project);
+    void buildProjectMakefile(std::shared_ptr<DevCppProject> project);
+    void checkSyntax(const QString&filename, const QByteArray& encoding, const QString& content, std::shared_ptr<DevCppProject> project);
     void run(
             const QString& filename,
             const QString& arguments,
@@ -88,7 +88,7 @@ private slots:
     void onSyntaxCheckFinished(QString filename);
     void onSyntaxCheckIssue(PCompileIssue issue);
 private:
-    ProjectCompiler* createProjectCompiler(std::shared_ptr<Project> project);
+    ProjectCompiler* createProjectCompiler(std::shared_ptr<DevCppProject> project);
 private:
     Compiler* mCompiler;
     int mCompileErrorCount;

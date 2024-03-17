@@ -59,8 +59,8 @@ public:
     const QString &name() const;
     void setName(const QString &newName);
 
-    const ProjectOptions &options() const;
-    void setOptions(const ProjectOptions &newOptions);
+    const DevCppProjectOptions &options() const;
+    void setOptions(const DevCppProjectOptions &newOptions);
 
     int version() const;
 
@@ -71,7 +71,7 @@ public:
 
 private:
     QString mFileName;
-    ProjectOptions mOptions;
+    DevCppProjectOptions mOptions;
     QString mDescription;
     QString mCategory;
     QString mName;

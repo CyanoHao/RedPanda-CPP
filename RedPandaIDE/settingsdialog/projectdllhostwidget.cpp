@@ -16,7 +16,7 @@
  */
 #include "projectdllhostwidget.h"
 #include "ui_projectdllhostwidget.h"
-#include "../project.h"
+#include "project/project.h"
 #include "../mainwindow.h"
 #include "../iconsmanager.h"
 #include "../systemconsts.h"

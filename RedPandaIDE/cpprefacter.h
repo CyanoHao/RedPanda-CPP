@@ -26,7 +26,7 @@ class Editor;
 namespace QSynedit {
     struct BufferCoord;
 }
-class Project;
+class DevCppProject;
 class CppRefacter : public QObject
 {
     Q_OBJECT
@@ -39,7 +39,7 @@ public:
     void renameSymbol(Editor* editor, const QSynedit::BufferCoord& pos, const QString& newWord);
 private:
     void doFindOccurenceInEditor(PStatement statement, Editor* editor, const PCppParser& parser);
-    void doFindOccurenceInProject(PStatement statement, std::shared_ptr<Project> project, const PCppParser& parser);
+    void doFindOccurenceInProject(PStatement statement, std::shared_ptr<DevCppProject> project, const PCppParser& parser);
     PSearchResultTreeItem findOccurenceInFile(
             const QString& filename,
             const QByteArray& fileEncoding,

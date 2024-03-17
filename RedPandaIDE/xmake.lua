@@ -35,7 +35,6 @@ target("RedPandaIDE")
         "colorscheme.cpp",
         "customfileiconprovider.cpp",
         "main.cpp",
-        "projectoptions.cpp",
         "settings.cpp",
         "syntaxermanager.cpp",
         "systemconsts.cpp",
@@ -54,6 +53,9 @@ target("RedPandaIDE")
         "problems/freeprojectsetformat.cpp",
         "problems/ojproblemset.cpp",
         "problems/problemcasevalidator.cpp",
+        -- project
+        "project/projectoptions.cpp",
+        -- utils
         "utils/escape.cpp",
         "utils/font.cpp",
         "utils/parsearg.cpp")
@@ -65,8 +67,6 @@ target("RedPandaIDE")
         "editor",
         "editorlist",
         "iconsmanager",
-        "project",
-        "projecttemplate",
         "shortcutmanager",
         "symbolusagemanager",
         "thememanager",
@@ -88,6 +88,11 @@ target("RedPandaIDE")
         -- parser
         "parser/cppparser",
         "parser/statementmodel",
+        -- project
+        "project/compilationdatabaseproject",
+        "project/devcppproject",
+        "project/project",
+        "project/projecttemplate",
         -- settings dialog
         "settingsdialog/settingswidget",
         -- widgets

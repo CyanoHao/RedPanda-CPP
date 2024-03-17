@@ -10,7 +10,7 @@
 #include "editorlist.h"
 #include "settings.h"
 #include "mainwindow.h"
-#include "project.h"
+#include "project/project.h"
 #include "parser/cppparser.h"
 #include "compiler/executablerunner.h"
 #include <QComboBox>
