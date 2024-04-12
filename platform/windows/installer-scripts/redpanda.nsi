@@ -134,6 +134,9 @@ Section "$(SectionMainName)" SectionMain
   SetOutPath $INSTDIR\templates
   File /nonfatal /r "templates\*"
 
+  SetOutPath $INSTDIR\resources
+  File /nonfatal /r "resources\*"
+
 SectionEnd
 
 !ifdef HAVE_MINGW32
@@ -441,6 +444,7 @@ Section "Uninstall"
   Delete "$INSTDIR\compiler_hint.lua"
 
   RMDir /r "$INSTDIR\templates"
+  RMDir /r "$INSTDIR\resources"
   RMDir /r "$INSTDIR\mingw32"
   RMDir /r "$INSTDIR\mingw64"
   RMDir /r "$INSTDIR\llvm-mingw"

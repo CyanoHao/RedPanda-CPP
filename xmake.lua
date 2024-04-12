@@ -207,10 +207,18 @@ target("resources")
     if is_xdg() then
         add_installfiles("platform/linux/templates/(**.*)", {prefixdir = "$(prefix)/share/$(app-name)/templates"})
     elseif is_os("windows") then
-        add_installfiles("platform/windows/templates/(**.*)", {prefixdir = "bin/templates"})
+        add_installfiles("platform/windows/templates/(**.*)", {prefixdir = "bin/resources/templates"})
         if is_arch("x86_64") then
-            add_installfiles("platform/windows/templates-win64/(**.*)", {prefixdir = "bin/templates"})
+            add_installfiles("platform/windows/templates-win64/(**.*)", {prefixdir = "bin/resources/templates"})
         end
+    end
+
+    -- themes
+
+    if is_xdg() then
+        add_installfiles("RedPandaIDE/resources/themes/(**.*)", {prefixdir = "$(prefix)/share/$(app-name)/themes"})
+    else
+        add_installfiles("RedPandaIDE/resources/themes/(**.*)", {prefixdir = "bin/resources/themes"})
     end
 
     -- docs
