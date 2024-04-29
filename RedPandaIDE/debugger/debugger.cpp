@@ -2546,7 +2546,7 @@ QVariant MemoryModel::data(const QModelIndex &index, int role) const
                 if (ch<' ' || ch>=128)
                     s+='.';
                 else
-                    s+=ch;
+                    s+=QChar(ch);
             }
             return s;
         } else

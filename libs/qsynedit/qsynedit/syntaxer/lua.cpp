@@ -587,7 +587,7 @@ void LuaSyntaxer::spaceProc()
 {
     mRun += 1;
     mTokenId = TokenId::Space;
-    while (mRun<mLineSize && mLine[mRun]>=1 && mLine[mRun]<=32)
+    while (mRun<mLineSize && mLine[mRun] > 0 && mLine[mRun] <= QChar(32))
         mRun+=1;
     if (mRun>=mLineSize) {
         mRange.hasTrailingSpaces = true;

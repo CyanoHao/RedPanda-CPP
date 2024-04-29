@@ -26,22 +26,27 @@
 #include <QThread>
 #include <QProcessEnvironment>
 
+#if QT_VERSION_MAJOR >= 6
+# include <QStringEncoder>
+# include <QStringDecoder>
+#else
 class QTextCodec;
+#endif
 
 class QByteArray;
 class QTextStream;
 class TextDecoder;
 
-#define ENCODING_AUTO_DETECT "AUTO"
-#define ENCODING_UTF8   "UTF-8"
-#define ENCODING_UTF16   "UTF-16"
-#define ENCODING_UTF32   "UTF-32"
-#define ENCODING_UTF8_BOM "UTF-8 BOM"
-#define ENCODING_UTF16_BOM "UTF-16 BOM"
-#define ENCODING_UTF32_BOM "UTF-32 BOM"
-#define ENCODING_SYSTEM_DEFAULT   "SYSTEM"
-#define ENCODING_ASCII  "ASCII"
-#define ENCODING_PROJECT    "PROJECT"
+#define ENCODING_AUTO_DETECT    "AUTO"
+#define ENCODING_UTF8           "UTF-8"
+#define ENCODING_UTF16          "UTF-16"
+#define ENCODING_UTF32          "UTF-32"
+#define ENCODING_UTF8_BOM       "UTF-8 BOM"
+#define ENCODING_UTF16_BOM      "UTF-16 BOM"
+#define ENCODING_UTF32_BOM      "UTF-32 BOM"
+#define ENCODING_SYSTEM_DEFAULT "SYSTEM"
+#define ENCODING_ASCII          "ASCII"
+#define ENCODING_PROJECT        "PROJECT"
 
 enum class NewlineType {
     Windows,
@@ -69,7 +74,7 @@ public:
 };
 
 /* text processing utils */
-const QByteArray guessTextEncoding(const QByteArray& text);
+QString guessTextEncoding(const QByteArray& text);
 
 const QChar *getNullTerminatedStringData(const QString& str);
 
@@ -215,6 +220,11 @@ public:
     TextEncoder &operator=(TextEncoder &&other) noexcept = default;
     ~TextEncoder() = default;
 
+#if QT_VERSION_MAJOR >= 6
+private:
+    TextEncoder(QStringEncoder &&encoder);
+#endif
+
 public:
     bool isValid() const;
     QByteArray name() const;
@@ -228,7 +238,11 @@ public:
     static TextEncoder encoderForSystem();
 
 private:
+#if QT_VERSION_MAJOR >= 6
+    QStringEncoder mEncoder;
+#else
     QTextCodec *mCodec;
+#endif
 };
 
 class TextDecoder {
@@ -240,6 +254,11 @@ public:
     TextDecoder &operator=(const TextDecoder &other) = delete;
     TextDecoder &operator=(TextDecoder &&other) noexcept = default;
     ~TextDecoder() = default;
+
+#if QT_VERSION_MAJOR >= 6
+private:
+    TextDecoder(QStringDecoder &&decoder);
+#endif
 
 public:
     bool isValid() const;
@@ -254,11 +273,34 @@ public:
     static TextDecoder decoderForSystem();
 
 private:
+#if QT_VERSION_MAJOR >= 6
+    QStringDecoder mDecoder;
+#else
     QTextCodec *mCodec;
+#endif
 };
 
-const QList<QByteArray> &availableEncodings();
+const QStringList &availableEncodings();
 
 bool isEncodingAvailable(const QByteArray &encoding);
+
+#if QT_VERSION_MAJOR >= 6
+
+namespace std {
+    constexpr inline int max(int a, qsizetype b) {
+        return max<int>(a, b);
+    }
+    constexpr inline int max(qsizetype a, int b) {
+        return max<int>(a, b);
+    }
+    constexpr inline int min(int a, qsizetype b) {
+        return min<int>(a, b);
+    }
+    constexpr inline int min(qsizetype a, int b) {
+        return min<int>(a, b);
+    }
+}
+
+#endif
 
 #endif // UTILS_H

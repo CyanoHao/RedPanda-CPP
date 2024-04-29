@@ -58,7 +58,11 @@ class WindowLogoutEventFilter : public QAbstractNativeEventFilter {
 
     // QAbstractNativeEventFilter interface
 public:
+#if QT_VERSION_MAJOR >= 6
+    bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *result) override;
+#else
     bool nativeEventFilter(const QByteArray &eventType, void *message, long *result) override;
+#endif
 };
 
 #ifndef WM_DPICHANGED
@@ -123,7 +127,12 @@ HWND getPreviousInstance() {
         return NULL;
 }
 
-bool WindowLogoutEventFilter::nativeEventFilter(const QByteArray & /*eventType*/, void *message, long *result){
+#if QT_VERSION_MAJOR >= 6
+bool WindowLogoutEventFilter::nativeEventFilter(const QByteArray & /*eventType*/, void *message, qintptr *result)
+#else
+bool WindowLogoutEventFilter::nativeEventFilter(const QByteArray & /*eventType*/, void *message, long *result)
+#endif
+{
     MSG * pMsg = static_cast<MSG *>(message);
     switch(pMsg->message) {
     case WM_QUERYENDSESSION:
