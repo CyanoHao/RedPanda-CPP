@@ -44,6 +44,7 @@
 #include <QUuid>
 #include <QScrollBar>
 #include <QTextDocumentFragment>
+#include <QActionGroup>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -1732,7 +1733,7 @@ Editor* MainWindow::openFile(QString filename, bool activate, QTabWidget* page)
         }
         bool inProject = (mProject && unit);
         QByteArray encoding = unit ? unit->encoding() :
-                                     (pSettings->editor().autoDetectFileEncoding()? ENCODING_AUTO_DETECT : pSettings->editor().defaultEncoding());
+                                     (pSettings->editor().autoDetectFileEncoding() ? QByteArray(ENCODING_AUTO_DETECT) : pSettings->editor().defaultEncoding());
         Project * pProject = (inProject?mProject.get():nullptr);
         if (pProject && encoding==ENCODING_PROJECT)
             encoding=pProject->options().encoding;
@@ -3448,7 +3449,7 @@ void MainWindow::loadLastOpens()
         }
         bool inProject = (mProject && unit);
         QByteArray encoding = unit ? unit->encoding() :
-                                     (pSettings->editor().autoDetectFileEncoding()? ENCODING_AUTO_DETECT : pSettings->editor().defaultEncoding());
+                                     (pSettings->editor().autoDetectFileEncoding()? QByteArray(ENCODING_AUTO_DETECT) : pSettings->editor().defaultEncoding());
         Project* pProject = (inProject?mProject.get():nullptr);
         if (pProject && encoding==ENCODING_PROJECT)
             encoding=pProject->options().encoding;
@@ -5880,7 +5881,7 @@ void MainWindow::onCompileIssue(PCompileIssue issue)
             int line = issue->line;
             if (line > e->lineCount())
                 return;
-            int col = std::min(issue->column,e->lineText(line).length()+1);
+            int col = std::min<int>(issue->column,e->lineText(line).length()+1);
             if (col < 1)
                 col = e->lineText(line).length()+1;
             e->addSyntaxIssues(line,col,issue->endColumn,issue->type,issue->description);
@@ -6348,7 +6349,7 @@ void MainWindow::on_actionConvert_to_ANSI_triggered()
         return;
     if (QMessageBox::warning(this,tr("Confirm Convertion"),
                    tr("The editing file will be saved using %1 encoding. <br />This operation can't be reverted. <br />Are you sure to continue?")
-                   .arg(QString(QTextCodec::codecForLocale()->name())),
+                   .arg(QString(TextEncoder::encoderForSystem().name())),
                    QMessageBox::Yes, QMessageBox::No)!=QMessageBox::Yes)
         return;
     editor->convertToEncoding(ENCODING_SYSTEM_DEFAULT);

@@ -37,7 +37,7 @@ QByteArray CharsetInfoManager::getDefaultSystemEncoding()
     }
     return "unknown";
 #else
-    return QByteArray(nl_langinfo(CODESET));
+    return "UTF-8";
 #endif
 }
 

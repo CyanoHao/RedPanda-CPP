@@ -4228,7 +4228,7 @@ void Editor::updateFunctionTip(bool showTip)
         return;
 
     QChar ch=lastNonSpaceChar(currentLine,currentChar);
-    if (ch!="(" && ch!=",")
+    if (ch!='(' && ch!=',')
         return;
 
     QSynedit::PTokenAttribute attr;
