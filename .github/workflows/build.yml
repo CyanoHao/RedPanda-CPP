@@ -9,6 +9,7 @@ jobs:
       fail-fast: false
       matrix:
         msystem: [MINGW32, MINGW64, UCRT64, CLANG64]
+        qt: ['5', '6']
         include:
           - isUcrt: false
           - msystem: MINGW32
@@ -25,6 +26,9 @@ jobs:
             isUcrt: true
             packagePrefix: mingw-w64-clang-x86_64
             _7zPackagePrefix: mingw-w64-clang-x86_64
+        exclude:
+          - msystem: MINGW32
+            qt: '6'
     runs-on: windows-latest
     defaults:
       run:
@@ -35,7 +39,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup
+      - name: Setup (Qt 5)
+        if: ${{ matrix.qt == '5' }}
         uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ matrix.msystem }}
@@ -55,6 +60,16 @@ jobs:
           curl -L https://github.com/redpanda-cpp/toolchain-win32-mingw-xp/releases/download/11.4.0-r0/mingw32-11.4.0-r0.7z -o assets/mingw32.7z
           curl -L https://github.com/redpanda-cpp/toolchain-win32-mingw-xp/releases/download/11.4.0-r0/mingw64-11.4.0-r0.7z -o assets/mingw64.7z
 
+      - name: Setup (Qt 6)
+        if: ${{ matrix.qt == '6' }}
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.msystem }}
+          update: true
+          install: |
+            ${{ matrix.packagePrefix }}-toolchain ${{ matrix.packagePrefix }}-qt6-static
+            ${{ matrix.packagePrefix }}-glib2 ${{ matrix.packagePrefix }}-harfbuzz ${{ matrix.packagePrefix }}-libb2 ${{ matrix.packagePrefix }}-libmng
+
       - name: Build
         run: |
           ./packages/msys/build-mingw.sh \
@@ -65,7 +80,7 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: Windows MSYS2 - msystem=${{ matrix.msystem }}
+          name: Windows MSYS2 - msystem=${{ matrix.msystem }}, qt=${{ matrix.qt }}
           path: dist/
 
   windows_legacy:
@@ -120,82 +135,100 @@ jobs:
           name: Windows NT 5.x - profile=${{ matrix.profile }}
           path: dist/*
 
-  windows_msvc_x64:
-    name: Windows MSVC x64
+  windows_msvc:
+    name: Windows MSVC
     runs-on: windows-2019
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86, x64, arm64, 'arm64ec (do not use)']
+        qt: ['5', '6']
+        include:
+          - arch: x86
+            vsArch: x86
+            qtArch: win32_msvc2019
+            qtDir: msvc2019
+          - arch: x64
+            vsArch: amd64
+            qtArch: win64_msvc2019_64
+            qtDir: msvc2019_64
+          - arch: arm64
+            vsArch: arm64
+            qtArch: win64_msvc2019_arm64
+            qtDir: msvc2019_arm64
+          - arch: 'arm64ec (do not use)'
+            vsArch: arm64
+            qtArch: win64_msvc2019_64
+            qtDir: msvc2019_64
+            qmakeFlags: "QMAKE_CFLAGS+=/arm64EC QMAKE_CXXFLAGS+=/arm64EC QMAKE_LFLAGS+=/MACHINE:ARM64EC QMAKE_LIBFLAGS+=/MACHINE:ARM64X"
+          - qt: '5'
+            qtVersion: '5.15.2'
+          - qt: '6'
+            qtVersion: '6.7.0'
+        exclude:
+          - arch: x86
+            qt: '6'
+          - arch: arm64
+            qt: '5'
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup
+      - name: Setup x64 host tool (arm64)
+        if: ${{ matrix.arch == 'arm64' }}
         uses: jurplel/install-qt-action@v3
         with:
-          version: '5.15.2'
+          version: ${{ matrix.qtVersion }}
           host: windows
           target: desktop
           arch: win64_msvc2019_64
+          archives: qtbase qttools
+
+      - name: Setup
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ matrix.qtVersion }}
+          host: windows
+          target: desktop
+          arch: ${{ matrix.qtArch }}
           archives: qtbase qtsvg qttools
           tools: tools_qtcreator,qt.tools.qtcreator
 
       - name: Build
         run: |
           $JOM = "${Env:RUNNER_WORKSPACE}/Qt/Tools/QtCreator/bin/jom/jom.exe"
+          $QMAKE = "${Env:RUNNER_WORKSPACE}/Qt/${{ matrix.qtVersion }}/${{ matrix.qtDir }}/bin/qmake"  # no `.exe`, arm64 is `.bat`
           $VS_INSTALL_PATH = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise"
           Import-Module "$VS_INSTALL_PATH\Common7\Tools\Microsoft.VisualStudio.DevShell.dll"
-          Enter-VsDevShell -VsInstallPath "$VS_INSTALL_PATH" -SkipAutomaticLocation -DevCmdArguments -arch=amd64
-          mkdir build && pushd build
-          qmake PREFIX=${Env:GITHUB_WORKSPACE}/pkg ${Env:GITHUB_WORKSPACE}/Red_Panda_CPP.pro
+          Enter-VsDevShell -VsInstallPath "$VS_INSTALL_PATH" -SkipAutomaticLocation -DevCmdArguments "-arch=${{ matrix.vsArch }} -host_arch=amd64"
+          mkdir build && cd build
+          & $QMAKE ${{ matrix.qmakeFlags }} PREFIX=${Env:GITHUB_WORKSPACE}/pkg ${Env:GITHUB_WORKSPACE}/Red_Panda_CPP.pro
           & $JOM "-j${Env:NUMBER_OF_PROCESSORS}"
           & $JOM install
-          windeployqt ${Env:GITHUB_WORKSPACE}/pkg/RedPandaIDE.exe
-          rm ${Env:GITHUB_WORKSPACE}/pkg/vc_redist.x64.exe
-          popd
 
-      - name: Upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: Windows MSVC x64
-          path: pkg/
-
-  windows_msvc_arm64ec:
-    name: Windows MSVC ARM64EC
-    runs-on: windows-2019
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '5.15.2'
-          host: windows
-          target: desktop
-          arch: win64_msvc2019_64
-          archives: qtbase qtsvg qttools
-          tools: tools_qtcreator,qt.tools.qtcreator
-
-      - name: Build
+      - name: Windeployqt (arm64)
+        if: ${{ matrix.arch == 'arm64' }}
         run: |
-          $JOM = "${Env:RUNNER_WORKSPACE}/Qt/Tools/QtCreator/bin/jom/jom.exe"
-          $VS_INSTALL_PATH = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise"
-          Import-Module "$VS_INSTALL_PATH\Common7\Tools\Microsoft.VisualStudio.DevShell.dll"
-          Enter-VsDevShell -VsInstallPath "$VS_INSTALL_PATH" -SkipAutomaticLocation -DevCmdArguments "-arch=arm64 -host_arch=amd64"
-          mkdir build && pushd build
-          qmake QMAKE_CFLAGS="/arm64EC" QMAKE_CXXFLAGS="/arm64EC" QMAKE_LFLAGS="/MACHINE:ARM64EC" QMAKE_LIBFLAGS="/MACHINE:ARM64X" PREFIX=${Env:GITHUB_WORKSPACE}/pkg ${Env:GITHUB_WORKSPACE}/Red_Panda_CPP.pro
-          & $JOM "-j${Env:NUMBER_OF_PROCESSORS}"
-          & $JOM install
+          "${Env:RUNNER_WORKSPACE}\Qt\${{ matrix.qtVersion }}\msvc2019_64\bin\qtpaths.exe -qtconf `"%~dp0\target_qt.conf`" %*" | `
+            Out-File -Encoding ascii -FilePath "${Env:RUNNER_WORKSPACE}/Qt/${{ matrix.qtVersion }}/msvc2019_arm64/bin/qtpaths.bat"
+          cat ${Env:RUNNER_WORKSPACE}/Qt/${{ matrix.qtVersion }}/msvc2019_arm64/bin/qtpaths.bat
+          & "${Env:RUNNER_WORKSPACE}/Qt/${{ matrix.qtVersion }}/msvc2019_64/bin/windeployqt" `
+            --qtpaths "${Env:RUNNER_WORKSPACE}/Qt/${{ matrix.qtVersion }}/msvc2019_arm64/bin/qtpaths.bat" `
+            ${Env:GITHUB_WORKSPACE}/pkg/RedPandaIDE.exe
+          rm ${Env:GITHUB_WORKSPACE}/pkg/vc_redist.*.exe
+
+      - name: Windeployqt (non-arm64)
+        if: ${{ matrix.arch != 'arm64' }}
+        run: |
           windeployqt ${Env:GITHUB_WORKSPACE}/pkg/RedPandaIDE.exe
-          rm ${Env:GITHUB_WORKSPACE}/pkg/vc_redist.x64.exe
-          popd
+          rm ${Env:GITHUB_WORKSPACE}/pkg/vc_redist.*.exe
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: Windows MSVC ARM64EC (do not use)
+          name: Windows MSVC - arch=${{ matrix.arch }}, qt=${{ matrix.qt }}
           path: pkg/
 
   debian:
