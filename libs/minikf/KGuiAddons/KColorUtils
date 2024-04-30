@@ -1,0 +1,5 @@
+// Red Panda C++ shim
+#pragma once
+
+#include "kcolorutils.h"
+

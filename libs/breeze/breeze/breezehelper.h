@@ -10,11 +10,8 @@
 #include "breeze.h"
 #include "breezeanimationdata.h"
 #include "breezemetrics.h"
-#include "breezesettings.h"
 #include "config-breeze.h"
 
-#include <KConfigWatcher>
-#include <KSharedConfig>
 #include <KStatefulBrush>
 
 #include <QIcon>

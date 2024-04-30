@@ -1,6 +1,7 @@
 target("breeze")
     add_rules("qt.static")
     add_frameworks("QtGui", "QtWidgets")
+    add_deps("minikf")
 
     add_includedirs(
         "breeze",

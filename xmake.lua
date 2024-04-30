@@ -188,6 +188,7 @@ includes("libs/breeze")
 if has_config("lua-addon") then
     includes("libs/lua")
 end
+includes("libs/minikf")
 includes("libs/qsynedit")
 includes("libs/redpanda_qt_utils")
 includes("tools/consolepauser")
