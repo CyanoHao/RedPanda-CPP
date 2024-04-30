@@ -1,0 +1,10 @@
+{
+    "name": "Breeze Dark",
+    "name_pt_BR": "Brisa Escura",
+    "name_zh_CN": "微风深色",
+    "name_zh_TW": "Breeze Dark",
+    "style": "MiniBreeze",
+    "default scheme": "Adaptive",
+    "default iconset": "newlook",
+    "palette": {}
+}

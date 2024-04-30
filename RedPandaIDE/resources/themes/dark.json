@@ -1,10 +1,9 @@
 {
-    "name":"Dark",
-    "name_pt_BR": "Escura",
-    "name_zh_CN": "深色",
-    "name_zh_TW": "深色",
-    "useQtFusionStyle": true,
-    "isDark": true,
+    "name": "Fusion Dark",
+    "name_pt_BR": "Fusão Escura",
+    "name_zh_CN": "融合深色",
+    "name_zh_TW": "融合深色",
+    "style": "RedPandaDarkFusion",
     "default scheme": "VS Code",
     "default iconset": "contrast",
     "palette": {

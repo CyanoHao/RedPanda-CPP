@@ -7,42 +7,26 @@ global function apiVersion(): ApiVersion
 end
 
 local nameMap: {string:string} = {
-    en_US = "System Style and Color",
-    pt_BR = "Estilo e Cor do Sistema",
-    zh_CN = "跟随系统样式和颜色",
-    zh_TW = "跟隨系統樣式和顏色",
-}
-
-local nameMapNoStyle: {string:string} = {
-    en_US = "System Color",
-    pt_BR = "Cor do Sistema",
-    zh_CN = "跟随系统颜色",
-    zh_TW = "跟隨系統顏色",
+    en_US = "Fusion (auto)",
+    pt_BR = "Fusão (automática)",
+    zh_CN = "融合（自动）",
+    zh_TW = "融合（自動）",
 }
 
 global function main(): Theme
-    local desktopEnvironment = C_Desktop.desktopEnvironment()
-    local useSystemStyle = desktopEnvironment == "xdg" or desktopEnvironment == "macos"
-
     local systemAppMode = C_Desktop.systemAppMode()
     local isDarkMode = systemAppMode == "dark"
 
     local function getStyle(): string
-        if useSystemStyle then
-            return C_Desktop.systemStyle()
+        if isDarkMode then
+            return "RedPandaDarkFusion"
         else
-            if isDarkMode then
-                return "RedPandaDarkFusion"
-            else
-                return "RedPandaLightFusion"
-            end
+            return "RedPandaLightFusion"
         end
     end
 
     local function getPalette(): Theme.Palette
-        if useSystemStyle then
-            return {}
-        elseif isDarkMode then
+        if isDarkMode then
             return { -- palette from `dark.lua`
                 PaletteWindow = "#19232D",
                 PaletteWindowText = "#E0E1E3",
@@ -104,7 +88,7 @@ global function main(): Theme
     local lang = C_Desktop.language()
 
     return {
-        ["name"] = useSystemStyle and (nameMap[lang] or nameMap.en_US) or (nameMapNoStyle[lang] or nameMapNoStyle.en_US),
+        ["name"] = nameMap[lang] or nameMap.en_US,
         ["style"] = getStyle(),
         ["default scheme"] = "Adaptive",
         ["default iconset"] = "newlook",

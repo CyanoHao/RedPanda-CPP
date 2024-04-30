@@ -1,0 +1,10 @@
+{
+    "name": "Breeze Light",
+    "name_pt_BR": "Brisa Clara",
+    "name_zh_CN": "微风浅色",
+    "name_zh_TW": "Breeze Light",
+    "style": "MiniBreeze",
+    "default scheme": "Adaptive",
+    "default iconset": "newlook",
+    "palette": {}
+}
