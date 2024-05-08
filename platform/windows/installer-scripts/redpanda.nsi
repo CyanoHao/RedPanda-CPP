@@ -165,6 +165,15 @@ SectionEnd
   SectionEnd
 !endif
 
+!ifdef HAVE_MINGWARM64
+  Section "$(SectionMinGWArm64Name)" SectionMinGWArm64
+    SectionIn 1 3
+    SetOutPath $INSTDIR
+
+    File /nonfatal /r "mingwarm64"
+  SectionEnd
+!endif
+
 !ifdef HAVE_LLVM
   Section "$(SectionLlvmName)" SectionLlvm
     SectionIn 1 3
@@ -310,6 +319,9 @@ SectionEnd
 !endif
 !ifdef HAVE_MINGW64
   !insertmacro MUI_DESCRIPTION_TEXT ${SectionMinGW64}      "$(MessageSectionMinGW64)"
+!endif
+!ifdef HAVE_MINGWARM64
+  !insertmacro MUI_DESCRIPTION_TEXT ${SectionMinGWArm64}   "$(MessageSectionMinGWArm64)"
 !endif
 !ifdef HAVE_LLVM
   !insertmacro MUI_DESCRIPTION_TEXT ${SectionLlvm}        "$(MessageSectionLlvm)"
@@ -462,6 +474,7 @@ Section "Uninstall"
   RMDir /r "$INSTDIR\templates"
   RMDir /r "$INSTDIR\mingw32"
   RMDir /r "$INSTDIR\mingw64"
+  RMDir /r "$INSTDIR\mingwarm64"
   RMDir /r "$INSTDIR\llvm-mingw"
 
   RMDir "$INSTDIR"

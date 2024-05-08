@@ -11,9 +11,11 @@ function fn_print_help() {
                             (MINGW32, MINGW64, UCRT64, CLANG32, CLANG64, CLANGARM64)
                             MUST be used before other options.
    -c, --clean              Clean build and package directories.
-   --mingw                  Alias for --mingw32 (x86 app) or --mingw64 (x64 app).
+   --mingw                  Alias for --mingw32 (x86 app), --mingw64 (x64 app),
+                            or --mingwarm64 (arm64 app).
    --mingw32                Build mingw32 integrated compiler.
    --mingw64                Build mingw64 integrated compiler.
+   --mingwarm64             Build mingwarm64 integrated compiler.
    --ucrt <build>           Include UCRT in the package. Windows SDK required.
                             e.g. '--ucrt 22621' for Windows 11 SDK 22H2.
    -nd, --no-deps           Skip dependency check.
@@ -69,6 +71,7 @@ CHECK_DEPS=1
 compilers=()
 COMPILER_MINGW32=0
 COMPILER_MINGW64=0
+COMPILER_MINGWARM64=0
 TARGET_DIR="$(pwd)/dist"
 UCRT=""
 while [[ $# -gt 0 ]]; do
@@ -93,9 +96,9 @@ while [[ $# -gt 0 ]]; do
           COMPILER_MINGW64=1
           shift
           ;;
-        *)
-          echo "ambiguous --mingw, please specify --mingw32 or --mingw64"
-          exit 1
+        arm64)
+          compilers+=("mingwarm64")
+          COMPILER_MINGWARM64=1
           ;;
       esac
       ;;
@@ -107,6 +110,11 @@ while [[ $# -gt 0 ]]; do
     --mingw64)
       compilers+=("mingw64")
       COMPILER_MINGW64=1
+      shift
+      ;;
+    --mingwarm64)
+      compilers+=("mingwarm64")
+      COMPILER_MINGWARM64=1
       shift
       ;;
     --ucrt)
@@ -158,11 +166,16 @@ MINGW64_ARCHIVE="mingw64.7z"
 MINGW64_COMPILER_NAME="MinGW-w64 X86_64 GCC 11.4"
 MINGW64_PACKAGE_SUFFIX="MinGW64_11.4"
 
+MINGWARM64_ARCHIVE="mingwarm64.7z"
+MINGWARM64_COMPILER_NAME="MinGW-w64 aarch64 GCC 15.git"
+MINGWARM64_PACKAGE_SUFFIX="MinGWARM64_15.git"
+
 if [[ ${#compilers[@]} -eq 0 ]]; then
   PACKAGE_BASENAME="${PACKAGE_BASENAME}.NoCompiler"
 else
   [[ ${COMPILER_MINGW32} -eq 1 ]] && PACKAGE_BASENAME="${PACKAGE_BASENAME}.${MINGW32_PACKAGE_SUFFIX}"
   [[ ${COMPILER_MINGW64} -eq 1 ]] && PACKAGE_BASENAME="${PACKAGE_BASENAME}.${MINGW64_PACKAGE_SUFFIX}"
+  [[ ${COMPILER_MINGWARM64} -eq 1 ]] && PACKAGE_BASENAME="${PACKAGE_BASENAME}.${MINGWARM64_PACKAGE_SUFFIX}"
 fi
 
 function fn_print_progress() {
@@ -199,6 +212,10 @@ if [[ ${COMPILER_MINGW32} -eq 1 && ! -f "${SOURCE_DIR}/assets/${MINGW32_ARCHIVE}
 fi
 if [[ ${COMPILER_MINGW64} -eq 1 && ! -f "${SOURCE_DIR}/assets/${MINGW64_ARCHIVE}" ]]; then
   echo "Missing MinGW archive: assets/${MINGW64_ARCHIVE}"
+  exit 1
+fi
+if [[ ${COMPILER_MINGWARM64} -eq 1 && ! -f "${SOURCE_DIR}/assets/${MINGWARM64_ARCHIVE}" ]]; then
+  echo "Missing MinGW archive: assets/${MINGWARM64_ARCHIVE}"
   exit 1
 fi
 if [[ -n "${UCRT}" && ! -f "${UCRT_DIR}/ucrtbase.dll" ]]; then
@@ -276,6 +293,7 @@ nsis_flags=(
   -DFINALNAME="${SETUP_NAME}"
   -DMINGW32_COMPILER_NAME="${MINGW32_COMPILER_NAME}"
   -DMINGW64_COMPILER_NAME="${MINGW64_COMPILER_NAME}"
+  -DMINGWARM64_COMPILER_NAME="${MINGWARM64_COMPILER_NAME}"
   -DREQUIRED_WINDOWS_BUILD=7600
   -DREQUIRED_WINDOWS_NAME="Windows 7"
   -DUSE_MODERN_FONT
@@ -287,6 +305,10 @@ fi
 if [[ ${COMPILER_MINGW64} -eq 1 ]]; then
   nsis_flags+=(-DHAVE_MINGW64)
   [[ -d "mingw64" ]] || 7z x "${SOURCE_DIR}/assets/${MINGW64_ARCHIVE}" -o"${PACKAGE_DIR}"
+fi
+if [[ ${COMPILER_MINGWARM64} -eq 1 ]]; then
+  nsis_flags+=(-DHAVE_MINGWARM64)
+  [[ -d "mingwarm64" ]] || 7z x "${SOURCE_DIR}/assets/${MINGWARM64_ARCHIVE}" -o"${PACKAGE_DIR}"
 fi
 if [[ -n "${UCRT}" ]]; then
   nsis_flags+=(-DHAVE_UCRT)

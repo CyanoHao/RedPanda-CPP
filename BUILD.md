@@ -74,7 +74,8 @@ Common arguments:
 Extra arguments for `build-mingw.sh`:
 - `--mingw32`: add `assets/mingw32.7z` to the package.
 - `--mingw64`: add `assets/mingw64.7z` to the package.
-- `--mingw`: alias for `--mingw32` (x86 app) or `--mingw64` (x64 app).
+- `--mingwarm64`: add `assets/mingwarm64.7z` to the package.
+- `--mingw`: alias for `--mingw32` (x86 app), `--mingw64` (x64 app), or `--mingwarm64` (ARM64 app).
 - `--ucrt <build>`: add UCRT runtime from Windows SDK to the package. e.g. `--ucrt 22621` for Windows 11 SDK 22H2.
 
 ## Windows XP Qt Library with MinGW UCRT Toolchain

@@ -3270,6 +3270,7 @@ void Settings::CompilerSets::findSets()
         mSettings->dirs().appDir() + "/clang64/bin",
         mSettings->dirs().appDir() + "/mingw64/bin",
         mSettings->dirs().appDir() + "/mingw32/bin",
+        mSettings->dirs().appDir() + "/mingwarm64/bin",
     } + pathList;
 #endif
     QString folder, canonicalFolder;

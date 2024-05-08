@@ -74,7 +74,8 @@
 `build-mingw.sh` 的额外参数：
 - `--mingw32`：把 `assets/mingw32.7z` 添加到包中。
 - `--mingw64`：把 `assets/mingw64.7z` 添加到包中。
-- `--mingw`：`--mingw32`（x86 程序）或 `--mingw64`（x64 程序）的别名。
+- `--mingwarm64`：把 `assets/mingwarm64.7z` 添加到包中。
+- `--mingw`：`--mingw32`（x86 程序）、`--mingw64`（x64 程序）、`--mingwarm64`（ARM64 程序）的别名。
 - `--ucrt <build>`：把 Windows SDK 附带的 UCRT 运行时添加到包中。例如 `--ucrt 22621` 表示 Windows 11 SDK 22H2。
 
 ## 用于 Windows XP 的 Qt 库 + MinGW UCRT 工具链
