@@ -18,7 +18,6 @@
 #include "qt_utils/utils.h"
 #include <QDataStream>
 #include <QFile>
-#include <QTextCodec>
 #include <QTextStream>
 #include <QMutexLocker>
 #include <stdexcept>

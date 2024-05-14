@@ -18,7 +18,6 @@
 
 #include <QtCore/QFileInfo>
 #include <QFont>
-#include <QTextCodec>
 #include <QVariant>
 #include <QWheelEvent>
 #include <QGuiApplication>
@@ -30,7 +29,6 @@
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QTextDocument>
-#include <QTextCodec>
 #include <QScrollBar>
 #include <QScreen>
 #include <memory>
