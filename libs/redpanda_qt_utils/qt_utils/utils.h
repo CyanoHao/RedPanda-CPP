@@ -26,9 +26,11 @@
 #include <QThread>
 #include <QProcessEnvironment>
 
+class QTextCodec;
+
 class QByteArray;
 class QTextStream;
-class QTextCodec;
+class TextDecoder;
 
 #define ENCODING_AUTO_DETECT "AUTO"
 #define ENCODING_UTF8   "UTF-8"
@@ -109,9 +111,7 @@ void readStreamToLines(QTextStream* stream, LineProcessFunc lineFunc);
  * @param codec
  * @return
  */
-QStringList readFileToLines(const QString& fileName, QTextCodec* codec);
 QStringList readFileToLines(const QString& fileName);
-void readFileToLines(const QString& fileName, QTextCodec* codec, LineProcessFunc lineFunc);
 
 QByteArray readFileToByteArray(const QString& fileName);
 
@@ -204,4 +204,61 @@ finally(F&& f) noexcept
     return final_action<typename std::remove_cv<typename std::remove_reference<F>::type>::type>(
         std::forward<F>(f));
 }
+
+class TextEncoder {
+public:
+    explicit TextEncoder(const char *name);
+    explicit TextEncoder(const QByteArray &name);
+    TextEncoder(const TextEncoder &other) = delete;
+    TextEncoder(TextEncoder &&other) noexcept = default;
+    TextEncoder &operator=(const TextEncoder &other) = delete;
+    TextEncoder &operator=(TextEncoder &&other) noexcept = default;
+    ~TextEncoder() = default;
+
+public:
+    bool isValid() const;
+    QByteArray name() const;
+    std::pair<bool, QByteArray> encode(const QString &text);
+    QByteArray encodeUnchecked(const QString &text);
+
+public:
+    static TextEncoder encoderForUtf8();
+    static TextEncoder encoderForUtf16();
+    static TextEncoder encoderForUtf32();
+    static TextEncoder encoderForSystem();
+
+private:
+    QTextCodec *mCodec;
+};
+
+class TextDecoder {
+public:
+    explicit TextDecoder(const char *name);
+    explicit TextDecoder(const QByteArray &name);
+    TextDecoder(const TextDecoder &other) = delete;
+    TextDecoder(TextDecoder &&other) noexcept = default;
+    TextDecoder &operator=(const TextDecoder &other) = delete;
+    TextDecoder &operator=(TextDecoder &&other) noexcept = default;
+    ~TextDecoder() = default;
+
+public:
+    bool isValid() const;
+    QByteArray name() const;
+    std::pair<bool, QString> decode(const QByteArray &text);
+    QString decodeUnchecked(const QByteArray &text);
+
+public:
+    static TextDecoder decoderForUtf8();
+    static TextDecoder decoderForUtf16();
+    static TextDecoder decoderForUtf32();
+    static TextDecoder decoderForSystem();
+
+private:
+    QTextCodec *mCodec;
+};
+
+const QList<QByteArray> &availableEncodings();
+
+bool isEncodingAvailable(const QByteArray &encoding);
+
 #endif // UTILS_H

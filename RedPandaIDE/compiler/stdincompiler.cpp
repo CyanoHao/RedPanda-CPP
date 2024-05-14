@@ -18,7 +18,6 @@
 #include "compilermanager.h"
 #include <QFile>
 #include <QFileInfo>
-#include <QTextCodec>
 
 StdinCompiler::StdinCompiler(const QString &filename,const QByteArray& encoding, const QString& content, bool onlyCheckSyntax):
     Compiler(filename, onlyCheckSyntax),

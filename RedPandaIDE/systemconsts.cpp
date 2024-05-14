@@ -20,7 +20,6 @@
 #include <QSet>
 #include <QString>
 #include <QStringList>
-#include <QTextCodec>
 
 SystemConsts* pSystemConsts;
 

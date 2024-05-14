@@ -21,7 +21,6 @@
 #include <QGuiApplication>
 #include <QMimeData>
 #include <QPalette>
-#include <QTextCodec>
 
 namespace QSynedit {
 
