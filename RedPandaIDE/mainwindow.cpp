@@ -17,7 +17,6 @@
 #include <QGuiApplication>
 #include <QClipboard>
 #include <QMessageBox>
-#include <QTextCodec>
 #include <QCloseEvent>
 #include <QComboBox>
 #include <QDesktopServices>

@@ -31,7 +31,6 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QMessageBox>
-#include <QTextCodec>
 #include <QMessageBox>
 #include <QDirIterator>
 #include <QMimeDatabase>

@@ -253,14 +253,14 @@ QByteArray toByteArray(const QString &s)
 
 QString fromByteArray(const QByteArray &s)
 {
-    QTextCodec* codec = QTextCodec::codecForName(ENCODING_UTF8);
-    QTextCodec::ConverterState state;
-    if (!codec)
+    TextDecoder decoder = TextDecoder::decoderForUtf8();
+    if (!decoder.isValid())
         return QString(s);
-    QString tmp = codec->toUnicode(s,s.length(),&state);
-    if (state.invalidChars>0)
-        tmp = QString::fromLocal8Bit(s);
-    return tmp;
+    auto [ok, result] = decoder.decode(s);
+    if (ok)
+        return result;
+    else
+        return QString::fromLocal8Bit(s);
 }
 
 QStringList readStreamToLines(QTextStream *stream)
@@ -282,24 +282,26 @@ void readStreamToLines(QTextStream *stream,
     }
 }
 
-QStringList readFileToLines(const QString& fileName, QTextCodec* codec)
+QStringList readFileToLines(const QString& fileName, TextDecoder &decoder)
 {
     QFile file(fileName);
     if (file.open(QFile::ReadOnly)) {
-        QTextStream stream(&file);
-        stream.setCodec(codec);
+        QByteArray data = file.readAll();
+        QString text = decoder.decodeUnchecked(data);
+        QTextStream stream(&text);
         stream.setAutoDetectUnicode(false);
         return readStreamToLines(&stream);
     }
     return QStringList();
 }
 
-void readFileToLines(const QString &fileName, QTextCodec *codec, LineProcessFunc lineFunc)
+void readFileToLines(const QString &fileName, TextDecoder &decoder, LineProcessFunc lineFunc)
 {
     QFile file(fileName);
     if (file.open(QFile::ReadOnly)) {
-        QTextStream stream(&file);
-        stream.setCodec(codec);
+        QByteArray data = file.readAll();
+        QString text = decoder.decodeUnchecked(data);
+        QTextStream stream(&text);
         stream.setAutoDetectUnicode(false);
         readStreamToLines(&stream, lineFunc);
     }
