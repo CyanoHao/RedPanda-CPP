@@ -3,7 +3,7 @@ set_languages("cxx17")
 target("RedPandaIDE")
     add_rules("qt.widgetapp", "qt.ts")
 
-    add_deps("redpanda_qt_utils", "qsynedit")
+    add_deps("redpanda_qt_utils", "qsynedit", "style")
     add_frameworks("QtNetwork", "QtPrintSupport", "QtSvg")
     add_includedirs(".")
 

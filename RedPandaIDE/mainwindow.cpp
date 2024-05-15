@@ -46,6 +46,10 @@
 #include <QScrollBar>
 #include <QTextDocumentFragment>
 
+#include <qnamespace.h>
+#include <style/breezestyle.h>
+#include <style/phantomstyle.h>
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "editorlist.h"
@@ -1012,10 +1016,14 @@ void MainWindow::applySettings()
     }
 #endif
     const QString& style = appTheme->style();
-    if (style == "RedPandaDarkFusion")
+    if (style.compare("RedPandaDarkFusion", Qt::CaseInsensitive) == 0)
         QApplication::setStyle(new DarkFusionStyle());//app takes the onwership
-    else if (style == "RedPandaLightFusion")
+    else if (style.compare("RedPandaLightFusion", Qt::CaseInsensitive) == 0)
         QApplication::setStyle(new LightFusionStyle());//app takes the onwership
+    else if (style.compare("MiniBreeze", Qt::CaseInsensitive) == 0)
+        QApplication::setStyle(new MiniBreeze::Style());
+    else if (style.compare("Phantom", Qt::CaseInsensitive) == 0)
+        QApplication::setStyle(new PhantomStyle());
     else
         QApplication::setStyle(style);
     qApp->setPalette(appTheme->palette());
