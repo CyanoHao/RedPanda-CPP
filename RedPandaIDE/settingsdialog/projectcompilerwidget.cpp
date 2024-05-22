@@ -48,25 +48,8 @@ void ProjectCompilerWidget::refreshOptions()
     ui->chkAddCharset->setChecked(mAddCharset);
 
     QByteArray execEncoding = mExecCharset;
-    if (execEncoding == ENCODING_AUTO_DETECT
-            || execEncoding == ENCODING_SYSTEM_DEFAULT
-            || execEncoding == ENCODING_UTF8) {
-        int index =ui->cbEncoding->findData(execEncoding);
-        ui->cbEncoding->setCurrentIndex(index);
-        ui->cbEncodingDetails->clear();
-        ui->cbEncodingDetails->setVisible(false);
-    } else {
-        QString encoding = execEncoding;
-        QString language = pCharsetInfoManager->findLanguageByCharsetName(encoding);
-        ui->cbEncoding->setCurrentText(language);
-        ui->cbEncodingDetails->setVisible(true);
-        ui->cbEncodingDetails->clear();
-        QList<PCharsetInfo> infos = pCharsetInfoManager->findCharsetsByLanguageName(language);
-        foreach (const PCharsetInfo& info, infos) {
-            ui->cbEncodingDetails->addItem(info->name);
-        }
-        ui->cbEncodingDetails->setCurrentText(encoding);
-    }
+    int index =ui->cbEncoding->findData(execEncoding);
+    ui->cbEncoding->setCurrentIndex(index);
 }
 
 void ProjectCompilerWidget::doLoad()
@@ -95,11 +78,8 @@ void ProjectCompilerWidget::doSave()
         pMainWindow->project()->options().addCharset = ui->chkAddCharset->isChecked();
     pMainWindow->project()->options().staticLink = ui->chkStaticLink->isChecked();
 
-    if (ui->cbEncodingDetails->isVisible()) {
-        pMainWindow->project()->options().execEncoding = ui->cbEncodingDetails->currentText().toLocal8Bit();
-    } else {
-        pMainWindow->project()->options().execEncoding = ui->cbEncoding->currentData().toString().toLocal8Bit();
-    }
+    pMainWindow->project()->options().execEncoding = ui->cbEncoding->currentData().toString().toLatin1();
+
     mOptions = pMainWindow->project()->options().compilerOptions;
     mStaticLink = pMainWindow->project()->options().staticLink;
     mAddCharset = pMainWindow->project()->options().addCharset;
@@ -115,12 +95,9 @@ void ProjectCompilerWidget::init()
         ui->cbCompilerSet->addItem(pSettings->compilerSets().getSet(i)->name());
     }
     ui->cbCompilerSet->blockSignals(false);
-    ui->cbEncodingDetails->setVisible(false);
     ui->cbEncoding->clear();
-    ui->cbEncoding->addItem(tr("ANSI"),ENCODING_SYSTEM_DEFAULT);
-    ui->cbEncoding->addItem(tr("UTF-8"),ENCODING_UTF8);
-    foreach (const QString& langName, pCharsetInfoManager->languageNames()) {
-        ui->cbEncoding->addItem(langName,langName);
+    for (const Win32AnsiCodePage &item : Win32AnsiCodePage::codePageList) {
+        ui->cbEncoding->addItem(item.displayName, item.encoding);
     }
     SettingsWidget::init();
 }
@@ -181,28 +158,3 @@ void ProjectCompilerWidget::on_cbCompilerSet_currentIndexChanged(int index)
     setSettingsChanged();
     //project->saveOptions();
 }
-
-void ProjectCompilerWidget::on_cbEncoding_currentTextChanged(const QString &/*arg1*/)
-{
-    QString userData = ui->cbEncoding->currentData().toString();
-    if (userData == ENCODING_AUTO_DETECT
-            || userData == ENCODING_SYSTEM_DEFAULT
-            || userData == ENCODING_UTF8) {
-        ui->cbEncodingDetails->setVisible(false);
-        ui->cbEncodingDetails->clear();
-    } else {
-        ui->cbEncodingDetails->setVisible(true);
-        ui->cbEncodingDetails->clear();
-        QList<PCharsetInfo> infos = pCharsetInfoManager->findCharsetsByLanguageName(userData);
-        foreach (const PCharsetInfo& info, infos) {
-            ui->cbEncodingDetails->addItem(info->name);
-        }
-    }
-}
-
-
-void ProjectCompilerWidget::on_cbEncodingDetails_currentTextChanged(const QString &/*arg1*/)
-{
-
-}
-

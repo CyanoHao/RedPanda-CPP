@@ -22,19 +22,23 @@
 #include <QObject>
 
 struct CharsetInfo{
-    int codepage;
     QByteArray name;
     QString language;
     QString localeName;
-    bool enabled;
-    explicit CharsetInfo(int codepage,
-                         const QByteArray& name,
+    explicit CharsetInfo(const QByteArray& name,
                          const QString& language,
-                         const QString& locale,
-                         bool enabled);
+                         const QString& locale);
 };
 
 using PCharsetInfo = std::shared_ptr<CharsetInfo>;
+
+struct Win32AnsiCodePage {
+    unsigned codePage;
+    QByteArray encoding;
+    QString displayName;
+
+    static const QList<Win32AnsiCodePage> codePageList;
+};
 
 class CharsetInfoManager: public QObject {
     Q_OBJECT
@@ -44,8 +48,7 @@ public:
     explicit CharsetInfoManager(CharsetInfoManager&) = delete;
     CharsetInfoManager& operator=(CharsetInfoManager&) = delete;
 
-    QByteArray getDefaultSystemEncoding();
-    PCharsetInfo findCharsetByCodepage(int codepage);
+    static QByteArray getDefaultSystemEncoding();
     QStringList languageNames();
     QList<PCharsetInfo> findCharsetsByLanguageName(const QString& languageName);
     QList<PCharsetInfo> findCharsetByLocale(const QString& localeName);

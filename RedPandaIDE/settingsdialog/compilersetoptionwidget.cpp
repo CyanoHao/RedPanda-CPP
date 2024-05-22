@@ -63,12 +63,9 @@ CompilerSetOptionWidget::~CompilerSetOptionWidget()
 
 void CompilerSetOptionWidget::init()
 {
-    ui->cbEncodingDetails->setVisible(false);
     ui->cbEncoding->clear();
-    ui->cbEncoding->addItem(tr("ANSI"),ENCODING_SYSTEM_DEFAULT);
-    ui->cbEncoding->addItem(tr("UTF-8"),ENCODING_UTF8);
-    foreach (const QString& langName, pCharsetInfoManager->languageNames()) {
-        ui->cbEncoding->addItem(langName,langName);
+    for (const Win32AnsiCodePage &item : Win32AnsiCodePage::codePageList) {
+        ui->cbEncoding->addItem(item.displayName, item.encoding);
     }
     SettingsWidget::init();
 }
@@ -78,7 +75,6 @@ static void loadCompilerSetSettings(Settings::PCompilerSet pSet, Ui::CompilerSet
     bool supportCharset = CompilerInfoManager::supportCovertingCharset(pSet->compilerType());
     ui->chkAutoAddCharset->setEnabled(supportCharset);
     ui->cbEncoding->setEnabled(supportCharset);
-    ui->cbEncodingDetails->setEnabled(supportCharset);
     ui->panelCharset->setVisible(supportCharset);
     ui->chkAutoAddCharset->setEnabled(supportCharset);
     ui->chkAutoAddCharset->setVisible(supportCharset);
@@ -108,25 +104,8 @@ static void loadCompilerSetSettings(Settings::PCompilerSet pSet, Ui::CompilerSet
     ui->txtGDBServer->setText(pSet->debugServer());
     ui->txtResourceCompiler->setText(pSet->resourceCompiler());
 
-    if (pSet->execCharset() == ENCODING_AUTO_DETECT
-            || pSet->execCharset() == ENCODING_SYSTEM_DEFAULT
-            || pSet->execCharset() == ENCODING_UTF8) {
-        int index =ui->cbEncoding->findData(pSet->execCharset());
-        ui->cbEncoding->setCurrentIndex(index);
-        ui->cbEncodingDetails->clear();
-        ui->cbEncodingDetails->setVisible(false);
-    } else {
-        QString encoding = pSet->execCharset();
-        QString language = pCharsetInfoManager->findLanguageByCharsetName(encoding);
-        ui->cbEncoding->setCurrentText(language);
-        ui->cbEncodingDetails->setVisible(true);
-        ui->cbEncodingDetails->clear();
-        QList<PCharsetInfo> infos = pCharsetInfoManager->findCharsetsByLanguageName(language);
-        foreach (const PCharsetInfo& info, infos) {
-            ui->cbEncodingDetails->addItem(info->name);
-        }
-        ui->cbEncodingDetails->setCurrentText(encoding);
-    }
+    int index =ui->cbEncoding->findData(pSet->execCharset());
+    ui->cbEncoding->setCurrentIndex(index);
 
     ui->txtPreprocessingSuffix->setText(pSet->preprocessingSuffix());
     ui->txtCompilationSuffix->setText(pSet->compilationProperSuffix());
@@ -257,11 +236,7 @@ void CompilerSetOptionWidget::saveCurrentCompilerSet()
     pSet->CIncludeDirs()=mCIncludeDirWidget->dirList();
     pSet->CppIncludeDirs()=mCppIncludeDirWidget->dirList();
 
-    if (ui->cbEncodingDetails->isVisible()) {
-        pSet->setExecCharset(ui->cbEncodingDetails->currentText());
-    } else {
-        pSet->setExecCharset(ui->cbEncoding->currentData().toString());
-    }
+    pSet->setExecCharset(ui->cbEncoding->currentData().toString());
 
     //read values in the options widget
     pSet->setCompileOptions(ui->optionTabs->arguments(false));
@@ -397,30 +372,6 @@ void CompilerSetOptionWidget::updateIcons(const QSize& /*size*/)
     pIconsManager->setIcon(ui->btnChooseGDBServer, IconsManager::ACTION_FILE_LOCATE);
     pIconsManager->setIcon(ui->btnChooseMake, IconsManager::ACTION_FILE_LOCATE);
     pIconsManager->setIcon(ui->btnChooseResourceCompiler, IconsManager::ACTION_FILE_LOCATE);
-}
-
-void CompilerSetOptionWidget::on_cbEncoding_currentTextChanged(const QString &/*arg1*/)
-{
-    QString userData = ui->cbEncoding->currentData().toString();
-    if (userData == ENCODING_AUTO_DETECT
-            || userData == ENCODING_SYSTEM_DEFAULT
-            || userData == ENCODING_UTF8) {
-        ui->cbEncodingDetails->setVisible(false);
-        ui->cbEncodingDetails->clear();
-    } else {
-        ui->cbEncodingDetails->setVisible(true);
-        ui->cbEncodingDetails->clear();
-        QList<PCharsetInfo> infos = pCharsetInfoManager->findCharsetsByLanguageName(userData);
-        foreach (const PCharsetInfo& info, infos) {
-            ui->cbEncodingDetails->addItem(info->name);
-        }
-    }
-}
-
-
-void CompilerSetOptionWidget::on_cbEncodingDetails_currentTextChanged(const QString &/*arg1*/)
-{
-
 }
 
 

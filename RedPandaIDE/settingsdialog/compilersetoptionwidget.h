@@ -62,8 +62,6 @@ private slots:
     void on_btnRenameCompilerSet_clicked();
     void on_btnRemoveCompilerSet_clicked();
 
-    void on_cbEncoding_currentTextChanged(const QString &arg1);
-    void on_cbEncodingDetails_currentTextChanged(const QString &arg1);
     void on_btnChooseCCompiler_clicked();
     void on_btnChooseCppCompiler_clicked();
     void on_btnChooseMake_clicked();

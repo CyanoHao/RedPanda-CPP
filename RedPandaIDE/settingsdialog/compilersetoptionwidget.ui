@@ -128,9 +128,6 @@
            <widget class="QComboBox" name="cbEncoding"/>
           </item>
           <item>
-           <widget class="QComboBox" name="cbEncodingDetails"/>
-          </item>
-          <item>
            <spacer name="horizontalSpacer_2">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -522,7 +519,6 @@
   <tabstop>settingTabs</tabstop>
   <tabstop>chkAutoAddCharset</tabstop>
   <tabstop>cbEncoding</tabstop>
-  <tabstop>cbEncodingDetails</tabstop>
   <tabstop>chkStaticLink</tabstop>
   <tabstop>chkForceEnglishOutput</tabstop>
   <tabstop>chkPersistInAutoFind</tabstop>
