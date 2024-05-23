@@ -67,7 +67,7 @@ public:
 };
 
 /* text processing utils */
-const QByteArray guessTextEncoding(const QByteArray& text);
+QByteArray guessTextEncoding(const QByteArray& text);
 
 const QChar *getNullTerminatedStringData(const QString& str);
 

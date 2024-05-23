@@ -2,6 +2,7 @@ target("redpanda_qt_utils")
     add_rules("qt.static")
     add_rules("qt.ts")
     add_frameworks("QtGui", "QtWidgets")
+    add_deps("ced")
 
     add_files("qt_utils/utils.cpp")
     add_moc_classes("qt_utils/charsetinfo")

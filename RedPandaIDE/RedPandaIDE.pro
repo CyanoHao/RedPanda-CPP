@@ -96,17 +96,19 @@ CONFIG(debug_and_release_target) {
     }
 }
 
-INCLUDEPATH += ../libs/qsynedit ../libs/redpanda_qt_utils ../libs/lua
+INCLUDEPATH += ../libs/qsynedit ../libs/redpanda_qt_utils ../libs/lua ../libs/ced
 
 gcc | clang {
 LIBS += $$OUT_PWD/../libs/qsynedit/$${OBJ_OUT_PWD}libqsynedit.a \
         $$OUT_PWD/../libs/redpanda_qt_utils/$${OBJ_OUT_PWD}libredpanda_qt_utils.a \
-        $$OUT_PWD/../libs/lua/$${OBJ_OUT_PWD}liblua.a
+        $$OUT_PWD/../libs/lua/$${OBJ_OUT_PWD}liblua.a \
+        $$OUT_PWD/../libs/ced/$${OBJ_OUT_PWD}libced.a
 }
 msvc {
 LIBS += $$OUT_PWD/../libs/qsynedit/$${OBJ_OUT_PWD}qsynedit.lib \
         $$OUT_PWD/../libs/redpanda_qt_utils/$${OBJ_OUT_PWD}redpanda_qt_utils.lib \
-        $$OUT_PWD/../libs/lua/$${OBJ_OUT_PWD}lua.lib
+        $$OUT_PWD/../libs/lua/$${OBJ_OUT_PWD}lua.lib \
+        $$OUT_PWD/../libs/ced/$${OBJ_OUT_PWD}ced.lib
 LIBS += advapi32.lib user32.lib
 }
 

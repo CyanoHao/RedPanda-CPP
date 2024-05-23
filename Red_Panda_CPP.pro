@@ -5,12 +5,14 @@ SUBDIRS += \
     consolepauser \
     redpanda_qt_utils \
     qsynedit \
-    lua
+    lua \
+    ced
 
 consolepauser.subdir = tools/consolepauser
 redpanda_qt_utils.subdir = libs/redpanda_qt_utils
 qsynedit.subdir = libs/qsynedit
 lua.subdir = libs/lua
+ced.subdir = libs/ced
 
 # Add the dependencies so that the RedPandaIDE project can add the depended programs
 # into the main app bundle

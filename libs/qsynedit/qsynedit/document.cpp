@@ -606,8 +606,6 @@ void Document::loadFromFile(const QString& filename, const QByteArray& encoding,
         QByteArray line = file.readLine();
         QTextCodec* codec;
         QTextCodec::ConverterState state;
-        bool needReread = false;
-        bool allAscii = true;
         //test for BOM
         if ((line.length()>=3) && ((unsigned char)line[0]==0xEF) && ((unsigned char)line[1]==0xBB) && ((unsigned char)line[2]==0xBF) ) {
             realEncoding = ENCODING_UTF8_BOM;
@@ -638,61 +636,8 @@ void Document::loadFromFile(const QString& filename, const QByteArray& encoding,
         }
 
         internalClear();
-        while (true) {
-            if (line.endsWith("\r\n")) {
-                line.remove(line.length()-2,2);
-            } else if (line.endsWith("\r")) {
-                line.remove(line.length()-1,1);
-            } else if (line.endsWith("\n")){
-                line.remove(line.length()-1,1);
-            }
-            if (isBinaryContent(line))
-                throw BinaryFileError(tr("'%1' is a binaray File!").arg(filename));
-            if (allAscii) {
-                allAscii = isTextAllAscii(line);
-            }
-            if (allAscii) {
-                addItem(QString::fromLatin1(line));
-            } else {
-                QString newLine = codec->toUnicode(line.constData(),line.length(),&state);
-                if (state.invalidChars>0) {
-                    needReread = true;
-                    break;
-                }
-                addItem(newLine);
-            }
-            if (file.atEnd()){
-                break;
-            }
-            line = file.readLine();
-        }
-        if (!needReread) {
-            if (allAscii)
-                realEncoding = ENCODING_ASCII;
-            return;
-        }
-        realEncoding = pCharsetInfoManager->getDefaultSystemEncoding();
-        if (tryLoadFileByEncoding(realEncoding,file)) {
-            return;
-        }
-        QList<PCharsetInfo> charsets = pCharsetInfoManager->findCharsetByLocale(pCharsetInfoManager->localeName());
-        if (!charsets.isEmpty()) {
-
-            QSet<QByteArray> encodingSet;
-            for (int i=0;i<charsets.size();i++) {
-                encodingSet.insert(charsets[i]->name);
-            }
-            encodingSet.remove(realEncoding);
-            foreach (const QByteArray& encodingName,encodingSet) {
-                if (encodingName == ENCODING_UTF8)
-                    continue;
-                if (tryLoadFileByEncoding(encodingName,file)) {
-                    //qDebug()<<encodingName;
-                    realEncoding = encodingName;
-                    return;
-                }
-            }
-        }
+        QByteArray content = file.readAll();
+        realEncoding = guessTextEncoding(content);
     } else {
         realEncoding = encoding;
     }

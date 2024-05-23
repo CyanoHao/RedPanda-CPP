@@ -40,6 +40,8 @@
 #include <QMimeDatabase>
 #include <windows.h>
 #endif
+#include <compact_enc_det/compact_enc_det.h>
+#include <compact_enc_det/compact_enc_det_hint_code.h>
 #include "charsetinfo.h"
 
 BaseError::BaseError(const QString &reason):
@@ -64,51 +66,23 @@ FileError::FileError(const QString &reason): BaseError(reason)
 
 }
 
-const QByteArray guessTextEncoding(const QByteArray& text){
-    bool allAscii;
-    int ii;
-    int size;
-    const QByteArray& s=text;
-    size = s.length();
-    if ( (size >= 3) && ((unsigned char)s[0]==0xEF) && ((unsigned char)s[1]==0xBB) && ((unsigned char)s[2]==0xBF)) {
-        return ENCODING_UTF8_BOM;
-    }
-    allAscii = true;
-    ii = 0;
-    while (ii < size) {
-        unsigned char ch = s[ii];
-        if (ch < 0x80 ) {
-            ii++; // is an ascii char
-        } else if (ch < 0xC0) { // value between 0x80 and 0xC0 is an invalid UTF-8 char
-            return ENCODING_SYSTEM_DEFAULT;
-        } else if (ch < 0xE0) { // should be an 2-byte UTF-8 char
-            if (ii>=size-1) {
-                return ENCODING_SYSTEM_DEFAULT;
-            }
-            unsigned char ch2=s[ii+1];
-            if ((ch2 & 0xC0) !=0x80)  {
-                return ENCODING_SYSTEM_DEFAULT;
-            }
-            allAscii = false;
-            ii+=2;
-        } else if (ch < 0xF0) { // should be an 3-byte UTF-8 char
-            if (ii>=size-2) {
-                return ENCODING_SYSTEM_DEFAULT;
-            }
-            unsigned char ch2=s[ii+1];
-            unsigned char ch3=s[ii+2];
-            if (((ch2 & 0xC0)!=0x80) ||  ((ch3 & 0xC0)!=0x80)) {
-                return ENCODING_SYSTEM_DEFAULT;
-            }
-            allAscii = false;
-            ii+=3;
-        } else { // invalid UTF-8 char
-            return ENCODING_SYSTEM_DEFAULT;
-        }
-    }
-    if (allAscii)
-        return ENCODING_ASCII;
-    return ENCODING_UTF8;
+QByteArray guessTextEncoding(const QByteArray& text){
+    bool isReliable;
+    int bytesConsumed;
+
+    Encoding encoding = CompactEncDet::DetectEncoding(
+        text.constData(), text.size(),
+        nullptr, nullptr, nullptr,
+        UNKNOWN_ENCODING,
+        UNKNOWN_LANGUAGE,
+        CompactEncDet::QUERY_CORPUS,
+        true,
+        &bytesConsumed,
+        &isReliable);
+
+    const char *name = MimeEncodingName(encoding);
+    qDebug() << "Detected encoding:" << name;
+    return QByteArray(name);
 }
 
 

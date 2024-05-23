@@ -184,6 +184,7 @@ function install_bin(target)
 end
 
 includes("RedPandaIDE")
+includes("libs/ced")
 if has_config("lua-addon") then
     includes("libs/lua")
 end

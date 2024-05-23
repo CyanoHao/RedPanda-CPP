@@ -20,6 +20,8 @@ msvc {
     DEFINES += NOMINMAX
 }
 
+INCLUDEPATH += ../ced
+
 SOURCES += qt_utils/utils.cpp \
 	qt_utils/charsetinfo.cpp
 
