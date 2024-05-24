@@ -1,5 +1,5 @@
 target("ced")
-    set_kind("static")
+    add_rules("qt.static")  -- let xmake handle CRT linkage
 
     add_files(
         "compact_enc_det/compact_enc_det.cc",

@@ -1,5 +1,5 @@
 target("lua")
-    set_kind("static")
+    add_rules("qt.static")  -- let xmake handle CRT linkage
 
     if is_os("macosx") then
         add_defines("LUA_USE_MACOSX")
