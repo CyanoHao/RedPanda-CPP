@@ -4,11 +4,13 @@ SUBDIRS += \
     RedPandaIDE \
     consolepauser \
     redpanda_qt_utils \
+    buildcore \
     qsynedit \
     lua
 
 consolepauser.subdir = tools/consolepauser
 redpanda_qt_utils.subdir = libs/redpanda_qt_utils
+buildcore.subdir = libs/buildcore
 qsynedit.subdir = libs/qsynedit
 lua.subdir = libs/lua
 

@@ -2,6 +2,8 @@
 #include <QObject>
 #include <QDebug>
 
+#include "compileroptionfilter.hpp"
+
 CompilerInfo::CompilerInfo(const QString &name):
     mName(name)
 {
@@ -77,6 +79,129 @@ PCompilerOption CompilerInfo::addNumberOption(const QString &key, const QString 
 void CompilerInfo::init()
 {
     prepareCompilerOptions();
+}
+
+void gccCompilerOption()
+{
+    using Option = CompilerOptionWithFilter<CompilerInfoFamilyGcc>;
+    using namespace CompilerOptionFilter;
+    QList<Option> options = {
+        // code generation
+        Option::ChoiceOption(
+            CC_CMD_OPT_OPTIMIZE,
+            QObject::tr("Optimization level (-Ox)"),
+            "-O",
+            {
+                {"-Og for debugging", "g", Or<GccAtLeast<4, 8>, ClangAtLeast<4>>{}},
+                {"-O1 for optimizing", "1"},
+                {"-Oz aggressively for size", "z", Or<GccAtLeast<12>, Clang>{}},
+                {"-Os for size", "s"},
+                {"-O2 for even more", "2"},
+                {"-O3 for yet more", "3"},
+                {"-Ofast against compliance", "fast", Or<GccAtLeast<4, 6>, Clang>{}},
+            }
+            // TODO: minimal clang version for `-Ofast` and `-Oz` are unsure (works in 3.3)
+        ),
+        Option::ChoiceOption(
+            CC_CMD_OPT_STD,
+            QObject::tr("C++ Language standard (-std)"),
+            "-std=",
+            {
+                {"ISO C++98", "c++98"},
+                {"ISO C++11", "c++0x", And<GccAtLeast<4, 3>, GccLessThan<4, 7>>{}},
+                {"ISO C++11", "c++11", Or<GccAtLeast<4, 7>, Clang>{}},
+                {"ISO C++14", "c++1y", And<GccAtLeast<4, 8>, GccLessThan<5>>{}},
+                {"ISO C++14", "c++14", Or<GccAtLeast<5>, ClangAtLeast<3, 5>>{}},
+                {"ISO C++17", "c++1z", Or<And<GccAtLeast<5>, GccLessThan<8>>, And<ClangAtLeast<3>, ClangLessThan<5>>>{}},
+                {"ISO C++17", "c++17", Or<GccAtLeast<8>, ClangAtLeast<5>>{}},
+                {"ISO C++20", "c++2a", Or<And<GccAtLeast<8>, GccLessThan<10>>, And<ClangAtLeast<5>, ClangLessThan<10>>>{}},
+                {"ISO C++20", "c++20", Or<GccAtLeast<10>, ClangAtLeast<10>>{}},
+                {"ISO C++23", "c++2b", And<ClangAtLeast<12>, ClangLessThan<17>>{}},
+                {"ISO C++23", "c++23", Or<GccAtLeast<11>, ClangAtLeast<17>>{}},
+                {"ISO C++26", "c++26", Or<GccAtLeast<14>, ClangAtLeast<17>>{}},
+                {"GNU C++98", "gnu++98"},
+                {"GNU C++11", "gnu++0x"},
+                {"GNU C++11", "gnu++11"},
+                {"GNU C++14", "gnu++1y"},
+                {"GNU C++14", "gnu++14"},
+                {"GNU C++17", "gnu++1z"},
+                {"GNU C++17", "gnu++17"},
+                {"GNU C++20", "gnu++2a"},
+                {"GNU C++20", "gnu++20"},
+                {"GNU C++23", "gnu++2b"},
+                {"GNU C++23", "gnu++23"},
+                {"GNU C++26", "gnu++2c"},
+            },
+            Or<GccAtLeast<3, 3>, Clang>{}
+        ),
+        Option::ChoiceOption(
+            C_CMD_OPT_STD,
+            QObject::tr("C Language standard (-std)"),
+            "-std=",
+            {
+                // GCC option for C standard changed from `-fstd=c??` to `-std=c??` in 3.0.
+                // We do not meant to support pre-3.0 versions so C90/C95/C99 are always truthy.
+                {"ISO C90", "c90"},
+                {"ISO C95", "iso9899:199409"},
+                {"ISO C99", "c99"},
+                {"ISO C11", "c1x", And<GccAtLeast<4, 6>, GccLessThan<4, 7>>{}},
+                {"ISO C11", "c11", Or<GccAtLeast<4, 7>, Clang>{}},
+                {"ISO C17", "c17", GccAtLeast<8>{}},
+                {"ISO C23", "c2x", And<GccAtLeast<9>, GccLessThan<14>>{}},
+                {"ISO C23", "c23", Or<GccAtLeast<14>, ClangAtLeast<18>>{}},
+                {"GNU C90", "gnu90"},
+                {"GNU C99", "gnu99"},
+                {"GNU C11", "gnu1x"},
+                {"GNU C11", "gnu11"},
+                {"GNU C17", "gnu17"},
+                {"GNU C23", "gnu2x"},
+                {"GNU C23", "gnu23"},
+            }
+        ),
+        Option::ChoiceOption(
+            CC_CMD_OPT_ARCH,
+            QObject::tr("µ-arch level (-march=)"),
+            "-march=",
+            {
+                {"x86-64", "x86-64"},
+                {"x86-64-v2 (SSE4.2)", "x86-64-v2"},
+                {"x86-64-v3 (AVX2)", "x86-64-v3"},
+                {"x86-64-v4 (AVX-512)", "x86-64-v4"},
+                {"armv8-a", "armv8-a"},
+                {"rv64g", "rv64g"},
+                {"rv64gc", "rv64gc"},
+                {"rv64gcv", "rv64gcv"},
+            }
+        ),
+        Option::ChoiceOption(
+            CC_CMD_OPT_POINTER_SIZE,
+            QObject::tr("x86 multilib (-mx)"),
+            "-m",
+            {
+                {"-m32", "32"},
+                {"-m64", "64"},
+                {"-mx32", "x32"},
+            }
+        ),
+        Option::ChoiceOption(
+            CC_CMD_OPT_POINTER_SIZE,
+            QObject::tr("MIPS ABI (-mabi=)"),
+            "-mabi=",
+            {
+                {"32", "32"},
+                {"n32", "n32"},
+                {"64", "64"},
+            }
+            // there are also abi options for aarch64, loongarch and riscv, but not actually used.
+            // TODO: investigate ilp32 on apple OSes (usage is reported on watchOS)
+        ),
+    };
+}
+
+void msvcCompilerOption()
+{
+    using Option = CompilerOptionWithFilter<CompilerInfoFamilyMsvc>;
+    QList<Option> options = {};
 }
 
 void CompilerInfo::prepareCompilerOptions()
@@ -232,11 +357,11 @@ CompilerInfoManager::CompilerInfoManager()
 {
     PCompilerInfo compilerInfo = std::make_shared<ClangCompilerInfo>();
     compilerInfo->init();
-    mInfos.insert(CompilerType::Clang, compilerInfo);
+    mInfos.insert(CompilerDriverFamily::Clang, compilerInfo);
 
     compilerInfo = std::make_shared<GCCCompilerInfo>();
     compilerInfo->init();
-    mInfos.insert(CompilerType::GCC, compilerInfo);
+    mInfos.insert(CompilerDriverFamily::GCC, compilerInfo);
 
     compilerInfo = std::make_shared<GCCUTF8CompilerInfo>();
     compilerInfo->init();
@@ -249,12 +374,12 @@ CompilerInfoManager::CompilerInfoManager()
 #endif
 }
 
-PCompilerInfo CompilerInfoManager::getInfo(CompilerType compilerType)
+PCompilerInfo CompilerInfoManager::getInfo(CompilerDriverFamily compilerType)
 {
     return getInstance()->mInfos.value(compilerType,PCompilerInfo());
 }
 
-bool CompilerInfoManager::hasCompilerOption(CompilerType compilerType, const QString &optKey)
+bool CompilerInfoManager::hasCompilerOption(CompilerDriverFamily compilerType, const QString &optKey)
 {
     PCompilerInfo pInfo = getInfo(compilerType);
     if (!pInfo)
@@ -262,7 +387,7 @@ bool CompilerInfoManager::hasCompilerOption(CompilerType compilerType, const QSt
     return pInfo->hasCompilerOption(optKey);
 }
 
-PCompilerOption CompilerInfoManager::getCompilerOption(CompilerType compilerType, const QString &optKey)
+PCompilerOption CompilerInfoManager::getCompilerOption(CompilerDriverFamily compilerType, const QString &optKey)
 {
     PCompilerInfo pInfo = getInfo(compilerType);
     if (!pInfo)
@@ -270,7 +395,7 @@ PCompilerOption CompilerInfoManager::getCompilerOption(CompilerType compilerType
     return pInfo->getCompilerOption(optKey);
 }
 
-QList<PCompilerOption> CompilerInfoManager::getCompilerOptions(CompilerType compilerType)
+QList<PCompilerOption> CompilerInfoManager::getCompilerOptions(CompilerDriverFamily compilerType)
 {
     PCompilerInfo pInfo = getInfo(compilerType);
     if (!pInfo)
@@ -278,7 +403,7 @@ QList<PCompilerOption> CompilerInfoManager::getCompilerOptions(CompilerType comp
     return pInfo->compilerOptions();
 }
 
-bool CompilerInfoManager::supportCovertingCharset(CompilerType compilerType)
+bool CompilerInfoManager::supportCovertingCharset(CompilerDriverFamily compilerType)
 {
     PCompilerInfo pInfo = getInfo(compilerType);
     if (!pInfo)
@@ -286,7 +411,7 @@ bool CompilerInfoManager::supportCovertingCharset(CompilerType compilerType)
     return pInfo->supportConvertingCharset();
 }
 
-bool CompilerInfoManager::supportStaticLink(CompilerType compilerType)
+bool CompilerInfoManager::supportStaticLink(CompilerDriverFamily compilerType)
 {
     PCompilerInfo pInfo = getInfo(compilerType);
     if (!pInfo)
@@ -294,7 +419,7 @@ bool CompilerInfoManager::supportStaticLink(CompilerType compilerType)
     return pInfo->supportStaticLink();
 }
 
-bool CompilerInfoManager::supportSyntaxCheck(CompilerType compilerType)
+bool CompilerInfoManager::supportSyntaxCheck(CompilerDriverFamily compilerType)
 {
     PCompilerInfo pInfo = getInfo(compilerType);
     if (!pInfo)
@@ -302,7 +427,7 @@ bool CompilerInfoManager::supportSyntaxCheck(CompilerType compilerType)
     return pInfo->supportSyntaxCheck();
 }
 
-bool CompilerInfoManager::forceUTF8InDebugger(CompilerType compilerType)
+bool CompilerInfoManager::forceUTF8InDebugger(CompilerDriverFamily compilerType)
 {
     PCompilerInfo pInfo = getInfo(compilerType);
     if (!pInfo)
@@ -320,7 +445,7 @@ PCompilerInfoManager CompilerInfoManager::getInstance()
     return instance;
 }
 
-void CompilerInfoManager::addInfo(CompilerType compilerType, PCompilerInfo info)
+void CompilerInfoManager::addInfo(CompilerDriverFamily compilerType, PCompilerInfo info)
 {
     getInstance()->mInfos.insert(compilerType,info);
 }

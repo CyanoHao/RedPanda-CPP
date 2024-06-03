@@ -86,7 +86,7 @@ void CompilerManager::compile(const QString& filename, const QByteArray& encodin
         mCompileIssueCount = 0;
         //deleted when thread finished
 #ifdef ENABLE_SDCC
-        if (pSettings->compilerSets().defaultSet()->compilerType()==CompilerType::SDCC) {
+        if (pSettings->compilerSets().defaultSet()->compilerType()==CompilerDriverFamily::SDCC) {
             mCompiler = new SDCCFileCompiler(filename,encoding,compileType,false);
         } else
 #endif

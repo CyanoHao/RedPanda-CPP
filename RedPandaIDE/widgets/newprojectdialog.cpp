@@ -122,7 +122,7 @@ void NewProjectDialog::addTemplate(const QString &filename)
     Settings::PCompilerSet pSet=pSettings->compilerSets().defaultSet();
     if (pSet) {
 #ifdef ENABLE_SDCC
-        if (pSet->compilerType()==CompilerType::SDCC) {
+        if (pSet->compilerType()==CompilerDriverFamily::SDCC) {
             if (t->options().type==ProjectType::MicroController)
                 mTemplates.append(t);
         } else

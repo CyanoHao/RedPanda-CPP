@@ -102,7 +102,7 @@ CONFIG(debug_and_release_target) {
     }
 }
 
-INCLUDEPATH += ../libs/qsynedit ../libs/redpanda_qt_utils ../libs/lua
+INCLUDEPATH += ../libs/qsynedit ../libs/redpanda_qt_utils ../libs/buildcore ../libs/lua
 
 LIBS += -L$$OUT_PWD/../libs/qsynedit/$${OBJ_OUT_PWD} -lqsynedit \
         -L$$OUT_PWD/../libs/redpanda_qt_utils/$${OBJ_OUT_PWD} -lredpanda_qt_utils \
@@ -142,6 +142,7 @@ SOURCES += \
     projectoptions.cpp \
     projecttemplate.cpp \
     settingsdialog/compilerautolinkwidget.cpp \
+    settingsdialog/compilerbuildmode.cpp \
     settingsdialog/debuggeneralwidget.cpp \
     settingsdialog/editorautosavewidget.cpp \
     settingsdialog/editorcodecompletionwidget.cpp \
@@ -278,6 +279,7 @@ HEADERS += \
     projectoptions.h \
     projecttemplate.h \
     settingsdialog/compilerautolinkwidget.h \
+    settingsdialog/compilerbuildmode.h \
     settingsdialog/debuggeneralwidget.h \
     settingsdialog/editorautosavewidget.h \
     settingsdialog/editorcodecompletionwidget.h \
@@ -378,6 +380,7 @@ HEADERS += \
 
 FORMS += \
     settingsdialog/compilerautolinkwidget.ui \
+    settingsdialog/compilerbuildmode.ui \
     settingsdialog/debuggeneralwidget.ui \
     settingsdialog/editorautosavewidget.ui \
     settingsdialog/editorcodecompletionwidget.ui \

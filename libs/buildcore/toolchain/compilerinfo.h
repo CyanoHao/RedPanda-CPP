@@ -3,7 +3,11 @@
 
 #include <QString>
 #include <QMap>
+#include <initializer_list>
 #include <memory>
+
+#include <qt_utils/enum.h>
+
 #define COMPILER_CLANG "Clang"
 #define COMPILER_GCC "GCC"
 #define COMPILER_GCC_UTF8 "GCC_UTF8"
@@ -72,15 +76,19 @@
 #define COMPILER_OPTION_ON "on"
 #define COMPILER_OPTION_OFF ""
 
-enum class CompilerType {
+BETTER_ENUM(CompilerDriverFamily, int,
+    Unknown = -1,
     GCC,
-    GCC_UTF8,
-    Clang,
-#ifdef ENABLE_SDCC
     SDCC,
-#endif
-    Unknown
-};
+    MSVC)
+
+BETTER_ENUM(CompilerDriverFamilyGccVariant, int,
+    GCC,
+    Clang)
+
+BETTER_ENUM(CompilerDriverFamilyMsvcVariant, int,
+    MSVC,
+    ClangCL)
 
 enum class CompilerOptionType {
     Checkbox,
@@ -89,9 +97,32 @@ enum class CompilerOptionType {
     Number
 };
 
+class CompilerInfoFamilyGcc;
+class CompilerInfoFamilySdcc;
+class CompilerInfoFamilyMsvc;
+
 using CompileOptionChoiceList = QList<QPair<QString,QString>>;
 
-typedef struct {
+namespace CompilerOptionFilter {
+    struct Truthy {
+        template <typename T>
+        bool operator()(const T &) const { return true; }
+    };
+}
+
+template <typename T>
+struct CompilerOptionChoice {
+    QString display;
+    QString value;
+    std::function<bool (const T &)> filter;
+
+    CompilerOptionChoice(const QString &display, const QString &value) :
+        CompilerOptionChoice(display, value, CompilerOptionFilter::Truthy{}) {}
+    CompilerOptionChoice(const QString &display, const QString &value, const std::function<bool (const T &)> &filter) :
+        display(display), value(value), filter(filter) {}
+};
+
+struct CompilerOption {
     QString key;
     QString name; // "Generate debugging info"
     QString section; // "C options"
@@ -107,7 +138,32 @@ typedef struct {
     int defaultValue;
     int minValue;
     int maxValue;
-} CompilerOption;
+};
+
+template <typename T>
+struct CompilerOptionWithFilter {
+    CompilerOption option;
+    std::function<bool (const T &)> filter;
+
+    static CompilerOption BooleanOption(
+        const QString &key, const QString &name, const QString &setting,
+        const std::function<bool (const T &)> &filter = CompilerOptionFilter::Truthy{}
+    );
+    static CompilerOption ChoiceOption(
+        const QString &key, const QString &name, const QString &setting,
+        const QList<CompilerOptionChoice<T>> &choices,
+        const std::function<bool (const T &)> &filter = CompilerOptionFilter::Truthy{}
+    );
+    static CompilerOption InputOption(
+        const QString &key, const QString &name, const QString &setting,
+        const std::function<bool (const T &)> &filter = CompilerOptionFilter::Truthy{}
+    );
+    static CompilerOption NumberOption(
+        const QString &key, const QString &name, const QString &setting,
+        int scale, int suffix, int defaultValue, int minValue, int maxValue,
+        const std::function<bool (const T &)> &filter = CompilerOptionFilter::Truthy{}
+    );
+};
 
 using PCompilerOption = std::shared_ptr<CompilerOption>;
 
@@ -127,8 +183,13 @@ public:
     void init();
 
     virtual bool supportConvertingCharset()=0;
+#ifdef Q_OS_WIN
     virtual bool forceUTF8InDebugger()=0;
     virtual bool forceUTF8InMakefile()=0;
+#else
+    constexpr bool forceUTF8InDebugger() { return true; }
+    constexpr bool forceUTF8InMakefile() { return true; }
+#endif
     virtual bool supportStaticLink()=0;
     virtual bool supportSyntaxCheck();
 protected:
@@ -155,10 +216,13 @@ protected:
                    int maxValue
                     );
     virtual void prepareCompilerOptions();
+    void invalidateCompilerOptions();
 protected:
     CompilerOptionMap mCompilerOptions;
     QList<PCompilerOption> mCompilerOptionList;
     QString mName;
+private:
+    bool mCompilerOptionValid;
 };
 
 using PCompilerInfo = std::shared_ptr<CompilerInfo>;
@@ -169,61 +233,55 @@ using PCompilerInfoManager = std::shared_ptr<CompilerInfoManager>;
 class CompilerInfoManager {
 public:
     CompilerInfoManager();
-    static PCompilerInfo getInfo(CompilerType compilerType);
-    static bool hasCompilerOption(CompilerType compilerType, const QString& optKey);
-    static PCompilerOption getCompilerOption(CompilerType compilerType, const QString& optKey);
-    static QList<PCompilerOption> getCompilerOptions(CompilerType compilerType);
-    static bool supportCovertingCharset(CompilerType compilerType);
-    static bool supportStaticLink(CompilerType compilerType);
-    static bool supportSyntaxCheck(CompilerType compilerType);
-    static bool forceUTF8InDebugger(CompilerType compilerType);
+    static PCompilerInfo getInfo(CompilerDriverFamily compilerType);
+    static bool hasCompilerOption(CompilerDriverFamily compilerType, const QString& optKey);
+    static PCompilerOption getCompilerOption(CompilerDriverFamily compilerType, const QString& optKey);
+    static QList<PCompilerOption> getCompilerOptions(CompilerDriverFamily compilerType);
+    static bool supportCovertingCharset(CompilerDriverFamily compilerType);
+    static bool supportStaticLink(CompilerDriverFamily compilerType);
+    static bool supportSyntaxCheck(CompilerDriverFamily compilerType);
+    static bool forceUTF8InDebugger(CompilerDriverFamily compilerType);
     static PCompilerInfoManager getInstance();
-    static void addInfo(CompilerType compilerType, PCompilerInfo info);
+    static void addInfo(CompilerDriverFamily compilerType, PCompilerInfo info);
 private:
     static PCompilerInfoManager instance;
-    QMap<CompilerType,PCompilerInfo> mInfos;
+    QMap<CompilerDriverFamily,PCompilerInfo> mInfos;
 };
 
-class ClangCompilerInfo: public CompilerInfo{
+class CompilerInfoFamilyGcc: public CompilerInfo {
 public:
-    ClangCompilerInfo();
+    CompilerInfoFamilyGcc();
     bool supportConvertingCharset() override;
+#ifdef Q_OS_WIN
     bool forceUTF8InDebugger() override;
     bool forceUTF8InMakefile() override;
+#endif
     bool supportStaticLink() override;
 };
 
-class GCCCompilerInfo: public CompilerInfo{
+class CompilerInfoFamilySdcc : public CompilerInfo{
 public:
-    GCCCompilerInfo();
+    CompilerInfoFamilySdcc();
     bool supportConvertingCharset() override;
+#ifdef Q_OS_WIN
     bool forceUTF8InDebugger() override;
     bool forceUTF8InMakefile() override;
-    bool supportStaticLink() override;
-};
-
-class GCCUTF8CompilerInfo: public CompilerInfo{
-public:
-    GCCUTF8CompilerInfo();
-    bool supportConvertingCharset() override;
-    bool forceUTF8InDebugger() override;
-    bool forceUTF8InMakefile() override;
-    bool supportStaticLink() override;
-};
-
-#ifdef ENABLE_SDCC
-class SDCCCompilerInfo: public CompilerInfo{
-public:
-    SDCCCompilerInfo();
-    bool supportConvertingCharset() override;
-    bool forceUTF8InDebugger() override;
-    bool forceUTF8InMakefile() override;
+#endif
     bool supportStaticLink() override;
     bool supportSyntaxCheck() override;
 protected:
     void prepareCompilerOptions() override;
 };
-#endif
 
+class CompilerInfoFamilyMsvc : public CompilerInfo{
+public:
+    CompilerInfoFamilyMsvc();
+    bool supportConvertingCharset() override;
+#ifdef Q_OS_WIN
+    bool forceUTF8InDebugger() override;
+    bool forceUTF8InMakefile() override;
+#endif
+    bool supportStaticLink() override;
+};
 
 #endif // COMPILERINFO_H

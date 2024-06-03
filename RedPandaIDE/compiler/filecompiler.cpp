@@ -85,7 +85,7 @@ bool FileCompiler::prepareForCompile()
             mOutputFile = changeFileExt(mFilename,compilerSet()->executableSuffix());
         }
 #ifdef ENABLE_SDCC
-        if (compilerSet()->compilerType()==CompilerType::SDCC) {
+        if (compilerSet()->compilerType()==CompilerDriverFamily::SDCC) {
             if (compilerSet()->executableSuffix()==SDCC_IHX_SUFFIX) {
 
             }

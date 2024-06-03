@@ -3175,7 +3175,7 @@ ParserLanguage Editor::calcParserLanguage()
     } else if (!inProject()) {
         pSet = pSettings->compilerSets().defaultSet();
     }
-    if (pSet && pSet->compilerType()==CompilerType::SDCC)
+    if (pSet && pSet->compilerType()==CompilerDriverFamily::SDCC)
         return ParserLanguage::SDCC;
 #endif
     return mUseCppSyntax?ParserLanguage::CPlusPlus:ParserLanguage::C;
@@ -5414,7 +5414,7 @@ void Editor::applySettings()
         }
 #ifdef ENABLE_SDCC
         if (!inProject() && pSettings->compilerSets().defaultSet()
-               && pSettings->compilerSets().defaultSet()->compilerType()==CompilerType::SDCC) {
+               && pSettings->compilerSets().defaultSet()->compilerType()==CompilerDriverFamily::SDCC) {
             for(auto it=SDCCKeywords.begin();it!=SDCCKeywords.end();++it)
                 set.insert(it.key());
         }

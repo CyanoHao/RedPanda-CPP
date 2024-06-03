@@ -3,7 +3,7 @@ set_languages("cxx17")
 target("RedPandaIDE")
     add_rules("qt.widgetapp", "qt.ts")
 
-    add_deps("redpanda_qt_utils", "qsynedit")
+    add_deps("buildcore", "redpanda_qt_utils", "qsynedit")
     add_frameworks("QtNetwork", "QtPrintSupport", "QtSvg")
     add_includedirs(".")
 
@@ -123,6 +123,7 @@ target("RedPandaIDE")
         "mainwindow",
         -- settings dialog
         "settingsdialog/compilerautolinkwidget",
+        "settingsdialog/compilerbuildmode",
         "settingsdialog/compilersetdirectorieswidget",
         "settingsdialog/compilersetoptionwidget",
         "settingsdialog/debuggeneralwidget",
@@ -228,7 +229,7 @@ target("RedPandaIDE")
 
     -- libs
 
-    add_links("redpanda_qt_utils", "qsynedit")
+    add_links("buildcore", "redpanda_qt_utils", "qsynedit")
     if is_os("windows") then
         add_links("psapi", "shlwapi")
     end
