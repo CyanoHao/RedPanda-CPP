@@ -559,8 +559,7 @@ RESOURCES += \
     codes.qrc \
     defaultconfigs.qrc \
     icons.qrc \
-    projecttemplates.qrc \
-    translations.qrc
+    projecttemplates.qrc
 
 RC_ICONS = images/devcpp.ico images/associations/c.ico images/associations/cpp.ico images/associations/dev.ico images/associations/c.ico images/associations/cpp.ico images/associations/h.ico images/associations/hpp.ico
 
@@ -573,9 +572,14 @@ theme_files.files += $$files(resources/themes/*.png, false)
 
 colorscheme_files.files += $$files(resources/colorschemes/*.scheme, false)
 
+qt_translation_files.files += $$[QT_INSTALL_TRANSLATIONS]/qt_zh_CN.qm
+qt_translation_files.base = $$[QT_INSTALL_TRANSLATIONS]
+qt_translation_files.prefix = /translations
+
 RESOURCES += iconsets_files
 RESOURCES += theme_files
 RESOURCES += colorscheme_files
+RESOURCES += qt_translation_files
 
 macos: {
     # Add needed executables into the main app bundle
