@@ -4,10 +4,12 @@
 | ------------------ | --- | --- | ----- |
 | MSYS2 + 基于 GNU 的 MinGW | ✔️ | ✔️ | ❌ |
 | MSYS2 + 基于 LLVM 的 MinGW | ✔️ | ✔️ | ✔️ |
-| [Windows XP](https://github.com/redpanda-cpp/qtbase-xp) + [MinGW UCRT](https://github.com/redpanda-cpp/mingw-lite) | ✔️ | ✔️ | ❌ |
+| [Windows NT 5.x](https://github.com/redpanda-cpp/qtbase-xp) + [MinGW Lite](https://github.com/redpanda-cpp/mingw-lite) | ✔️ | ✔️ | ❌ |
+| vcpkg + MSVC | ✔️ | ✔️ | ❌ |
+<!--
 | Qt.io + MinGW | ✔️ | ✔️ | ❌ |
 | Qt.io + MSVC | ✔️ | ✔️ | ❌ |
-| vcpkg + MSVC | ✔️ | ✔️ | ❌ |
+-->
 
 qmake 变量：
 - `PREFIX`：`$MAKE install` 的安装路径。
@@ -52,6 +54,7 @@ qmake 变量：
    mingw32-make install
    ```
 
+<!--
 ## Qt.io 的 Qt 库 + MinGW 工具链或 MSVC 工具链
 
 前置条件：
@@ -109,6 +112,7 @@ qmake 变量：
    )
    windeployqt "%INSTALL_DIR%\RedPandaIDE.exe"
    ```
+-->
 
 ## 高级选项：vcpkg 的 Qt 静态库 + MSVC 工具链
 

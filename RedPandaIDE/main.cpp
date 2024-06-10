@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
         if (transUtils.load("qt_utils_"+language,":/i18n/")) {
             app.installTranslator(&transUtils);
         }
-        if (transQt.load("qt_"+language,":/translations")) {
+        if (transQt.load("qtbase_"+language,":/translations")) {
             app.installTranslator(&transQt);
         }
     }

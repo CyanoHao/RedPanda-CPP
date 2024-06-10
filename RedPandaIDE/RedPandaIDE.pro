@@ -572,7 +572,7 @@ theme_files.files += $$files(resources/themes/*.png, false)
 
 colorscheme_files.files += $$files(resources/colorschemes/*.scheme, false)
 
-qt_translation_files.files += $$[QT_INSTALL_TRANSLATIONS]/qt_zh_CN.qm
+qt_translation_files.files += $$[QT_INSTALL_TRANSLATIONS]/qtbase_zh_CN.qm
 qt_translation_files.base = $$[QT_INSTALL_TRANSLATIONS]
 qt_translation_files.prefix = /translations
 

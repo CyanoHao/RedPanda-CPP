@@ -4,10 +4,12 @@
 | ---------------------------- | --- | --- | ----- |
 | MSYS2 + GNU-based MinGW | ✔️ | ✔️ | ❌ |
 | MSYS2 + LLVM-based MinGW | ✔️ | ✔️ | ✔️ |
-| [Windows XP](https://github.com/redpanda-cpp/qtbase-xp) + [MinGW UCRT](https://github.com/redpanda-cpp/mingw-lite) | ✔️ | ✔️ | ❌ |
+| [Windows NT 5.x](https://github.com/redpanda-cpp/qtbase-xp) + [MinGW Lite](https://github.com/redpanda-cpp/mingw-lite) | ✔️ | ✔️ | ❌ |
+| vcpkg + MSVC | ✔️ | ✔️ | ❌ |
+<!--
 | Qt.io + MinGW | ✔️ | ✔️ | ❌ |
 | Qt.io + MSVC | ✔️ | ✔️ | ❌ |
-| vcpkg + MSVC | ✔️ | ✔️ | ❌ |
+-->
 
 qmake variables:
 - `PREFIX`: where `$MAKE install` installs files to.
@@ -54,6 +56,7 @@ To build:
    mingw32-make install
    ```
 
+<!--
 ## Qt.io Qt Library with MinGW Toolchain or MSVC Toolchain
 
 Prerequisites:
@@ -111,6 +114,7 @@ To build:
    )
    windeployqt "%INSTALL_DIR%\RedPandaIDE.exe"
    ```
+-->
 
 ## Advanced Option: vcpkg Qt Static Library with MSVC Toolchain
 
