@@ -62,11 +62,9 @@ CompilerSet::CompilerSet(const QString& compilerFolder, const QString& c_prog):
 
         setUserInput();
 
-#ifdef ENABLE_SDCC
         if (mCompilerType == CompilerType::SDCC) {
             mExecutableSuffix = SDCC_HEX_SUFFIX;
         }
-#endif
         mFullLoaded = true;
     } else {
         mFullLoaded = false;
@@ -182,11 +180,9 @@ CompilerSet::CompilerSet(const QJsonObject &set) :
     } else if (compilerType == "Clang") {
         mCompilerType = CompilerType::Clang;
     }
-#if ENABLE_SDCC
     else if (compilerType == "SDCC") {
         mCompilerType = CompilerType::SDCC;
     }
-#endif
     else {
         mCompilerType = CompilerType::Unknown;
         mFullLoaded = false;
@@ -639,16 +635,11 @@ static void addExistingDirectory(QStringList& dirs, const QString& directory) {
 
 void CompilerSet::setProperties(const QString& binDir, const QString& c_prog)
 {
-#ifdef ENABLE_SDCC
     if (c_prog == SDCC_PROGRAM) {
         setSDCCProperties(binDir,c_prog);
     } else {
-#endif
-
         setGCCProperties(binDir,c_prog);
-#ifdef ENABLE_SDCC
     }
-#endif
 }
 
 void CompilerSet::setGCCProperties(const QString& binDir, const QString& c_prog)
@@ -776,7 +767,6 @@ void CompilerSet::setGCCProperties(const QString& binDir, const QString& c_prog)
     }
 }
 
-#ifdef ENABLE_SDCC
 void CompilerSet::setSDCCProperties(const QString& binDir, const QString& c_prog)
 {
     // We have tested before the call
@@ -808,7 +798,6 @@ void CompilerSet::setSDCCProperties(const QString& binDir, const QString& c_prog
 
     addExistingDirectory(mBinDirs, binDir);
 }
-#endif
 
 QStringList CompilerSet::defines(bool isCpp) {
     // get default defines
@@ -817,7 +806,6 @@ QStringList CompilerSet::defines(bool isCpp) {
     arguments.append("-E");
     arguments.append("-x");
     QString key;
-#ifdef ENABLE_SDCC
     if (mCompilerType==CompilerType::SDCC) {
         arguments.append("c");
         arguments.append("-V");
@@ -836,7 +824,6 @@ QStringList CompilerSet::defines(bool isCpp) {
                 arguments.append(pOption->setting + mCompileOptions[key]);
         }
     } else {
-#endif
         if (isCpp) {
             arguments.append("c++");
             key=CC_CMD_OPT_STD;
@@ -854,9 +841,7 @@ QStringList CompilerSet::defines(bool isCpp) {
         if (pOption && mCompileOptions.contains(CC_CMD_OPT_DEBUG_INFO)) {
             arguments.append(pOption->setting);
         }
-#ifdef ENABLE_SDCC
     }
-#endif
 
     if (mUseCustomCompileParams) {
         QStringList extraParams = parseArgumentsWithoutVariables(mCustomCompileParams);
@@ -871,7 +856,6 @@ QStringList CompilerSet::defines(bool isCpp) {
     // 'cpp.exe -dM -E -x c++ -std=c++17 NUL'
 //    qDebug()<<"------------------";
     QStringList result;
-#ifdef ENABLE_SDCC
     if (mCompilerType==CompilerType::SDCC) {
         QList<QByteArray> lines = output.split('\n');
         QByteArray currentLine;
@@ -896,9 +880,6 @@ QStringList CompilerSet::defines(bool isCpp) {
             }
         }
     } else {
-#else
-    {
-#endif
         QList<QByteArray> lines = output.split('\n');
         for (QByteArray& line:lines) {
             QByteArray trimmedLine = line.trimmed();
@@ -926,12 +907,10 @@ void CompilerSet::setExecutables()
             mCCompiler =  findProgramInBinDirs(GCC_PROGRAM);
         if (mCppCompiler.isEmpty())
             mCppCompiler = findProgramInBinDirs(GPP_PROGRAM);
-#ifdef ENABLE_SDCC
     } else if (mCompilerType == CompilerType::SDCC) {
         mCCompiler =  findProgramInBinDirs(SDCC_PROGRAM);
         if (mCCompiler.isEmpty())
             mCCompiler =  findProgramInBinDirs(SDCC_PROGRAM);
-#endif
     } else {
         mCCompiler =  findProgramInBinDirs(GCC_PROGRAM);
         mCppCompiler = findProgramInBinDirs(GPP_PROGRAM);
@@ -939,22 +918,16 @@ void CompilerSet::setExecutables()
         mDebugServer = findProgramInBinDirs(GDB_SERVER_PROGRAM);
     }
     mMake = findProgramInBinDirs(MAKE_PROGRAM);
-#ifdef Q_OS_WIN
     mResourceCompiler = findProgramInBinDirs(WINDRES_PROGRAM);
-#endif
 }
 
 void CompilerSet::setDirectories(const QString& binDir)
 {
-#ifdef ENABLE_SDCC
     if (mCompilerType == CompilerType::SDCC) {
         setSDCCDirectories(binDir);
     } else {
-#endif
         setGCCDirectories(binDir);
-#ifdef ENABLE_SDCC
     }
-#endif
 }
 
 void CompilerSet::setGCCDirectories(const QString& binDir)
@@ -1099,7 +1072,6 @@ void CompilerSet::setGCCDirectories(const QString& binDir)
     }
 }
 
-#ifdef ENABLE_SDCC
 void CompilerSet::setSDCCDirectories(const QString& binDir)
 {
     QString folder = QFileInfo(binDir).absolutePath();
@@ -1161,7 +1133,6 @@ void CompilerSet::setSDCCDirectories(const QString& binDir)
     }
 
 }
-#endif
 
 int CompilerSet::mainVersion() const
 {
@@ -1183,10 +1154,8 @@ bool CompilerSet::canCompileC() const
 
 bool CompilerSet::canCompileCPP() const
 {
-#ifdef ENABLE_SDCC
     if (mCompilerType==CompilerType::SDCC)
         return false;
-#endif
     return fileExists(mCppCompiler);
 }
 
@@ -1197,10 +1166,8 @@ bool CompilerSet::canMake() const
 
 bool CompilerSet::canDebug() const
 {
-#ifdef ENABLE_SDCC
     if (mCompilerType==CompilerType::SDCC)
         return false;
-#endif
     return fileExists(mDebugger);
 }
 
@@ -1208,14 +1175,10 @@ void CompilerSet::setUserInput()
 {
     mUseCustomCompileParams = false;
     mUseCustomLinkParams = false;
-#ifdef ENABLE_SDCC
     if (mCompilerType==CompilerType::SDCC) {
         mAutoAddCharsetParams = false;
         mStaticLink = false;
     } else {
-#else
-    {
-#endif
         mAutoAddCharsetParams = true;
         mStaticLink = true;
     }
@@ -1530,13 +1493,9 @@ bool CompilerSets::addSets(const QString &folder, const QString& c_prog) {
     PCompilerSet baseSet = addSet(folder,c_prog);
     if (!baseSet || baseSet->name().isEmpty())
         return false;
-#if ENABLE_SDCC
     if (c_prog == SDCC_PROGRAM) {
         baseSet->setCompileOption(SDCC_OPT_NOSTARTUP,COMPILER_OPTION_ON);
     } else {
-#else
-    {
-#endif
         QString baseName = baseSet->name();
         QString platformName;
         if (isTarget64Bit(baseSet->target())) {
@@ -1600,13 +1559,11 @@ bool CompilerSets::addSets(const QString &folder)
         addSets(folder,CLANG_PROGRAM);
         found=true;
     }
-#ifdef ENABLE_SDCC
     //qDebug()<<folder;
     if (fileExists(folder, SDCC_PROGRAM)) {
         addSets(folder,SDCC_PROGRAM);
         found=true;
     }
-#endif
     return found;
 }
 
@@ -2007,10 +1964,8 @@ Settings::PCompilerSet CompilerSets::loadSet(int index)
         pSet->setCompilerType(CompilerType::GCC);
     } else if (temp==COMPILER_GCC_UTF8) {
         pSet->setCompilerType(CompilerType::GCC_UTF8);
-#ifdef ENABLE_SDCC
     } else if (temp==COMPILER_SDCC) {
         pSet->setCompilerType(CompilerType::SDCC);
-#endif
     } else {
         pSet->setCompilerType((CompilerType)mSettings->mSettings.value("CompilerType").toInt());
     }

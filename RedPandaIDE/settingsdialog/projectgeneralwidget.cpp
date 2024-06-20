@@ -60,11 +60,7 @@ void ProjectGeneralWidget::doLoad()
     std::shared_ptr<Project> project = pMainWindow->project();
     if (!project)
         return;
-#ifdef ENABLE_SDCC
     bool isMicroControllerProject = (project->options().type==ProjectType::MicroController);
-#else
-    bool isMicroControllerProject = false;
-#endif
     ui->cbType->setVisible(!isMicroControllerProject);
     ui->cbDefaultCpp->setVisible(!isMicroControllerProject);
     ui->cbSupportXPTheme->setVisible(!isMicroControllerProject);

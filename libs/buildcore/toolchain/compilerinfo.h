@@ -11,9 +11,7 @@
 #define COMPILER_CLANG "Clang"
 #define COMPILER_GCC "GCC"
 #define COMPILER_GCC_UTF8 "GCC_UTF8"
-#ifdef ENABLE_SDCC
 #define COMPILER_SDCC "SDCC"
-#endif
 
 #define C_CMD_OPT_STD "c_cmd_opt_std"
 
@@ -52,7 +50,6 @@
 #define CC_CMD_OPT_STOP_AFTER_PREPROCESSING "cc_cmd_opt_stop_after_preprocessing"
 #define CC_CMD_OPT_USE_PIPE "cc_cmd_opt_use_pipe"
 
-#ifdef ENABLE_SDCC
 #define SDCC_CMD_OPT_PROCESSOR "sdcc_cmd_opt_processor"
 #define SDCC_CMD_OPT_STD "sdcc_cmd_opt_std"
 #define SDCC_OPT_MEMORY_MODEL "sdcc_opt_memory_model"
@@ -71,7 +68,6 @@
 #define SDCC_OPT_STACK_LOC "sdcc_opt_stack_loc"
 #define SDCC_OPT_DATA_LOC "sdcc_opt_data_loc"
 #define SDCC_OPT_NOSTARTUP "sdcc_opt_nostartup"
-#endif
 
 #define COMPILER_OPTION_ON "on"
 #define COMPILER_OPTION_OFF ""

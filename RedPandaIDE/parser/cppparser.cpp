@@ -2300,7 +2300,6 @@ void CppParser::checkAndHandleMethodOrVar(KeywordType keywordType, int maxIndex)
                                       isStatic, maxIndex);
                 return;
             } else if (mTokenizer[mIndex + 1]->text == '(') {
-#ifdef ENABLE_SDCC
                 if (mLanguage==ParserLanguage::SDCC && mTokenizer[mIndex]->text=="__at") {
                     if (!sName.isEmpty()) {
                         sType = sType+" "+sName;
@@ -2317,7 +2316,6 @@ void CppParser::checkAndHandleMethodOrVar(KeywordType keywordType, int maxIndex)
                     mIndex=idx+1;
                     continue;
                 }
-#endif
                 if (mIndex+2<maxIndex && mTokenizer[mIndex+2]->text == '*') {
                     //foo(*blabla), it's a function pointer var
                     handleVar(sType+" "+sName,isExtern,isStatic, maxIndex);
@@ -6766,12 +6764,10 @@ void CppParser::setLanguage(ParserLanguage newLanguage)
         mLanguage = newLanguage;
         mCppKeywords = CppKeywords;
         mCppTypeKeywords = CppTypeKeywords;
-#ifdef ENABLE_SDCC
         if (mLanguage == ParserLanguage::SDCC) {
             mCppKeywords.insert(SDCCKeywords);
             mCppTypeKeywords.unite(SDCCTypeKeywords);
         }
-#endif
     }
 }
 

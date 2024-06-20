@@ -139,7 +139,6 @@ void ProjectCompilerWidget::on_cbCompilerSet_currentIndexChanged(int index)
         connectInputs();
     });
     Settings::PCompilerSet pSet=pSettings->compilerSets().getSet(index);
-#ifdef ENABLE_SDCC
     if (pSet) {
         if (project->options().type==ProjectType::MicroController) {
             if (pSet->compilerType()!=CompilerType::SDCC) {
@@ -161,7 +160,6 @@ void ProjectCompilerWidget::on_cbCompilerSet_currentIndexChanged(int index)
             }
         }
     }
-#endif
     if (QMessageBox::warning(
                 this,
                 tr("Change Project Compiler Set"),

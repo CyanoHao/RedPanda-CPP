@@ -367,11 +367,9 @@ CompilerInfoManager::CompilerInfoManager()
     compilerInfo->init();
     mInfos.insert(CompilerType::GCC_UTF8, compilerInfo);
 
-#ifdef ENABLE_SDCC
     compilerInfo = std::make_shared<SDCCCompilerInfo>();
     compilerInfo->init();
     mInfos.insert(CompilerType::SDCC, compilerInfo);
-#endif
 }
 
 PCompilerInfo CompilerInfoManager::getInfo(CompilerDriverFamily compilerType)
@@ -522,7 +520,6 @@ bool GCCUTF8CompilerInfo::supportStaticLink()
     return true;
 }
 
-#ifdef ENABLE_SDCC
 SDCCCompilerInfo::SDCCCompilerInfo():CompilerInfo(COMPILER_SDCC)
 {
 
@@ -623,4 +620,3 @@ void SDCCCompilerInfo::prepareCompilerOptions()
     addOption(SDCC_OPT_CODE_LOC, QObject::tr("Code segment location"), groupName, false, false, true, "--code-loc",CompilerOptionType::Input);
     addOption(SDCC_OPT_CODE_SIZE, QObject::tr("Code segment size"), groupName, false, false, true, "--code-size",CompilerOptionType::Input);
 }
-#endif

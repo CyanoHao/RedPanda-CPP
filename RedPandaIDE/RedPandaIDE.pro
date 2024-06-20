@@ -10,9 +10,6 @@ CONFIG += embed_translations
 # uncomment the following line to enable vcs (git) support
 # CONFIG += ENABLE_VCS
 
-# uncomment the following line to enable sdcc support
-CONFIG += ENABLE_SDCC
-
 # uncomment the following line to enable Lua-based add-on support
 # CONFIG += ENABLE_LUA_ADDON
 
@@ -122,6 +119,8 @@ SOURCES += \
     compiler/compilermanager.cpp \
     compiler/executablerunner.cpp \
     compiler/filecompiler.cpp \
+    compiler/sdccfilecompiler.cpp \
+    compiler/sdccprojectcompiler.cpp \
     compiler/stdincompiler.cpp \
     debugger/debugger.cpp \
     debugger/gdbmidebugger.cpp \
@@ -258,6 +257,8 @@ HEADERS += \
     compiler/ojproblemcasesrunner.h \
     compiler/projectcompiler.h \
     compiler/runner.h \
+    compiler/sdccfilecompiler.h \
+    compiler/sdccprojectcompiler.h \
     compiler/stdincompiler.h \
     debugger/debugger.h \
     debugger/gdbmidebugger.h \
@@ -436,19 +437,6 @@ FORMS += \
     widgets/searchdialog.ui \
     widgets/searchinfiledialog.ui \
     widgets/signalmessagedialog.ui
-
-ENABLE_SDCC {
-    DEFINES += ENABLE_SDCC
-
-    SOURCES += \
-        compiler/sdccfilecompiler.cpp \
-        compiler/sdccprojectcompiler.cpp
-
-    HEADERS += \
-        compiler/sdccfilecompiler.h \
-        compiler/sdccprojectcompiler.h
-
-}
 
 ENABLE_LUA_ADDON {
     DEFINES += ENABLE_LUA_ADDON

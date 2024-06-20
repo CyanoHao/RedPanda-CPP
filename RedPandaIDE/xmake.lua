@@ -80,6 +80,8 @@ target("RedPandaIDE")
         "compiler/ojproblemcasesrunner",
         "compiler/projectcompiler",
         "compiler/runner",
+        "compiler/sdccfilecompiler",
+        "compiler/sdccprojectcompiler",
         "compiler/stdincompiler",
         -- debugger
         "debugger/dapdebugger",
@@ -201,12 +203,6 @@ target("RedPandaIDE")
             "addon/executor.cpp",
             "addon/runtime.cpp")
         add_links("lua")
-    end
-
-    if has_config("sdcc") then
-        add_moc_classes(
-            "compiler/sdccfilecompiler",
-            "compiler/sdccprojectcompiler")
     end
 
     if has_config("vcs") then

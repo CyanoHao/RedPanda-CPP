@@ -52,11 +52,6 @@ option("lua-addon")
     set_showmenu(true)
     add_defines("ENABLE_LUA_ADDON")
 
-option("sdcc")
-    set_default(true)
-    set_showmenu(true)
-    add_defines("ENABLE_SDCC")
-
 option("vcs")
     set_default(false)
     set_showmenu(true)
