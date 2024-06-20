@@ -3,7 +3,7 @@
 
 #include <QString>
 #include <QMap>
-#include <initializer_list>
+#include <QVariant>
 #include <memory>
 
 #include <qt_utils/enum.h>
@@ -86,17 +86,6 @@ BETTER_ENUM(CompilerDriverFamilyMsvcVariant, int,
     MSVC,
     ClangCL)
 
-enum class CompilerOptionType {
-    Checkbox,
-    Choice,
-    Input,
-    Number
-};
-
-class CompilerInfoFamilyGcc;
-class CompilerInfoFamilySdcc;
-class CompilerInfoFamilyMsvc;
-
 using CompileOptionChoiceList = QList<QPair<QString,QString>>;
 
 namespace CompilerOptionFilter {
@@ -118,7 +107,17 @@ struct CompilerOptionChoice {
         display(display), value(value), filter(filter) {}
 };
 
-struct CompilerOption {
+class CompilerInfo;
+
+enum class CompilerOptionType {
+    Args,
+    Boolean,
+    Choice,
+    Number,
+    String,
+};
+
+struct CompilerOptionBase {
     QString key;
     QString name; // "Generate debugging info"
     QString section; // "C options"
@@ -126,7 +125,7 @@ struct CompilerOption {
     bool isCpp; // True (C++ option?) - can be both C and C++ option...
     bool isLinker; // Is it a linker param
     QString setting; // "-g3"
-    CompilerOptionType type;
+
     CompileOptionChoiceList choices; // replaces "Yes/No" standard choices (max 30 different choices)
     /* for spin control */
     int scale; //Scale
@@ -134,36 +133,25 @@ struct CompilerOption {
     int defaultValue;
     int minValue;
     int maxValue;
+
+    virtual CompilerOptionType type() = 0;
+    virtual bool available(const CompilerInfo &info [[maybe_unused]]) const { return true; };
+    virtual void apply(const CompilerInfo &info, const QVariant &value, QStringList &args) const = 0;
 };
 
-template <typename T>
-struct CompilerOptionWithFilter {
-    CompilerOption option;
-    std::function<bool (const T &)> filter;
-
-    static CompilerOption BooleanOption(
-        const QString &key, const QString &name, const QString &setting,
-        const std::function<bool (const T &)> &filter = CompilerOptionFilter::Truthy{}
-    );
-    static CompilerOption ChoiceOption(
-        const QString &key, const QString &name, const QString &setting,
-        const QList<CompilerOptionChoice<T>> &choices,
-        const std::function<bool (const T &)> &filter = CompilerOptionFilter::Truthy{}
-    );
-    static CompilerOption InputOption(
-        const QString &key, const QString &name, const QString &setting,
-        const std::function<bool (const T &)> &filter = CompilerOptionFilter::Truthy{}
-    );
-    static CompilerOption NumberOption(
-        const QString &key, const QString &name, const QString &setting,
-        int scale, int suffix, int defaultValue, int minValue, int maxValue,
-        const std::function<bool (const T &)> &filter = CompilerOptionFilter::Truthy{}
-    );
+struct CompilerOptionBooleanBase : CompilerOptionBase {
+    CompilerOptionType type() { return CompilerOptionType::Boolean; }
 };
 
-using PCompilerOption = std::shared_ptr<CompilerOption>;
+struct CompilerOptionBooleanSimple : CompilerOptionBooleanBase {
+    QString arg;
 
-using CompilerOptionMap=QMap<QString,PCompilerOption>;
+    void apply(const CompilerInfo &info, const QVariant &value, QStringList &args) const override;
+};
+
+using PCompilerOption = std::shared_ptr<CompilerOptionBase>;
+
+using CompilerOptionMap = QMap<QString, PCompilerOption>;
 
 class CompilerInfo
 {
