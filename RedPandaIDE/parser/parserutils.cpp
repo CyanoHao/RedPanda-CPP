@@ -26,10 +26,8 @@
 QStringList CppDirectives;
 QStringList JavadocTags;
 QMap<QString,KeywordType> CppKeywords;
-#ifdef ENABLE_SDCC
 QMap<QString,KeywordType> SDCCKeywords;
 QSet<QString> SDCCTypeKeywords;
-#endif
 QSet<QString> CppControlKeyWords;
 QSet<QString> CppTypeKeywords;
 QSet<QString> CKeywords;
@@ -167,7 +165,6 @@ void initParser()
     CppKeywords.insert("void",KeywordType::None);
     CppKeywords.insert("wchar_t",KeywordType::None);
 
-#ifdef ENABLE_SDCC
     SDCCKeywords.insert("__sfr",KeywordType::None);
     SDCCKeywords.insert("__sfr16",KeywordType::None);
     SDCCKeywords.insert("__sfr32",KeywordType::None);
@@ -196,7 +193,6 @@ void initParser()
     SDCCTypeKeywords.insert("__sfr32");
     SDCCTypeKeywords.insert("__sbit");
     SDCCTypeKeywords.insert("__bit");
-#endif
     // type keywords
     CppTypeKeywords.insert("auto");
     CppTypeKeywords.insert("bool");

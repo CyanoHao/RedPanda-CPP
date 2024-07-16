@@ -885,6 +885,8 @@ private:
 
     QComboBox *mCompilerSet;
     std::shared_ptr<CompilerManager> mCompilerManager;
+    QComboBox *mBuildMode;
+
     std::shared_ptr<Debugger> mDebugger;
     CPUDialog *mCPUDialog;
     SearchInFileDialog *mSearchInFilesDialog;

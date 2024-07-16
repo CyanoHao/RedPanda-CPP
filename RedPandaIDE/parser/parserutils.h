@@ -28,9 +28,7 @@ using GetFileStreamCallBack = std::function<bool (const QString&, QStringList&)>
 enum class ParserLanguage {
     C,
     CPlusPlus,
-#ifdef ENABLE_SDCC
     SDCC,
-#endif
 };
 
 inline uint qHash(const ParserLanguage& value, uint seed) {
@@ -362,10 +360,8 @@ using PParsedFileInfo = std::shared_ptr<ParsedFileInfo>;
 extern QStringList CppDirectives;
 extern QStringList JavadocTags;
 extern QMap<QString,KeywordType> CppKeywords;
-#ifdef ENABLE_SDCC
 extern QMap<QString,KeywordType> SDCCKeywords;
 extern QSet<QString> SDCCTypeKeywords;
-#endif
 extern QSet<QString> CppControlKeyWords;
 extern QSet<QString> CKeywords;
 extern QSet<QString> CppTypeKeywords;

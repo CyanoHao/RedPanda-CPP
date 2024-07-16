@@ -248,10 +248,8 @@ PSettingsDialog SettingsDialog::projectOptionDialog()
 
     bool isMicroControllerProject=false;
     std::shared_ptr<Project> project = pMainWindow->project();
-#ifdef ENABLE_SDCC
     if (project)
         isMicroControllerProject=(project->options().type==ProjectType::MicroController);
-#endif
 
     dialog->setWindowTitle(tr("Project Options"));
 

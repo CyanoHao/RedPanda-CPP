@@ -3168,16 +3168,14 @@ void Editor::initParser()
 
 ParserLanguage Editor::calcParserLanguage()
 {
-#ifdef ENABLE_SDCC
     Settings::PCompilerSet pSet;
     if (inProject()) {
         pSet = pSettings->compilerSets().getSet(mProject->options().compilerSet);
     } else if (!inProject()) {
         pSet = pSettings->compilerSets().defaultSet();
     }
-    if (pSet && pSet->compilerType()==CompilerType::SDCC)
+    if (pSet && pSet->compilerType()==CompilerDriverFamily::SDCC)
         return ParserLanguage::SDCC;
-#endif
     return mUseCppSyntax?ParserLanguage::CPlusPlus:ParserLanguage::C;
 }
 
@@ -3543,14 +3541,12 @@ void Editor::showCompletion(const QString& preWord,bool autoComplete, CodeComple
         case ParserLanguage::C:
             keywords = CKeywords;
             break;
-#ifdef ENABLE_SDCC
         case ParserLanguage::SDCC:
             keywords = CKeywords;
             for(auto it = SDCCKeywords.begin();it!=SDCCKeywords.end();++it) {
                 keywords.insert(it.key());
             }
             break;
-#endif
         }
         if (pSettings->editor().enableCustomCTypeKeywords()) {
             foreach (const QString& keyword, pSettings->editor().customCTypeKeywords()) {
@@ -5412,13 +5408,11 @@ void Editor::applySettings()
             foreach(const QString& s, pSettings->editor().customCTypeKeywords())
                 set.insert(s);
         }
-#ifdef ENABLE_SDCC
         if (!inProject() && pSettings->compilerSets().defaultSet()
-               && pSettings->compilerSets().defaultSet()->compilerType()==CompilerType::SDCC) {
+               && pSettings->compilerSets().defaultSet()->compilerType()==CompilerDriverFamily::SDCC) {
             for(auto it=SDCCKeywords.begin();it!=SDCCKeywords.end();++it)
                 set.insert(it.key());
         }
-#endif
         ((QSynedit::CppSyntaxer*)(syntaxer().get()))->setCustomTypeKeywords(set);
     }
 

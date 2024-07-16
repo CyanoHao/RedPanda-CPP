@@ -130,7 +130,6 @@ QString Project::outputFilename() const
         exeFileName = mOptions.customOutputFilename;
     } else {
         switch(mOptions.type) {
-#ifdef ENABLE_SDCC
         case ProjectType::MicroController: {
             Settings::PCompilerSet pSet=pSettings->compilerSets().getSet(mOptions.compilerSet);
             if (pSet)
@@ -139,7 +138,6 @@ QString Project::outputFilename() const
                 exeFileName = changeFileExt(extractFileName(mFilename),SDCC_HEX_SUFFIX);
             }
             break;
-#endif
         case ProjectType::StaticLib:
             exeFileName = changeFileExt(extractFileName(mFilename),STATIC_LIB_EXT);
             if (!exeFileName.startsWith("lib"))

@@ -195,10 +195,15 @@ MainWindow::MainWindow(QWidget *parent)
     mCompilerSet->setMinimumWidth(200);
     mCompilerSet->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     ui->toolbarCompilerSet->insertWidget(ui->actionCompiler_Options, mCompilerSet);
-    ui->toolbarCompilerSet->insertSeparator(ui->actionCompiler_Options);
     connect(mCompilerSet,QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &MainWindow::onCompilerSetChanged);
     //updateCompilerSet();
+
+    mBuildMode = new QComboBox();
+    mBuildMode->setMinimumWidth(100);
+    mBuildMode->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    ui->toolbarCompilerSet->insertWidget(ui->actionCompiler_Options, mBuildMode);
+    ui->toolbarCompilerSet->insertSeparator(ui->actionCompiler_Options);
 
     mCompilerManager = std::make_shared<CompilerManager>();
     mDebugger = std::make_shared<Debugger>();
@@ -832,9 +837,7 @@ void MainWindow::updateCompileActions(const Editor *e)
                     case FileType::CSource:
                         canCompile = set->canCompileC();
                         //qDebug()<<(int)set->compilerType();
-#ifdef ENABLE_SDCC
                         if (set->compilerType()!=CompilerType::SDCC)
-#endif
                         {
                             canGenerateAssembly = canCompile;
                             canRun = canCompile ;

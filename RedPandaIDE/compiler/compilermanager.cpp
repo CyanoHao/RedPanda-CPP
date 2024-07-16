@@ -17,10 +17,8 @@
 #include "compilermanager.h"
 #include "filecompiler.h"
 #include "../project.h"
-#ifdef ENABLE_SDCC
 #include "sdccfilecompiler.h"
 #include "sdccprojectcompiler.h"
-#endif
 #include "stdincompiler.h"
 #include "../mainwindow.h"
 #include "executablerunner.h"
@@ -85,11 +83,9 @@ void CompilerManager::compile(const QString& filename, const QByteArray& encodin
         mCompileErrorCount = 0;
         mCompileIssueCount = 0;
         //deleted when thread finished
-#ifdef ENABLE_SDCC
-        if (pSettings->compilerSets().defaultSet()->compilerType()==CompilerType::SDCC) {
+        if (pSettings->compilerSets().defaultSet()->compilerType()==CompilerDriverFamily::SDCC) {
             mCompiler = new SDCCFileCompiler(filename,encoding,compileType,false);
         } else
-#endif
             mCompiler = new FileCompiler(filename,encoding,compileType,false);
         mCompiler->setRebuild(rebuild);
         connect(mCompiler, &Compiler::finished, mCompiler, &QObject::deleteLater);
@@ -491,11 +487,9 @@ void CompilerManager::onSyntaxCheckIssue(PCompileIssue issue)
 
 ProjectCompiler *CompilerManager::createProjectCompiler(std::shared_ptr<Project> project)
 {
-#ifdef ENABLE_SDCC
     if (project->options().type==ProjectType::MicroController)
         return new SDCCProjectCompiler(project);
     else
-#endif
         return new ProjectCompiler(project);
 }
 
