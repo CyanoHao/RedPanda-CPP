@@ -1,10 +1,12 @@
 #ifndef COMPILERINFO_H
 #define COMPILERINFO_H
 
+#include <memory>
+
 #include <QString>
 #include <QMap>
 #include <QVariant>
-#include <memory>
+#include <QVersionNumber>
 
 #include <qt_utils/enum.h>
 
@@ -96,6 +98,20 @@ struct CompilerOptionChoice {
 
     std::function<bool (const CompilerInfo &info)> availability;
     std::function<QString (const CompilerOptionChoice &self, const CompilerInfo &info)> filter;
+
+public:
+    CompilerOptionChoice(const QString &display, const QString &value);
+    CompilerOptionChoice(
+        const QString &display,
+        const QString &value,
+        const std::function<bool (const CompilerInfo &info)> &availability
+    );
+    CompilerOptionChoice(
+        const QString &display,
+        const QString &value,
+        const std::function<bool (const CompilerInfo &info)> &availability,
+        const std::function<QString (const CompilerOptionChoice &self, const CompilerInfo &info)> &filter
+    );
 };
 
 struct CompilerOption {
@@ -153,6 +169,10 @@ public:
 #endif
     virtual bool supportStaticLink()=0;
     virtual bool supportSyntaxCheck();
+
+    QVersionNumber version() { return mVersion; }
+    void setVersion(const QVersionNumber &version) { mVersion = version; }
+
 protected:
     PCompilerOption addOption(const QString& key,
                    const QString& name,
@@ -178,11 +198,14 @@ protected:
                     );
     virtual void prepareCompilerOptions();
     void invalidateCompilerOptions();
+
 protected:
     CompilerOptionMap mCompilerOptions;
     QList<PCompilerOption> mCompilerOptionList;
     QString mName;
+
 private:
+    QVersionNumber mVersion;
     bool mCompilerOptionValid;
 };
 

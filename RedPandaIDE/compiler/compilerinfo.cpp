@@ -45,7 +45,38 @@ namespace CompilerOptionFilter
     }
 }
 
+CompilerOptionChoice::CompilerOptionChoice(const QString &display, const QString &value):
+    display(display),
+    value(value),
+    availability(CompilerOptionFilter::always),
+    filter(CompilerOptionFilter::asIs)
+{
+}
 
+CompilerOptionChoice::CompilerOptionChoice(
+    const QString &display,
+    const QString &value,
+    const std::function<bool (const CompilerInfo &info)> &availability
+):
+    display(display),
+    value(value),
+    availability(availability),
+    filter(CompilerOptionFilter::asIs)
+{
+}
+
+CompilerOptionChoice::CompilerOptionChoice(
+    const QString &display,
+    const QString &value,
+    const std::function<bool (const CompilerInfo &info)> &availability,
+    const std::function<QString (const CompilerOptionChoice &self, const CompilerInfo &info)> &filter
+):
+    display(display),
+    value(value),
+    availability(availability),
+    filter(filter)
+{
+}
 
 CompilerInfo::CompilerInfo(const QString &name):
     mName(name)
