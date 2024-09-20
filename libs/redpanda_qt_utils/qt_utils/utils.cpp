@@ -364,7 +364,7 @@ QStringList readFileToLines(const QString &fileName)
         if (!charsets.isEmpty()) {
             QSet<QString> encodingSet;
             for (int i=0;i<charsets.size();i++) {
-                encodingSet.insert(charsets[i]->name);
+                encodingSet.insert(charsets[i]->qtName);
             }
             encodingSet.remove(realEncoding);
             foreach (const QString& encodingName,encodingSet) {

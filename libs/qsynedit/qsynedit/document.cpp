@@ -679,7 +679,7 @@ void Document::loadFromFile(const QString& filename, const QByteArray& encoding,
 
             QSet<QByteArray> encodingSet;
             for (int i=0;i<charsets.size();i++) {
-                encodingSet.insert(charsets[i]->name);
+                encodingSet.insert(charsets[i]->qtName);
             }
             encodingSet.remove(realEncoding);
             foreach (const QByteArray& encodingName,encodingSet) {

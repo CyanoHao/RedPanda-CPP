@@ -18,23 +18,27 @@
 #define QT_UTILS_CHARSETINFO_H
 #include <QByteArray>
 #include <QString>
-#include <memory>
 #include <QObject>
+#include <memory>
+#include <optional>
 
 struct CharsetInfo{
-    int codepage;
-    QByteArray name;
-    QString language;
-    QString localeName;
-    bool enabled;
-    explicit CharsetInfo(int codepage,
-                         const QByteArray& name,
-                         const QString& language,
-                         const QString& locale,
-                         bool enabled);
-};
+    // Qt encoding name
+    QByteArray qtName;
 
-using PCharsetInfo = std::shared_ptr<CharsetInfo>;
+    // iconv encoding name, gcc `-finput-charset`, `-fexec-charset`
+    QString iconvName;
+
+    QString displayName;
+
+    QStringList groups;
+
+    // for Unix legacy encoding detection
+    QStringList locales;
+
+    // for Windows legacy encoding detection
+    std::optional<unsigned> codepage;
+};
 
 class CharsetInfoManager: public QObject {
     Q_OBJECT
@@ -45,20 +49,18 @@ public:
     CharsetInfoManager& operator=(CharsetInfoManager&) = delete;
 
     QByteArray getDefaultSystemEncoding();
-    PCharsetInfo findCharsetByCodepage(int codepage);
+    CharsetInfo *findCharsetByCodepage(int codepage);
     QStringList languageNames();
-    QList<PCharsetInfo> findCharsetsByLanguageName(const QString& languageName);
-    QList<PCharsetInfo> findCharsetByLocale(const QString& localeName);
+    QList<CharsetInfo *> findCharsetsByLanguageName(const QString& languageName);
+    QList<CharsetInfo *> findCharsetByLocale(const QString& localeName);
     QString findLanguageByCharsetName(const QString& encodingName);
     const QString &localeName() const;
 
 private:
-    QList<PCharsetInfo> mCodePages;
+    QList<CharsetInfo> mCodePages;
     QString mLocaleName;
 };
 
-using PCharsetInfoManager = std::shared_ptr<CharsetInfo>;
-
-extern CharsetInfoManager* pCharsetInfoManager;
+extern CharsetInfoManager *pCharsetInfoManager;
 
 #endif // PLATFORM_H
