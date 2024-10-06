@@ -1,4 +1,4 @@
-﻿Language,Location (or type),Language ID,Language tag,Supported version,ACP,OEMCP
+﻿Language,Location (or type),Language ID,Language tag,Supported version,ACP,OEMCP,Note
 Afar,,0x1000,aa,Release 10,,
 Afar,Djibouti,0x1000,aa-DJ,Release 10,,
 Afar,Eritrea,0x1000,aa-ER,Release 10,,
@@ -66,13 +66,13 @@ Bamanankan,,0x1000,bm,Release 10,,
 Bamanankan (Latin),Mali,0x1000,bm-Latn-ML,Release 10,,
 Bangla,,0x0045,bn,Release 7,,
 Bangla,Bangladesh,0x0845,bn-BD,Release V,65001,65001
-Bangla,India,0x0445,bn-IN,Release E1,,
+Bangla,India,0x0445,bn-IN,Release E1,65001,65001
 Basaa,,0x1000,bas,Release 10,,
 Basaa,Cameroon,0x1000,bas-CM,Release 10,,
 Bashkir,,0x006D,ba,Release 7,,
 Bashkir,Russia,0x046D,ba-RU,Release V,1251,866
 Basque,,0x002D,eu,Release 7,,
-Basque,Spain,0x042D,eu-ES,Release B,65001,65001
+Basque,Spain,0x042D,eu-ES,Release B,65001,65001,1252/850 until reboot
 Belarusian,,0x0023,be,Release 7,,
 Belarusian,Belarus,0x0423,be-BY,Release B,1251,866
 Bemba,,0x1000,bem,Release 10,,
@@ -147,7 +147,7 @@ Danish,,0x0006,da,Release 7,,
 Danish,Denmark,0x0406,da-DK,Release A,1252,850
 Danish,Greenland,0x1000,da-GL,Release 10,,
 Dari,,0x008C,prs,Release 7,,
-Dari,Afghanistan,0x048C,prs-AF,Release V,1256,720
+Dari,Afghanistan,0x048C,prs-AF,Release V,1256,720,"Currently fa-AF, Persian (Afghanistan)"
 Divehi,,0x0065,dv,Release 7,,
 Divehi,Maldives,0x0465,dv-MV,Release D,65001,65001
 Duala,,0x1000,dua,Release 10,,
@@ -482,7 +482,7 @@ Langi,,0x1000,lag,Release 10,,
 Langi,Tanzania,0x1000,lag-TZ,Release 10,,
 Lao,,0x0054,lo,Release 7,,
 Lao,Lao P.D.R.,0x0454,lo-LA,Release V,65001,65001
-Latin,Vatican City,0x0476,la-VA,Release 10.5,,
+Latin,Vatican City,0x0476,la-VA,Release 10.5,1252,437,"Previously la-001, Latin (World)"
 Latvian,,0x0026,lv,Release 7,,
 Latvian,Latvia,0x0426,lv-LV,Release B,1257,775
 Lingala,,0x1000,ln,Release 10,,
@@ -631,7 +631,7 @@ Rajasthani (Devanagari),India,0x1000,raj-Deva-IN,Release 11,,
 Ripuarian,,0x1000,ksh,Release 10,,
 Ripuarian,Germany,0x1000,ksh-DE,Release 10,,
 Romanian,,0x0018,ro,Release 7,,
-Romanian,Moldova,0x0818,ro-MD,Release 8.1,65001,65001
+Romanian,Moldova,0x0818,ro-MD,Release 8.1,65001,65001,"1252/850 until reboot"
 Romanian,Romania,0x0418,ro-RO,Release A,1250,852
 Romansh,,0x0017,rm,Release 7,,
 Romansh,Switzerland,0x0417,rm-CH,Release E2,1252,850
@@ -643,7 +643,7 @@ Russian,,0x0019,ru,Release 7,,
 Russian,Belarus,0x1000,ru-BY,Release 10,,
 Russian,Kazakhstan,0x1000,ru-KZ,Release 10,,
 Russian,Kyrgyzstan,0x1000,ru-KG,Release 10,,
-Russian,Moldova,0x0819,ru-MD,Release 10,65001,65001
+Russian,Moldova,0x0819,ru-MD,Release 10,65001,65001,1251/866 until reboot
 Russian,Russia,0x0419,ru-RU,Release A,1251,866
 Russian,Ukraine,0x1000,ru-UA,Release 10,,
 Rwa,,0x1000,rwk,Release 10,,

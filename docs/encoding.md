@@ -1,10 +1,25 @@
-# Encoding / 编码
+# Encoding
 
-<!-- Please strike through <del>outdated text</del>. -->
+## Overview
 
-## Time Line / 时间线
+Null-terminated byte strings (NTBS) have been widely accepted in system interfaces since ~1970s. In the old days, NTBS were processed as is. However, with the advent of Unicode, the encoding of NTBS became a problem.
 
-## Windows Code Page / Windows 代码页
+| OS | File system | Console | Terminal emulator | GUI system | GUI user |
+| -- | ----------- | ------- | ----------------- | ---------- | -------- |
+| Windows NT | ACP | N/A | OEMCP | N/A | ACP (Win32) |
+| XDG (Linux, BSD, etc.) | as is | UTF-8 | UTF-8 | UTF-8 | UTF-8 (Qt, GTK) |
+
+- Columns:
+  - File system: how do file system APIs process NTBS (e.g. `open`, `CreateFileA`).
+  - Console: how does console translate stdout/stderr bytes to display characters.
+  - Terminal emulator: how does terminal emulator translate stdout/stderr bytes to display characters.
+  - GUI system: how does GUI framework work with system interfaces (e.g. file chooser).
+  - GUI user: how does GUI framework process user-provided NTBS (e.g. message box).
+- Windows NT console is the user interface for NT native applications, which use `UNICODE_STRING` structure rather than NTBS.
+- Mainstream GUI frameworks on Windows NT internally use “wide” APIs.
+- Qt accepts `QString`, user must explicitly specify encoding.
+
+## Windows Code Page
 
 [The list](./windows-code-page-list.csv), based on _[MS-LCID]: Windows Language Code Identifier (LCID) Reference_, revision 16.0, ACP and OEMCP collected by experiments on LTSC 2021 and 2024.
 
@@ -17,18 +32,33 @@ Missing items:
 | Edo | Nigeria | 0x0466 | bin-NG | 1252 | 850 |
 | English | Indonesia | 0x3809 | en-ID | 1252 | 850 |
 | Ibibio | Nigeria | 0x0469 | ibb-NG | 1252 | 850 |
-| Latin | World | 0x0476 | la-001 | 1252 | 437 |
 | Manipuri | India | 0x0458 | mni-IN | 65001 | 65001 |
 | Papiamento | Caribbean | pap-029 | 1252 | 850 |
 | Sindhi (Devanagari) | India | 0x0459 | sd-Deva-IN | 65001 | 65001 |
 
-Quirks:
+Possible unified ACP/OEMCP:
 
-| Language | Location (or type) | Language ID | Language tag | Behaviour |
-| -------- | ------------------ | ----------- | ------------ | --------- |
-| Basque | Basque | 0x042D | eu-ES | Should be ACP 1252, OEMCP 850, but Windows forces ACP/OEMCP 65001 after restart. |
-| Romanian | Moldova | 0x0818 | ro-MD | Should be ACP 1252, OEMCP 850, but Windows forces ACP/OEMCP 65001 after restart. |
-| Russian | Moldova | 0x0819 | ru-MD | Should be ACP 1251, OEMCP 866, but Windows forces ACP/OEMCP 65001 after restart. |
+| Language (or script) | ACP/OEMCP |
+| -------------------- | --------- |
+| อกษรไทย | 874 |
+| 日本語 | 932 |
+| 简体中文 | 936 |
+| 한국어 | 949 |0
+| 繁體中文 | 950 |
+| tiếng Việt | 1258 |
+| Universal | 65001 |
+
+Possible ACP/OEMCP combinations:
+
+| Language (or script) | ACP | OEMCP |
+| -------------------- | --- | ----- |
+| Latin, Central Europe | 1250 | 852 |
+| српски (Serbian) and босански (Bosnian) | 1251 | 855 |
+| кириллица (Cyrillic), other | 1251 | 866 |
+| Latin, US | 1252 | 437 |
+| Latin, Western Europe | 1252 | 850 |
+| ελληνικά (Greek) | 1253 | 737 |
+| Latin, | 1254 | 857 |
 
 Native speakers of languages that Windows forces UTF-8 code page (65001):
 
