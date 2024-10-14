@@ -283,8 +283,14 @@ const QStringList &availableEncodings();
 
 bool isEncodingAvailable(const QByteArray &encoding);
 
-#if QT_VERSION_MAJOR >= 6
+#if QT_VERSION_MAJOR >= 6 && (__SIZE_WIDTH__ > 32 /* GCC */ || defined (_WIN64) /* MSVC */ )
 
+// workaround for Qt 6 changing containers’ underlying size type from `int` to `qsizetype`.
+//
+// [documented] `qsizetype` is guaranteed to be the same size as a size_t;
+// [internal, unlikely to change] that is to say, on 32-bit targets, `qsizetype` is `qint32`,
+// [documented] which is `signed int`;
+// thus `qsizetype` is `int` on 32-bit targets, and no workaround is needed.
 namespace std {
     constexpr inline int max(int a, qsizetype b) {
         return max<int>(a, b);

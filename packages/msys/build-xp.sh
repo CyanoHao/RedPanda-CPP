@@ -16,6 +16,7 @@ Options:
   --mingw64                Build mingw64 integrated compiler.
   --ucrt <build>           Include UCRT in the package. Windows SDK required.
                            e.g. '--ucrt 22621' for Windows 11 SDK 22H2.
+  --qt6                    Build with Qt 6 instead of Qt 5.
   -t, --target-dir <dir>   Set target directory for the packages.
 EOF
 }
@@ -36,7 +37,6 @@ fi
 PROFILE=$2
 shift 2
 
-QT_VERSION="5.15.15+redpanda0"
 case "${PROFILE}" in
   64-ucrt|64-msvcrt)
     NSIS_ARCH=x64
@@ -61,6 +61,7 @@ CLEAN=0
 compilers=()
 COMPILER_MINGW32=0
 COMPILER_MINGW64=0
+QT_MAJOR="5"
 TARGET_DIR="$(pwd)/dist"
 UCRT=""
 while [[ $# -gt 0 ]]; do
@@ -109,6 +110,10 @@ while [[ $# -gt 0 ]]; do
           ;;
       esac
       ;;
+    --qt6)
+      QT_MAJOR="6"
+      shift
+      ;;
     -t|--target-dir)
       TARGET_DIR="$2"
       shift 2
@@ -120,10 +125,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+QT5_VERSION="5.15.15+redpanda0"
+QT6_VERSION="6.8.0+redpanda0"
 ASTYLE_VERSION_TAG="3.6.2"
-BUILD_DIR="${TEMP}/redpanda-xp-${PROFILE}-build"
+
+BUILD_DIR="${TEMP}/redpanda-xp-qt$QT_MAJOR-${PROFILE}-build"
 ASTYLE_BUILD_DIR="${BUILD_DIR}/astyle"
-PACKAGE_DIR="${TEMP}/redpanda-xp-${PROFILE}-pkg"
+PACKAGE_DIR="${TEMP}/redpanda-xp-qt$QT_MAJOR-${PROFILE}-pkg"
 NSIS="/mingw32/bin/makensis"
 _7Z="/mingw64/bin/7z"
 CMAKE="/mingw64/bin/cmake"
@@ -131,6 +139,14 @@ SOURCE_DIR="$(pwd)"
 ASSETS_DIR="${SOURCE_DIR}/assets"
 UCRT_DIR="/c/Program Files (x86)/Windows Kits/10/Redist/10.0.${UCRT}.0/ucrt/DLLs/${NSIS_ARCH}"
 
+case "$QT_MAJOR" in
+  5)
+    QT_VERSION="$QT5_VERSION"
+    ;;
+  6)
+    QT_VERSION="$QT6_VERSION"
+    ;;
+esac
 QT_ARCHIVE="qt-$QT_VERSION-$PROFILE.tar.zst"
 QT_DIR="/c/Qt/${QT_VERSION}/${PROFILE}"
 
@@ -143,6 +159,7 @@ MINGW64_ARCHIVE="mingw64-${REDPANDA_MINGW_RELEASE}.7z"
 MINGW64_COMPILER_NAME="MinGW-w64 x86_64 GCC"
 MINGW64_PACKAGE_SUFFIX="mingw64"
 
+PACKAGE_BASENAME="$PACKAGE_BASENAME-qt$QT_MAJOR"
 if [[ ${#compilers[@]} -eq 0 ]]; then
   PACKAGE_BASENAME="${PACKAGE_BASENAME}-none"
 else
@@ -176,11 +193,11 @@ pacman -S --noconfirm --needed \
   mingw-w64-i686-nsis \
   curl git
 
-if [[ ! -f "$ASSETS_DIR/$QT_ARCHIVE" ]]; then
-  fn_print_progress "Downloading Qt"
-  curl -L "https://github.com/redpanda-cpp/qtbase-xp/releases/download/$QT_VERSION/$QT_ARCHIVE" -o "$ASSETS_DIR/$QT_ARCHIVE"
-fi
-zstdcat "$ASSETS_DIR/$QT_ARCHIVE" | tar -x -C /c/Qt
+# if [[ ! -f "$ASSETS_DIR/$QT_ARCHIVE" ]]; then
+#   fn_print_progress "Downloading Qt"
+#   curl -L "https://github.com/redpanda-cpp/qtbase-xp/releases/download/$QT_VERSION/$QT_ARCHIVE" -o "$ASSETS_DIR/$QT_ARCHIVE"
+# fi
+# zstdcat "$ASSETS_DIR/$QT_ARCHIVE" | tar -x -C /c/Qt
 
 export PATH="${QT_DIR}/bin:${PATH}"
 
