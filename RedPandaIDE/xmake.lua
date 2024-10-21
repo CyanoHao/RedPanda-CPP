@@ -182,7 +182,7 @@ target("RedPandaIDE")
 
     add_files(
         "resources/iconsets/**.svg", "resources/iconsets/**.json",
-        "resources/themes/*.lua", "resources/themes/*.json", "resources/themes/*.png",
+        "resources/themes/*.lua", "resources/themes/*.js", "resources/themes/*.json", "resources/themes/*.png",
         "resources/colorschemes/*.scheme",
         "resources/fonts/asciicontrol.ttf",
         {rule = "RedPandaIDE.auto_qrc"})
@@ -194,12 +194,12 @@ target("RedPandaIDE")
     end
 
     if has_config("lua-addon") then
-        add_deps("lua")
+        add_deps("lua", "quickjs")
         add_files(
             "addon/api.cpp",
             "addon/executor.cpp",
             "addon/runtime.cpp")
-        add_links("lua")
+        add_links("lua", "quickjs")
     end
 
     if has_config("sdcc") then

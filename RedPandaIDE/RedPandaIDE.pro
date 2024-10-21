@@ -102,10 +102,11 @@ CONFIG(debug_and_release_target) {
     }
 }
 
-INCLUDEPATH += ../libs/qsynedit ../libs/redpanda_qt_utils ../libs/lua
+INCLUDEPATH += ../libs/qsynedit ../libs/redpanda_qt_utils ../libs/quickjs ../libs/lua
 
 LIBS += -L$$OUT_PWD/../libs/qsynedit/$${OBJ_OUT_PWD} -lqsynedit \
         -L$$OUT_PWD/../libs/redpanda_qt_utils/$${OBJ_OUT_PWD} -lredpanda_qt_utils \
+        -L$$OUT_PWD/../libs/quickjs/$${OBJ_OUT_PWD} -lquickjs \
         -L$$OUT_PWD/../libs/lua/$${OBJ_OUT_PWD} -llua
 
 SOURCES += \
@@ -567,6 +568,7 @@ iconsets_files.files += $$files(resources/iconsets/*.svg, true)
 iconsets_files.files += $$files(resources/iconsets/*.json, true)
 
 theme_files.files += $$files(resources/themes/*.lua, false)
+theme_files.files += $$files(resources/themes/*.js, false)
 theme_files.files += $$files(resources/themes/*.json, false)
 theme_files.files += $$files(resources/themes/*.png, false)
 

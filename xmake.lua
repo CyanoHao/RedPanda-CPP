@@ -201,6 +201,7 @@ if has_config("lua-addon") then
     includes("libs/lua")
 end
 includes("libs/qsynedit")
+includes("libs/quickjs")
 includes("libs/redpanda_qt_utils")
 includes("tools/consolepauser")
 if has_config("vcs") then

@@ -5,16 +5,18 @@ SUBDIRS += \
     consolepauser \
     redpanda_qt_utils \
     qsynedit \
+    quickjs \
     lua
 
 consolepauser.subdir = tools/consolepauser
 redpanda_qt_utils.subdir = libs/redpanda_qt_utils
 qsynedit.subdir = libs/qsynedit
+quickjs.subdir = libs/quickjs
 lua.subdir = libs/lua
 
 # Add the dependencies so that the RedPandaIDE project can add the depended programs
 # into the main app bundle
-RedPandaIDE.depends = consolepauser qsynedit lua
+RedPandaIDE.depends = consolepauser qsynedit quickjs lua
 qsynedit.depends = redpanda_qt_utils
 
 APP_NAME = RedPandaCPP
