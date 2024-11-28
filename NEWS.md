@@ -1,3 +1,6 @@
+Red Panda C++ Version 3.2.1
+  - fix: crash when debug.
+
 Red Panda C++ Version 3.2
 
   - change: The way to calcuate astyle path.
