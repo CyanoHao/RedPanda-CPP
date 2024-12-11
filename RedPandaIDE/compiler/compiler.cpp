@@ -390,7 +390,7 @@ QStringList Compiler::getCharsetArgument(const QByteArray& encoding,FileType fil
         } else {
             encodingName = encoding;
         }
-        if (forceExecUTF8) {
+        if (forceExecUTF8 || compilerSet()->utf8IsTheOnlyValidExecCharset()) {
             execEncodingName = "UTF-8";
         } else if (compilerSetExecCharset == ENCODING_SYSTEM_DEFAULT || compilerSetExecCharset.isEmpty()) {
             execEncodingName = systemEncodingName;

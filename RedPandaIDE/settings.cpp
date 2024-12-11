@@ -2960,6 +2960,14 @@ bool Settings::CompilerSet::supportConvertingCharset()
 #endif
 }
 
+bool Settings::CompilerSet::utf8IsTheOnlyValidExecCharset() const
+{
+    // intentionally ignore "aarch64-w64-mingw32": do not bring historical burden to a new world
+    QRegularExpression gccMingwPattern = QRegularExpression("^(i[34567]86|x86_64)-(.*)-mingw32$");
+    QRegularExpressionMatch match = gccMingwPattern.match(mDumpMachine);
+    return !match.hasMatch();
+}
+
 const QString &Settings::CompilerSet::assemblingSuffix() const
 {
     return mAssemblingSuffix;

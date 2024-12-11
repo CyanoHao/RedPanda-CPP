@@ -34,25 +34,34 @@ ProjectCompilerWidget::~ProjectCompilerWidget()
     delete ui;
 }
 
-void ProjectCompilerWidget::refreshOptions()
+static void loadCompilerSetEncodings(Settings::PCompilerSet pSet, Ui::ProjectCompilerWidget* ui, const QByteArray &execEncoding)
 {
-    Settings::PCompilerSet pSet = pSettings->compilerSets().getSet(ui->cbCompilerSet->currentIndex());
-    if (!pSet)
+    // UTF-8 fast path
+    if (pSet->utf8IsTheOnlyValidExecCharset()) {
+        ui->chkAddCharset->setText(QObject::tr("Set execution charset to UTF-8"));
+        ui->cbEncoding->setVisible(false);
         return;
-    ui->panelAddCharset->setVisible(pSet->compilerType()!=CompilerType::Clang);
-    //ui->chkAddCharset->setEnabled(pSet->compilerType()!=COMPILER_CLANG);
+    }
 
-    ui->tabOptions->resetUI(pSet,mOptions);
+    ui->chkAddCharset->setText(QObject::tr("Set execution charset to"));
+    ui->cbEncoding->setVisible(true);
+    ui->cbEncoding->clear();
+#ifdef Q_OS_WIN
+    ui->cbEncoding->addItem(QObject::tr("System Default(%1)").arg(QString(pCharsetInfoManager->getDefaultSystemEncoding())),ENCODING_SYSTEM_DEFAULT);
+    ui->cbEncoding->addItem(QObject::tr("System OEM(%1)").arg(QString(pCharsetInfoManager->getDefaultConsoleEncoding())),ENCODING_OEM_DEFAULT);
+#endif
+    ui->cbEncoding->addItem(QObject::tr("UTF-8"),ENCODING_UTF8);
+    foreach (const QString& langName, pCharsetInfoManager->languageNames()) {
+        // UTF-8 added; UTF-16 and UTF-32 cause ICE
+        if (langName != QObject::tr("Unicode"))
+            ui->cbEncoding->addItem(langName,langName);
+    }
 
-    ui->chkStaticLink->setChecked(mStaticLink);
-    ui->chkAddCharset->setChecked(mAddCharset);
-
-    QByteArray execEncoding = mExecCharset;
     if (execEncoding == ENCODING_AUTO_DETECT
             || execEncoding == ENCODING_SYSTEM_DEFAULT
             || execEncoding == ENCODING_OEM_DEFAULT
             || execEncoding == ENCODING_UTF8) {
-        int index =ui->cbEncoding->findData(execEncoding);
+        int index = ui->cbEncoding->findData(execEncoding);
         ui->cbEncoding->setCurrentIndex(index);
         ui->cbEncodingDetails->clear();
         ui->cbEncodingDetails->setVisible(false);
@@ -68,6 +77,22 @@ void ProjectCompilerWidget::refreshOptions()
         }
         ui->cbEncodingDetails->setCurrentText(encoding);
     }
+}
+
+void ProjectCompilerWidget::refreshOptions()
+{
+    Settings::PCompilerSet pSet = pSettings->compilerSets().getSet(ui->cbCompilerSet->currentIndex());
+    if (!pSet)
+        return;
+    ui->panelAddCharset->setVisible(pSet->compilerType()!=CompilerType::Clang);
+    //ui->chkAddCharset->setEnabled(pSet->compilerType()!=COMPILER_CLANG);
+
+    ui->tabOptions->resetUI(pSet,mOptions);
+
+    ui->chkStaticLink->setChecked(mStaticLink);
+    ui->chkAddCharset->setChecked(mAddCharset);
+
+    loadCompilerSetEncodings(pSet, ui, mExecCharset);
 }
 
 void ProjectCompilerWidget::doLoad()
@@ -117,15 +142,6 @@ void ProjectCompilerWidget::init()
     }
     ui->cbCompilerSet->blockSignals(false);
     ui->cbEncodingDetails->setVisible(false);
-    ui->cbEncoding->clear();
-    ui->cbEncoding->addItem(tr("System Default(%1)").arg(QString(pCharsetInfoManager->getDefaultSystemEncoding())),ENCODING_SYSTEM_DEFAULT);
-#ifdef Q_OS_WIN
-    ui->cbEncoding->addItem(tr("System OEM(%1)").arg(QString(pCharsetInfoManager->getDefaultConsoleEncoding())),ENCODING_OEM_DEFAULT);
-#endif
-    ui->cbEncoding->addItem(tr("UTF-8"),ENCODING_UTF8);
-    foreach (const QString& langName, pCharsetInfoManager->languageNames()) {
-        ui->cbEncoding->addItem(langName,langName);
-    }
     SettingsWidget::init();
 }
 

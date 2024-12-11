@@ -79,7 +79,7 @@
       <item>
        <widget class="QCheckBox" name="chkAddCharset">
         <property name="text">
-         <string>Set Encoding for the executable:</string>
+         <string>Set execution charset to</string>
         </property>
        </widget>
       </item>

@@ -63,18 +63,53 @@ CompilerSetOptionWidget::~CompilerSetOptionWidget()
 void CompilerSetOptionWidget::init()
 {
     ui->cbEncodingDetails->setVisible(false);
-    ui->cbEncoding->clear();
-    ui->cbEncoding->addItem(tr("System Default(%1)").arg(QString(pCharsetInfoManager->getDefaultSystemEncoding())),ENCODING_SYSTEM_DEFAULT);
-#ifdef Q_OS_WIN
-    ui->cbEncoding->addItem(tr("System OEM(%1)").arg(QString(pCharsetInfoManager->getDefaultConsoleEncoding())),ENCODING_OEM_DEFAULT);
-#endif
-    ui->cbEncoding->addItem(tr("UTF-8"),ENCODING_UTF8);
-    foreach (const QString& langName, pCharsetInfoManager->languageNames()) {
-        ui->cbEncoding->addItem(langName,langName);
-    }
     SettingsWidget::init();
 }
 
+static void loadCompilerSetEncodings(Settings::PCompilerSet pSet, Ui::CompilerSetOptionWidget* ui, const QString &execCharset)
+{
+    // UTF-8 fast path
+    if (pSet->utf8IsTheOnlyValidExecCharset()) {
+        ui->chkAutoAddCharset->setText(QObject::tr("Set execution charset to UTF-8"));
+        ui->cbEncoding->setVisible(false);
+        return;
+    }
+
+    ui->chkAutoAddCharset->setText(QObject::tr("Set execution charset to"));
+    ui->cbEncoding->setVisible(true);
+    ui->cbEncoding->clear();
+#ifdef Q_OS_WIN
+    ui->cbEncoding->addItem(QObject::tr("System Default(%1)").arg(QString(pCharsetInfoManager->getDefaultSystemEncoding())),ENCODING_SYSTEM_DEFAULT);
+    ui->cbEncoding->addItem(QObject::tr("System OEM(%1)").arg(QString(pCharsetInfoManager->getDefaultConsoleEncoding())),ENCODING_OEM_DEFAULT);
+#endif
+    ui->cbEncoding->addItem(QObject::tr("UTF-8"),ENCODING_UTF8);
+    foreach (const QString& langName, pCharsetInfoManager->languageNames()) {
+        // UTF-8 added; UTF-16 and UTF-32 cause ICE
+        if (langName != QObject::tr("Unicode"))
+            ui->cbEncoding->addItem(langName,langName);
+    }
+
+    if (execCharset == ENCODING_AUTO_DETECT
+            || execCharset == ENCODING_SYSTEM_DEFAULT
+            || execCharset == ENCODING_OEM_DEFAULT
+            || execCharset == ENCODING_UTF8) {
+        int index = ui->cbEncoding->findData(execCharset);
+        ui->cbEncoding->setCurrentIndex(index);
+        ui->cbEncodingDetails->clear();
+        ui->cbEncodingDetails->setVisible(false);
+    } else {
+        QString encoding = execCharset;
+        QString language = pCharsetInfoManager->findLanguageByCharsetName(encoding);
+        ui->cbEncoding->setCurrentText(language);
+        ui->cbEncodingDetails->setVisible(true);
+        ui->cbEncodingDetails->clear();
+        QList<PCharsetInfo> infos = pCharsetInfoManager->findCharsetsByLanguageName(language);
+        foreach (const PCharsetInfo& info, infos) {
+            ui->cbEncodingDetails->addItem(info->name);
+        }
+        ui->cbEncodingDetails->setCurrentText(encoding);
+    }
+}
 
 static void loadCompilerSetSettings(Settings::PCompilerSet pSet, Ui::CompilerSetOptionWidget* ui) {
     bool supportCharset = pSet->supportConvertingCharset();
@@ -84,6 +119,7 @@ static void loadCompilerSetSettings(Settings::PCompilerSet pSet, Ui::CompilerSet
     ui->panelCharset->setVisible(supportCharset);
     ui->chkAutoAddCharset->setEnabled(supportCharset);
     ui->chkAutoAddCharset->setVisible(supportCharset);
+    loadCompilerSetEncodings(pSet, ui, pSet->execCharset());
 
     bool supportStaticLink = CompilerInfoManager::supportStaticLink(pSet->compilerType());
     ui->chkStaticLink->setEnabled(supportStaticLink);
@@ -109,27 +145,6 @@ static void loadCompilerSetSettings(Settings::PCompilerSet pSet, Ui::CompilerSet
     ui->txtDebugger->setText(pSet->debugger());
     ui->txtGDBServer->setText(pSet->debugServer());
     ui->txtResourceCompiler->setText(pSet->resourceCompiler());
-
-    if (pSet->execCharset() == ENCODING_AUTO_DETECT
-            || pSet->execCharset() == ENCODING_SYSTEM_DEFAULT
-            || pSet->execCharset() == ENCODING_OEM_DEFAULT
-            || pSet->execCharset() == ENCODING_UTF8) {
-        int index =ui->cbEncoding->findData(pSet->execCharset());
-        ui->cbEncoding->setCurrentIndex(index);
-        ui->cbEncodingDetails->clear();
-        ui->cbEncodingDetails->setVisible(false);
-    } else {
-        QString encoding = pSet->execCharset();
-        QString language = pCharsetInfoManager->findLanguageByCharsetName(encoding);
-        ui->cbEncoding->setCurrentText(language);
-        ui->cbEncodingDetails->setVisible(true);
-        ui->cbEncodingDetails->clear();
-        QList<PCharsetInfo> infos = pCharsetInfoManager->findCharsetsByLanguageName(language);
-        foreach (const PCharsetInfo& info, infos) {
-            ui->cbEncodingDetails->addItem(info->name);
-        }
-        ui->cbEncodingDetails->setCurrentText(encoding);
-    }
 
     ui->txtPreprocessingSuffix->setText(pSet->preprocessingSuffix());
     ui->txtCompilationSuffix->setText(pSet->compilationProperSuffix());

@@ -133,7 +133,7 @@
           <item>
            <widget class="QCheckBox" name="chkAutoAddCharset">
             <property name="text">
-             <string>Convert Executable's Charset as</string>
+             <string>Set execution charset to</string>
             </property>
            </widget>
           </item>

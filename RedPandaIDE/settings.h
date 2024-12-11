@@ -1478,6 +1478,7 @@ public:
 #endif
 
         bool supportConvertingCharset();
+        bool utf8IsTheOnlyValidExecCharset() const;
 
         bool persistInAutoFind() const;
         void setPersistInAutoFind(bool newPersistInAutoFind);
