@@ -26,6 +26,8 @@ using std::string;
 #include <stdbool.h>
 #include <versionhelpers.h>
 
+#include "intl.hpp"
+
 #ifndef WINBOOL
 #define WINBOOL BOOL
 #endif
@@ -100,7 +102,7 @@ void PauseExit(int exitcode, bool reInp) {
         FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
         fflush(stdin);
         printf("\n");
-        printf("Press ANY key to exit...");
+        printf(_("Press ANY key to exit..."));
         getch();
         if (reInp) {
             CloseHandle(hInp);
@@ -127,7 +129,7 @@ string GetCommand(int argc,char** argv,bool &reInp, bool &enableVisualTerminalSe
 
     if(result.length() > MAX_COMMAND_LENGTH) {
         printf("\n--------------------------------");
-        printf("\nError: Length of command line string is over %d characters\n",MAX_COMMAND_LENGTH);
+        printf(_("\nError: Length of command line string is over %d characters\n"),MAX_COMMAND_LENGTH);
         PauseExit(EXIT_COMMAND_TOO_LONG,reInp);
     }
 
@@ -147,14 +149,14 @@ DWORD ExecuteCommand(string& command,bool reInp, LONGLONG &peakMemory, LONGLONG 
 
     if(!CreateProcessA(NULL, (LPSTR)command.c_str(), NULL, NULL, true, dwCreationFlags, NULL, NULL, &si, &pi)) {
         printf("\n--------------------------------");
-        printf("\nFailed to execute \"%s\":",command.c_str());
-        printf("\nError %lu: %s\n",GetLastError(),GetErrorMessage().c_str());
+        printf(_("\nFailed to execute \"%s\":"),command.c_str());
+        printf(_("\nError %lu: %s\n"),GetLastError(),GetErrorMessage().c_str());
         PauseExit(EXIT_CREATE_PROCESS_FAILED,reInp);
     }
     if (enableJobControl) {
         WINBOOL bSuccess = AssignProcessToJobObject( hJob, pi.hProcess );
         if ( bSuccess == FALSE ) {
-            printf( "AssignProcessToJobObject failed: error %lu\n", GetLastError() );
+            printf(_("AssignProcessToJobObject failed: error %lu\n"), GetLastError() );
             PauseExit(EXIT_ASSGIN_PROCESS_JOB_FAILED,reInp);
         }
     }
@@ -200,8 +202,8 @@ int main(int argc, char** argv) {
     // First make sure we aren't going to read nonexistent arrays
     if(argc < 4) {
         printf("\n--------------------------------");
-        printf("\nUsage: consolepauser.exe <0|1> <shared_memory_id> <filename> <parameters>\n");
-        printf("\n 1 means the STDIN is redirected by Red Panda C++; 0 means not\n");
+        printf(_("\nUsage: consolepauser.exe <0|1> <shared_memory_id> <filename> <parameters>\n"));
+        printf(_("\n 1 means the STDIN is redirected by Red Panda C++; 0 means not\n"));
         PauseExit(EXIT_WRONG_ARGUMENTS,false);
     }
 
@@ -224,7 +226,7 @@ int main(int argc, char** argv) {
         hJob= CreateJobObject( &sa, NULL );
 
         if ( hJob == NULL ) {
-            printf( "CreateJobObject failed: error %lu\n", GetLastError() );
+            printf(_("CreateJobObject failed: error %lu\n"), GetLastError() );
             PauseExit(EXIT_CREATE_JOB_OBJ_FAILED,reInp);
         }
 
@@ -233,7 +235,7 @@ int main(int argc, char** argv) {
         info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
         WINBOOL bSuccess = SetInformationJobObject( hJob, JobObjectExtendedLimitInformation, &info, sizeof( info ) );
         if ( bSuccess == FALSE ) {
-            printf( "SetInformationJobObject failed: error %lu\n", GetLastError() );
+            printf(_("SetInformationJobObject failed: error %lu\n"), GetLastError() );
             PauseExit(EXIT_SET_JOB_OBJ_INFO_FAILED,reInp);
         }
     }
@@ -300,7 +302,7 @@ int main(int argc, char** argv) {
 
     // Done? Print return value of executed program
     printf("\n--------------------------------");
-    printf("\nProcess exited after %.4g seconds with return value %lu (%.4g ms cpu time, %lld KB mem used).\n",seconds,returnvalue, execSeconds, peakMemory);
+    printf(_("\nProcess exited after %.4g seconds with return value %lu (%.4g ms cpu time, %lld KB mem used).\n"),seconds,returnvalue, execSeconds, peakMemory);
     PauseExit(returnvalue,reInp);
     return 0;
 }

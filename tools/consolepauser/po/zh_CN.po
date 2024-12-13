@@ -1,0 +1,122 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#, c-format
+msgid ""
+"\n"
+" 1 means the STDIN is redirected by Red Panda C++; 0 means not\n"
+msgstr ""
+"\n"
+" 1 表示 STDIN 由小熊猫C++ 重定向；0 表示不重定向\n"
+
+#, c-format
+msgid ""
+"\n"
+"Error %lu: %s\n"
+msgstr ""
+"\n"
+"错误 %lu：%s\n"
+
+#, c-format
+msgid ""
+"\n"
+"Error: Length of command line string is over %d characters\n"
+msgstr ""
+"\n"
+"错误：命令行字符串长度超过 %d 个字符\n"
+
+#, c-format
+msgid ""
+"\n"
+"Failed to execute \"%s\":"
+msgstr ""
+"\n"
+"无法执行 “%s”："
+
+#, c-format
+msgid ""
+"\n"
+"Process exited after %.4g seconds with return value %d, %ld KB mem used.\n"
+msgstr ""
+"\n"
+"进程在 %.4g 秒后退出，返回值 %d，使用了 %ld KB 内存。\n"
+
+#, c-format
+msgid ""
+"\n"
+"Process exited after %.4g seconds with return value %lu (%.4g ms cpu time, "
+"%lld KB mem used).\n"
+msgstr ""
+"\n"
+"进程在 %.4g 秒后退出，返回值 %lu（使用了 %.4g ms CPU 时间，%lld KB 内存）。\n"
+
+#, c-format
+msgid ""
+"\n"
+"Usage: consolepauser <0|1> <shared_memory_id> <filename> <parameters>\n"
+msgstr ""
+"\n"
+"用法：consolepauser <0|1> <共享内存ID> <文件名> <参数>\n"
+
+#, c-format
+msgid ""
+"\n"
+"Usage: consolepauser.exe <0|1> <shared_memory_id> <filename> <parameters>\n"
+msgstr ""
+"\n"
+"用法：consolepauser.exe <0|1> <共享内存ID> <文件名> <参数>\n"
+
+#, c-format
+msgid "AssignProcessToJobObject failed: error %lu\n"
+msgstr "AssignProcessToJobObject 失败：错误 %lu\n"
+
+#, c-format
+msgid "CreateJobObject failed: error %lu\n"
+msgstr "CreateJobObject 失败：错误 %lu\n"
+
+#, c-format
+msgid "Failed to start command %s %s!\n"
+msgstr "无法启动命令 %s %s！\n"
+
+#, c-format
+msgid "Press ANY key to exit..."
+msgstr "按任意键退出……"
+
+#, c-format
+msgid "SetInformationJobObject failed: error %lu\n"
+msgstr "SetInformationJobObject 失败：错误 %lu\n"
+
+#, c-format
+msgid "current dir: %s"
+msgstr "当前目录：%s"
+
+#, c-format
+msgid "errno %d: %s\n"
+msgstr "错误码 %d：%s\n"
+
+#, c-format
+msgid "mmap failed %d: %s\n"
+msgstr "mmap 失败 %d：%s\n"
+
+#, c-format
+msgid "not enough arguments1!\n"
+msgstr ""
+
+#, c-format
+msgid "not enough arguments2!\n"
+msgstr ""
+
+#, c-format
+msgid "shm_open failed %d: %s\n"
+msgstr "shm_open 失败 %d：%s\n"
+
+#, c-format
+msgid "wait4 failed!"
+msgstr "wait4 失败！"

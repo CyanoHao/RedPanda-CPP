@@ -1,0 +1,96 @@
+#, c-format
+msgid "Press ANY key to exit..."
+msgstr ""
+
+#, c-format
+msgid "not enough arguments1!\n"
+msgstr ""
+
+#, c-format
+msgid "not enough arguments2!\n"
+msgstr ""
+
+#, c-format
+msgid "Failed to start command %s %s!\n"
+msgstr ""
+
+#, c-format
+msgid "errno %d: %s\n"
+msgstr ""
+
+#, c-format
+msgid "current dir: %s"
+msgstr ""
+
+#, c-format
+msgid "wait4 failed!"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Usage: consolepauser <0|1> <shared_memory_id> <filename> <parameters>\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+" 1 means the STDIN is redirected by Red Panda C++; 0 means not\n"
+msgstr ""
+
+#, c-format
+msgid "shm_open failed %d: %s\n"
+msgstr ""
+
+#, c-format
+msgid "mmap failed %d: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Process exited after %.4g seconds with return value %d, %ld KB mem used.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Error: Length of command line string is over %d characters\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Failed to execute \"%s\":"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Error %lu: %s\n"
+msgstr ""
+
+#, c-format
+msgid "AssignProcessToJobObject failed: error %lu\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Usage: consolepauser.exe <0|1> <shared_memory_id> <filename> <parameters>\n"
+msgstr ""
+
+#, c-format
+msgid "CreateJobObject failed: error %lu\n"
+msgstr ""
+
+#, c-format
+msgid "SetInformationJobObject failed: error %lu\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Process exited after %.4g seconds with return value %lu (%.4g ms cpu time, "
+"%lld KB mem used).\n"
+msgstr ""

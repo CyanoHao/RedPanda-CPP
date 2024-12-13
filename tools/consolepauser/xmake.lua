@@ -8,6 +8,7 @@ target("consolepauser")
     else
         add_files("main.unix.cpp")
     end
+    add_files("mo-data.cpp")
 
     if is_os("windows") then
         add_syslinks("psapi")
