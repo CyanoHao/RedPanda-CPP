@@ -184,6 +184,7 @@ function install_libexec(target)
 end
 
 includes("RedPandaIDE")
+includes("libs/cli11")
 if has_config("lua-addon") then
     includes("libs/lua")
 end

@@ -16,10 +16,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+// C++
+#include <chrono>
+#include <filesystem>
+#include <map>
 #include <string>
 #include <vector>
-using std::string;
-using std::vector;
+
+// POSIX and C
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -28,112 +32,104 @@ using std::vector;
 #include <unistd.h>
 #include <sys/stat.h>        /* For mode constants */
 #include <fcntl.h>           /* For O_* constants */
-#include <chrono>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
-#define MAX_COMMAND_LENGTH 32768
-#define MAX_ERROR_LENGTH 2048
+#include <sys/ioctl.h>
+#include <termios.h>
 
-enum RunProgramFlag {
-    RPF_PAUSE_CONSOLE =     0x0001,
-    RPF_REDIRECT_INPUT =    0x0002
+// 3rd party
+#include <CLI/CLI.hpp>
+
+namespace fs = std::filesystem;
+using std::string;
+using std::vector;
+
+enum class RedirectInputMode {
+    None, // no redirection
+    /* Pipe, */ // Unix: always create a new tty, pipe never work
+    File, // console pauser handles redirection
 };
 
+void PrintSplitLine(FILE *stream, bool lineBreakBeforePrint)
+{
+    int width = 80;
+    struct winsize ws;
+    if (ioctl(fileno(stream), TIOCGWINSZ, &ws) == 0)
+        width = ws.ws_col;
 
-void PauseExit(int exitcode, bool reInp) {
-    if (reInp) {
-        freopen("/dev/tty","r",stdin);
-    }
-    fflush(stdin);
+    if (lineBreakBeforePrint)
+        fputc('\n', stream);
+    for (int i = 0; i < width; i++)
+        fputc('-', stream);
+    fputc('\n', stream);
+}
+
+void PrintSplitLineToStdout(bool lineBreakBeforePrint = true)
+{
+    PrintSplitLine(stdout, lineBreakBeforePrint);
+}
+
+void ClearStdinBuffer()
+{
+    tcflush(fileno(stdin), TCIFLUSH);
+}
+
+void PauseExit(int exitcode)
+{
+    ClearStdinBuffer();
+
     printf("\n");
     printf("Press ANY key to exit...");
+    fflush(stdout);
+
+    // set console to raw mode so we can read a single key
+    struct termios termios, saved;
+    int getResult;
+    if ((getResult = tcgetattr(fileno(stdin), &termios)) == 0) {
+        saved = termios;
+        cfmakeraw(&termios);
+        tcsetattr(fileno(stdin), TCSANOW, &termios);
+    }
+
     getchar();
+
+    // restore console mode, in case someone run it in existing terminal
+    if (getResult == 0)
+        tcsetattr(fileno(stdin), TCSANOW, &saved);
+
     exit(exitcode);
 }
 
-vector<string> GetCommand(int argc,char** argv,bool &reInp,bool &pauseAfterExit) {
-    vector<string> result;
-    int flags = atoi(argv[1]);
-    reInp = flags & RPF_REDIRECT_INPUT;
-    pauseAfterExit = flags & RPF_PAUSE_CONSOLE;
-    for(int i = 3;i < argc;i++) {
-        //result += string("\"") + string(argv[i]) + string("\"");
-        std::string s(argv[i]);
-
-        if (i==3 || (reInp && i==4 ))
-        if (s.length()>2 && s[0]=='\"' && s[s.length()-1]=='\"') {
-            s = s.substr(1,s.length()-2);
-        }
-        result.push_back(s);
-    }
-
-    return result;
-}
-
-string unescapeSpaces(const string& s) {
-    string result;
-    size_t i=0;
-    while(i<s.length()) {
-        if (s[i]=='%' && (i+2)<s.length() && s[i+1]=='2' && s[i+2]=='0') {
-            result.push_back(' ');
-            i+=3;
-        } else {
-            result.push_back(s[i]);
-            i++;
-        }
-    }
-    return result;
-}
-
-int ExecuteCommand(vector<string>& command,bool reInp, long int &peakMemory) {
+int ExecuteCommand(const string &program, vector<string> &args, RedirectInputMode redirectInputMode, const string &redirectedInputFile, long int &peakMemory) {
     peakMemory = 0;
     pid_t pid = fork();
+    if (pid < 0) {
+        fprintf(stderr, "Failed to create process -- fork() failed with %d: %s\n", errno, strerror(errno));
+        return -1;
+    }
     if (pid == 0) {
-        string path_to_command;
-        char * * argv;
-        int command_begin;
-        int command_size;
-        if (reInp) {
-            if (command.size()<2) {
-                fprintf(stderr,"not enough arguments1!\n");
-                exit(-1);
-            }
-            freopen(unescapeSpaces(command[0]).c_str(),"r",stdin);
-            path_to_command = unescapeSpaces(command[1]);
-            command_size = command.size()+1;
-            command_begin = 1;
-        } else {
-            if (command.size()<1) {
-                fprintf(stderr,"not enough arguments2!\n");
-                exit(-1);
-            }
-            path_to_command = unescapeSpaces(command[0]);
-            command_size = command.size()+1;
-            command_begin = 0;
+        vector<char *> argv(args.size() + 2, nullptr);
+        string basename = fs::path(program).filename().string();
+        argv[0] = basename.data();
+        for (size_t i = 0; i < args.size(); i++)
+            argv[i + 1] = args[i].data();
+        argv[args.size() + 1] = nullptr;
+
+        if (redirectInputMode == RedirectInputMode::File) {
+            freopen(redirectedInputFile.c_str(), "r", stdin);
         }
-        argv = (char * *)malloc(sizeof(char *)*command_size);
-        for (size_t i=command_begin;i<command.size();i++) {
-            argv[i-command_begin] = (char *)command[i].c_str();
-        }
-        argv[command.size()-command_begin]=NULL;
-        //child process
-        int pos = path_to_command.find_last_of('/');
-        std::string file = path_to_command;
-        if (pos>=0) {
-            file = path_to_command.substr(pos+1);
-        }
-        argv[0]=(char *)file.c_str();
-        int result=execv(path_to_command.c_str(),argv);
-        if (result) {
-            fprintf(stderr,"Failed to start command %s %s!\n",path_to_command.c_str(), file.c_str());
-            fprintf(stderr,"errno %d: %s\n",errno,strerror(errno));
-            char* current_dir = getcwd(nullptr, 0);
-            fprintf(stderr,"current dir: %s",current_dir);
-            free(current_dir);
-            exit(-1);
-        }
-        free(argv);
+
+        // child process
+        execv(program.c_str(), argv.data());
+
+        // execv returns? error occured!
+        fprintf(stderr,"Failed to start command %s %s!\n", program.c_str(), basename.c_str());
+        fprintf(stderr,"errno %d: %s\n",errno,strerror(errno));
+        char* current_dir = getcwd(nullptr, 0);
+        fprintf(stderr,"current dir: %s",current_dir);
+        free(current_dir);
+        exit(-1);
     } else {
         int status;
         pid_t w;
@@ -154,42 +150,51 @@ int ExecuteCommand(vector<string>& command,bool reInp, long int &peakMemory) {
 }
 
 int main(int argc, char** argv) {
-    char* sharedMemoryId;
-    // First make sure we aren't going to read nonexistent arrays
-    if(argc < 4) {
-        fprintf(stderr,"\n--------------------------------");
-        fprintf(stderr,"\nUsage: consolepauser <0|1> <shared_memory_id> <filename> <parameters>\n");
-        fprintf(stderr,"\n 1 means the STDIN is redirected by Red Panda C++; 0 means not\n");
-        PauseExit(EXIT_SUCCESS,false);
-    }
+    CLI::App app{"Run program and pause console after exit."};
 
-    // Make us look like the paused program
-    //SetConsoleTitleA(argv[3]);
-    sharedMemoryId = argv[2];
+    bool pauseAfterExit = 0;
+    app.add_flag("--pause-console", pauseAfterExit, "Pause console after exit.");
 
-    bool reInp;
-    bool pauseAfterExit;
-    // Then build the to-run application command
-    vector<string> command = GetCommand(argc,argv,reInp, pauseAfterExit);
-    if (reInp) {
-        freopen("/dev/tty","w+",stdout);
-        freopen("/dev/tty","w+",stderr);
-    } else {
-        fflush(stdin);
-    }
+    std::map<string, RedirectInputMode> redirectInputModeMap = {
+        {"none", RedirectInputMode::None},
+        {"file", RedirectInputMode::File},
+    };
+    RedirectInputMode redirectInputMode = RedirectInputMode::None;
+    app.add_option("--redirect-input", redirectInputMode, "Redirect stdin.")
+        ->transform(CLI::CheckedTransformer(redirectInputModeMap));
+
+    string redirectedInputFile;
+    app.add_option("--redirect-input-file", redirectedInputFile, "Redirect stdin to file.");
+
+    string sharedMemoryName;
+    app.add_option("--shared-memory-name", sharedMemoryName, "Communicate to Red Panda C++ with the shared memory object.");
+
+    string program;
+    app.add_option("program", program, "Program to run.")->required();
+
+    vector<string> args;
+    app.add_option("args", args, "Arguments to pass to program.");
+
+    app.failure_message(CLI::FailureMessage::help);
+    CLI11_PARSE(app, argc, argv);
+
+    ClearStdinBuffer();
 
     int BUF_SIZE=1024;
     char* pBuf=nullptr;
-    int fd_shm = shm_open(sharedMemoryId,O_RDWR,S_IRWXU);
-    if (fd_shm==-1) {
-        //todo: handle error
-        fprintf(stderr,"shm open failed %d:%s\n",errno,strerror(errno));
-    } else {
-        // `ftruncate` has already done in RedPandaIDE
-        pBuf = (char*)mmap(NULL,BUF_SIZE,PROT_READ | PROT_WRITE, MAP_SHARED, fd_shm,0);
-        if (pBuf == MAP_FAILED) {
-            fprintf(stderr,"mmap failed %d:%s\n",errno,strerror(errno));
-            pBuf = nullptr;
+    int fd_shm = -1;
+    if (!sharedMemoryName.empty()) {
+        fd_shm = shm_open(sharedMemoryName.c_str(), O_RDWR, S_IRWXU);
+        if (fd_shm == -1) {
+            //todo: handle error
+            fprintf(stderr,"shm open failed %d:%s\n",errno,strerror(errno));
+        } else {
+            // `ftruncate` has already done in RedPandaIDE
+            pBuf = (char*)mmap(NULL,BUF_SIZE,PROT_READ | PROT_WRITE, MAP_SHARED, fd_shm,0);
+            if (pBuf == MAP_FAILED) {
+                fprintf(stderr,"mmap failed %d:%s\n",errno,strerror(errno));
+                pBuf = nullptr;
+            }
         }
     }
 
@@ -198,27 +203,25 @@ int main(int argc, char** argv) {
 
     // Execute the command
     long int peakMemory;
-    int returnvalue = ExecuteCommand(command,reInp, peakMemory);
+    int returnvalue = ExecuteCommand(program, args, redirectInputMode, redirectedInputFile, peakMemory);
 
     // Get ending timestamp
     auto endtime = std::chrono::high_resolution_clock::now();
     auto difftime = endtime - starttime;
-    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(difftime);
-    double seconds = milliseconds.count()/1000.0;
+    double seconds = difftime.count() * 1.0 / decltype(difftime)::period::den;
 
     if (pBuf) {
         strcpy(pBuf,"FINISHED");
         munmap(pBuf,BUF_SIZE);
     }
     if (fd_shm!=-1) {
-        shm_unlink(sharedMemoryId);
+        shm_unlink(sharedMemoryName.c_str());
     }
 
     // Done? Print return value of executed program
-    printf("\n--------------------------------");
-    printf("\nProcess exited after %.4g seconds with return value %d, %ld KB mem used.\n",seconds,returnvalue,peakMemory);
+    PrintSplitLineToStdout();
+    printf("Process exited after %.4g seconds with return value %d, %ld KB mem used.\n",seconds,returnvalue,peakMemory);
     if (pauseAfterExit)
-        PauseExit(returnvalue,reInp);
+        PauseExit(returnvalue);
     return 0;
 }
-
