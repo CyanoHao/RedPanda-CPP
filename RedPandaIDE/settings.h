@@ -20,6 +20,7 @@
 #include <QSettings>
 #include <vector>
 #include <memory>
+#include <type_traits>
 #include <QColor>
 #include <QString>
 #include <QPair>
@@ -78,6 +79,29 @@ private:
         QSet<QString> stringSetValue(const QString &key);
         QColor colorValue(const QString &key, const QColor& defaultValue);
         QString stringValue(const QString &key, const QString& defaultValue);
+
+        template <typename Enum>
+#ifdef __cpp_concepts
+            requires std::is_enum_v<Enum>
+        void
+#else
+        std::enable_if_t<std::is_enum_v<Enum>, void>
+#endif
+        saveValue(const QString &key, Enum value) {
+            saveValue(key, static_cast<int>(value));
+        }
+
+        template <typename Enum>
+#ifdef __cpp_concepts
+            requires std::is_enum_v<Enum>
+        Enum
+#else
+        std::enable_if_t<std::is_enum_v<Enum>, Enum>
+#endif
+        enumValue(const QString &key, Enum defaultValue) {
+            return static_cast<Enum>(intValue(key, static_cast<int>(defaultValue)));
+        }
+
         void save();
         void load();
     protected:

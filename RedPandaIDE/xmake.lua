@@ -1,5 +1,3 @@
-set_languages("cxx17")
-
 target("RedPandaIDE")
     add_rules("qt.widgetapp", "qt.ts")
 

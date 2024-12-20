@@ -4,7 +4,7 @@ TEST_VERSION = "$(shell git rev-list HEAD --count)"
 
 add_rules("mode.debug", "mode.release")
 set_warnings("all", "extra", "pedantic")
-set_languages("cxx17", "c11")
+set_languages("cxx20", "c11")
 set_encodings("utf-8")
 
 function is_xdg()

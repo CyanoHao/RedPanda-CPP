@@ -1,6 +1,7 @@
 QT       += core gui printsupport network svg xml widgets
 
-CONFIG += c++17
+# qmake5 does not support CONFIG += c++20
+CONFIG += c++17 c++20
 CONFIG += nokey
 
 win32: CONFIG += lrelease_dosdevice

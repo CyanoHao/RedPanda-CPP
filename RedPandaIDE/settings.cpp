@@ -4405,7 +4405,7 @@ void Settings::Executor::doSave()
     saveValue("competitive_companion_port", mCompetivieCompanionPort);
     saveValue("input_convert_html", mConvertHTMLToTextForInput);
     saveValue("expected_convert_html", mConvertHTMLToTextForExpected);
-    saveValue("problem_case_validate_type", (int)mProblemCaseValidateType);
+    saveValue("problem_case_validate_type", mProblemCaseValidateType);
     saveValue("redirect_stderr_to_toollog", mRedirectStderrToToolLog);
     saveValue("case_editor_font_name",mCaseEditorFontName);
     saveValue("case_editor_font_size",mCaseEditorFontSize);
@@ -4444,7 +4444,7 @@ void Settings::Executor::doLoad()
     mCompetivieCompanionPort = intValue("competitive_companion_port",10045);
     mConvertHTMLToTextForInput = boolValue("input_convert_html", false);
     mConvertHTMLToTextForExpected = boolValue("expected_convert_html", false);
-    mProblemCaseValidateType =(ProblemCaseValidateType)intValue("problem_case_validate_type", (int)ProblemCaseValidateType::Exact);
+    mProblemCaseValidateType = enumValue("problem_case_validate_type", ProblemCaseValidateType::Exact);
     mRedirectStderrToToolLog = boolValue("redirect_stderr_to_toollog", false);
 
     mCaseEditorFontName = stringValue("case_editor_font_name", defaultMonoFont());
@@ -6637,7 +6637,7 @@ void Settings::Languages::doSave()
     //ASM
     saveValue("no_debug_directives_when_generate_asm",mNoDebugDirectivesWhenGenerateASM);
     saveValue("no_seh_directives_when_generate_asm",mNoSEHDirectivesWhenGenerateASM);
-    saveValue("x86_dialect_of_asm_generated",(int)mX86DialectOfASMGenerated);
+    saveValue("x86_dialect_of_asm_generated", mX86DialectOfASMGenerated);
 
     //C/C++
 //    saveValue("ident_c_class_member_visibility_keywords",mIndentCClassMemberVisibilityKeywords);
@@ -6648,7 +6648,7 @@ void Settings::Languages::doLoad()
 {
     mNoDebugDirectivesWhenGenerateASM = boolValue("no_debug_directives_when_generate_asm",true);
     mNoSEHDirectivesWhenGenerateASM = boolValue("no_seh_directives_when_generate_asm",true);
-    mX86DialectOfASMGenerated = (X86ASMDialect)intValue("x86_dialect_of_asm_generated",(int)X86ASMDialect::ATT);
+    mX86DialectOfASMGenerated = enumValue("x86_dialect_of_asm_generated", X86ASMDialect::ATT);
 
 
     //C/C++

@@ -3,7 +3,8 @@ QT += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++17
+# qmake5 does not support CONFIG += c++20
+CONFIG += c++17 c++20
 CONFIG += nokey
 CONFIG += staticlib
 
