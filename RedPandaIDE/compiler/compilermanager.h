@@ -19,6 +19,7 @@
 
 #include <QObject>
 #include <QMutex>
+#include <QMainWindow>
 #include "qt_utils/utils.h"
 #include "../utils.h"
 #include "../common.h"
@@ -34,6 +35,13 @@ using POJProblemCase = std::shared_ptr<OJProblemCase>;
 class CompilerManager : public QObject
 {
     Q_OBJECT
+private:
+    struct ExecArgs {
+        QStringList execArgs;
+        QString sharedMemoryId;
+        QString redirectInputFilename;
+    };
+
 public:
     explicit CompilerManager(QObject *parent = nullptr);
     CompilerManager(const CompilerManager&)=delete;
@@ -91,6 +99,14 @@ private slots:
     void onSyntaxCheckIssue(PCompileIssue issue);
 private:
     ProjectCompiler* createProjectCompiler(std::shared_ptr<Project> project);
+
+    // helper for run executable in terminal
+    ExecArgs resolveExecArgs(const QString &filename, const QString &arguments);
+
+    // helper for run executable
+    void runInBuiltInTerminal(const QString &filename, const QString &arguments, const QString &workDir, const QStringList &extraBinDir);
+    void runInExternalTerminal(const QString &filename, const QString &arguments, const QString &workDir, const QStringList &extraBinDir);
+    void runWithoutTerminal(const QString &filename, const QString &arguments, const QString &workDir, const QStringList &extraBinDir);
 private:
     Compiler* mCompiler;
     int mCompileErrorCount;
@@ -99,6 +115,7 @@ private:
     int mSyntaxCheckIssueCount;
     Compiler* mBackgroundSyntaxChecker;
     Runner* mRunner;
+    QMainWindow *mTerminalWindow;
     PNonExclusiveTemporaryFileOwner mTempFileOwner;
     QRecursiveMutex mCompileMutex;
     QRecursiveMutex mBackgroundSyntaxCheckMutex;

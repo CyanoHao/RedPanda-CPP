@@ -33,8 +33,12 @@ EnvironmentProgramsWidget::EnvironmentProgramsWidget(const QString& name, const 
 {
     ui->setupUi(this);
     ui->labelCmdPreviewResult->setFont(defaultMonoFont());
-#ifndef Q_OS_WINDOWS
-    ui->grpUseCustomTerminal->setCheckable(false);
+#ifdef Q_OS_WINDOWS
+    ui->rbTerminalBuiltInWindow->setVisible(false);
+    ui->rbTerminalBuiltInPanel->setVisible(false);
+#else
+    ui->rbTerminalWindowsDefault->setVisible(false);
+    ui->rbTerminalBuiltInPanel->setVisible(false); //TODO: implement this
 #endif
 }
 
@@ -73,18 +77,38 @@ void EnvironmentProgramsWidget::autoDetectAndUpdateArgumentsPattern(const QStrin
 
 void EnvironmentProgramsWidget::doLoad()
 {
-#ifdef Q_OS_WINDOWS
-    ui->grpUseCustomTerminal->setChecked(pSettings->environment().useCustomTerminal());
-#endif
+    using TerminalMode = Settings::Environment::TerminalMode;
+    switch (pSettings->environment().terminalMode()) {
+        case TerminalMode::BuiltInPanel:
+            ui->rbTerminalBuiltInPanel->setChecked(true);
+            break;
+        case TerminalMode::BuiltInWindow:
+            ui->rbTerminalBuiltInWindow->setChecked(true);
+            break;
+        case TerminalMode::WindowsDefault:
+            ui->rbTerminalWindowsDefault->setChecked(true);
+            break;
+        case TerminalMode::External:
+            ui->rbTerminalExternal->setChecked(true);
+            break;
+    }
+
     ui->txtTerminal->setText(pSettings->environment().terminalPath());
     ui->txtArgsPattern->setText(pSettings->environment().terminalArgumentsPattern());
 }
 
 void EnvironmentProgramsWidget::doSave()
 {
-#ifdef Q_OS_WINDOWS
-    pSettings->environment().setUseCustomTerminal(ui->grpUseCustomTerminal->isChecked());
-#endif
+    using TerminalMode = Settings::Environment::TerminalMode;
+    if (ui->rbTerminalBuiltInPanel->isChecked())
+        pSettings->environment().setTerminalMode(TerminalMode::BuiltInPanel);
+    else if (ui->rbTerminalBuiltInWindow->isChecked())
+        pSettings->environment().setTerminalMode(TerminalMode::BuiltInWindow);
+    else if (ui->rbTerminalWindowsDefault->isChecked())
+        pSettings->environment().setTerminalMode(TerminalMode::WindowsDefault);
+    else if (ui->rbTerminalExternal->isChecked())
+        pSettings->environment().setTerminalMode(TerminalMode::External);
+
     pSettings->environment().setTerminalPath(ui->txtTerminal->text());
     pSettings->environment().setTerminalArgumentsPattern(ui->txtArgsPattern->text());
     pSettings->environment().save();

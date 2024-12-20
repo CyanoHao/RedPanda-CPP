@@ -24,6 +24,7 @@
 #include "stdincompiler.h"
 #include "../mainwindow.h"
 #include "executablerunner.h"
+#include "builtinterminalrunner.h"
 #include "ojproblemcasesrunner.h"
 #include "utils.h"
 #include "utils/parsearg.h"
@@ -36,6 +37,16 @@
 #include <sys/posix_shm.h>
 #endif
 
+#ifndef Q_OS_WIN
+#include <qtermwidget/qtermwidget.h>
+#include <QMenuBar>
+#include <QMenu>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+
 CompilerManager::CompilerManager(QObject *parent) : QObject(parent),
     mCompileMutex(),
     mBackgroundSyntaxCheckMutex(),
@@ -44,6 +55,7 @@ CompilerManager::CompilerManager(QObject *parent) : QObject(parent),
     mCompiler = nullptr;
     mBackgroundSyntaxChecker = nullptr;
     mRunner = nullptr;
+    mTerminalWindow = nullptr;
     mSyntaxCheckErrorCount = 0;
     mSyntaxCheckIssueCount = 0;
     mCompileErrorCount = 0;
@@ -229,30 +241,24 @@ void CompilerManager::checkSyntax(const QString &filename, const QByteArray& enc
     }
 }
 
-void CompilerManager::run(
-        const QString &filename,
-        const QString &arguments,
-        const QString &workDir,
-        const QStringList& binDirs)
+CompilerManager::ExecArgs CompilerManager::resolveExecArgs(const QString &filename, const QString &arguments)
 {
-    QMutexLocker locker(&mRunnerMutex);
-    if (mRunner!=nullptr && !mRunner->pausing()) {
-        return;
-    }
+    using TerminalMode = Settings::Environment::TerminalMode;
+
+    QStringList execArgs;
+    QString sharedMemoryId;
     QString redirectInputFilename;
-    bool redirectInput=false;
-    if (pSettings->executor().redirectInput()
-            && !pSettings->executor().inputFilename().isEmpty()) {
-        redirectInput =true;
+
+    bool redirectInput = pSettings->executor().redirectInput();
+    if (redirectInput)
         redirectInputFilename = pSettings->executor().inputFilename();
-    }
-    bool useCustomTerminal = pSettings->environment().useCustomTerminal();
+    bool hasDiscreteTty = pSettings->environment().terminalMode() != TerminalMode(TerminalMode::WindowsDefault);
     ExecutableRunner * execRunner;
-    if (!programIsWin32GuiApp(filename)) {
+    if (programIsWin32GuiApp(filename)) {
         QString consolePauserPath = getFilePath(pSettings->dirs().appLibexecDir(), CONSOLE_PAUSER);
         QStringList execArgs = {consolePauserPath};
-        if (redirectInput) {
-            if (useCustomTerminal)
+        if (!redirectInputFilename.isEmpty()) {
+            if (hasDiscreteTty)
                 execArgs << "--redirect-input" << redirectInputFilename;
             else
                 execArgs << "--redirect-input" << "-";
@@ -260,73 +266,100 @@ void CompilerManager::run(
         if (pSettings->executor().pauseConsole())
             execArgs << "--pause-console";
 #ifdef Q_OS_WIN
-        if (pSettings->executor().enableVirualTerminalSequence())
-            execArgs << "--enable-virtual-terminal-sequence";
-        QString triplet = pSettings->compilerSets().defaultSet()->dumpMachine();
-        if (triplet.contains("-linux-"))
-            execArgs << "--run-in-wsl";
-        QString sharedMemoryId = QUuid::createUuid().toString();
+    if (pSettings->executor().enableVirualTerminalSequence())
+        execArgs << "--enable-virtual-terminal-sequence";
+    QString triplet = pSettings->compilerSets().defaultSet()->dumpMachine();
+    if (triplet.contains("-linux-"))
+        execArgs << "--run-in-wsl";
+    sharedMemoryId = QUuid::createUuid().toString();
 #else
-        QString sharedMemoryId = "/r" + QUuid::createUuid().toString(QUuid::StringFormat::Id128);
+    sharedMemoryId = "/r" + QUuid::createUuid().toString(QUuid::StringFormat::Id128);
 #ifdef Q_OS_MACOS
-        sharedMemoryId = sharedMemoryId.mid(0, PSHMNAMLEN);
+    sharedMemoryId = sharedMemoryId.mid(0, PSHMNAMLEN);
 #endif
 #endif
-        bool requireConsolePauser = execArgs.length() > 1;
-        if (requireConsolePauser) {
-            if (!fileExists(consolePauserPath)) {
-                QMessageBox::critical(pMainWindow,
-                                         tr("Can't find Console Pauser"),
-                                         tr("Console Pauser \"%1\" doesn't exists!")
-                                         .arg(consolePauserPath));
-                return;
-            }
-            execArgs << "--shared-memory" << sharedMemoryId;
-
-            // translation items: please keep sync with `tools/consolepauser/argparser.hpp`
-            execArgs << "--add-translation" << "EXIT=" + tr("Press ANY key to exit...");
-            execArgs << "--add-translation" << "USAGE_HEADER=" + tr("Process exited after");
-            execArgs << "--add-translation" << "USAGE_RETURN_VALUE=" + tr("Return value");
-            execArgs << "--add-translation" << "USAGE_CPU_TIME=" + tr("CPU time");
-            execArgs << "--add-translation" << "USAGE_MEMORY=" + tr("Memory");
-
-            // end of console pauser args
-            execArgs << "--";
-        } else {
-            execArgs.clear();
+    bool requireConsolePauser = execArgs.length() > 1;
+    if (requireConsolePauser) {
+        if (!fileExists(consolePauserPath)) {
+            QMessageBox::critical(pMainWindow,
+                                        tr("Can't find Console Pauser"),
+                                        tr("Console Pauser \"%1\" doesn't exists!")
+                                        .arg(consolePauserPath));
+            return {};
         }
-        execArgs << localizePath(filename);
-        execArgs += parseArgumentsWithoutVariables(arguments);
-        if (useCustomTerminal) {
-            auto [filename, args, fileOwner] = wrapCommandForTerminalEmulator(
-                pSettings->environment().terminalPath(),
-                pSettings->environment().terminalArgumentsPattern(),
-                execArgs
-            );
-            //delete when thread finished
-            execRunner = new ExecutableRunner(filename, args, workDir);
-            mTempFileOwner = std::move(fileOwner);
-        } else {
-            //delete when thread finished
-            execRunner = new ExecutableRunner(execArgs[0], execArgs.mid(1), workDir);
-        }
-        execRunner->setStartConsole(true);
-        if (requireConsolePauser)
-            execRunner->setShareMemoryId(sharedMemoryId);
+        execArgs << "--shared-memory" << sharedMemoryId;
+
+        // translation items: please keep sync with `tools/consolepauser/argparser.hpp`
+        execArgs << "--add-translation" << "EXIT=" + tr("Press ANY key to exit...");
+        execArgs << "--add-translation" << "USAGE_HEADER=" + tr("Process exited after");
+        execArgs << "--add-translation" << "USAGE_RETURN_VALUE=" + tr("Return value");
+        execArgs << "--add-translation" << "USAGE_CPU_TIME=" + tr("CPU time");
+        execArgs << "--add-translation" << "USAGE_MEMORY=" + tr("Memory");
+
+        // end of console pauser args
+        execArgs << "--";
+    } else {
+        execArgs.clear();
+        sharedMemoryId.clear();
+    }
+    execArgs << localizePath(filename);
+    execArgs += parseArgumentsWithoutVariables(arguments);
+    return ExecArgs{execArgs, sharedMemoryId, redirectInputFilename};
+}
+
+void CompilerManager::runInExternalTerminal(
+        const QString &filename,
+        const QString &arguments,
+        const QString &workDir,
+        const QStringList& binDirs)
+{
+    using TerminalMode = Settings::Environment::TerminalMode;
+    QMutexLocker locker(&mRunnerMutex);
+    if (mRunner!=nullptr && !mRunner->pausing()) {
+        return;
+    }
+    ExecutableRunner * execRunner;
+
+    auto [
+        execArgs,
+        sharedMemoryId,
+        redirectInputFilename
+    ] = resolveExecArgs(filename, arguments);
+
+    if (execArgs.empty()) {
+        // error: console pauser not found
+        return;
+    }
+
+    bool useCustomTerminal = pSettings->environment().terminalMode() == TerminalMode(TerminalMode::External);
+    bool redirectInput = !redirectInputFilename.isEmpty();
+
+    if (useCustomTerminal) {
+        auto [filename, args, fileOwner] = wrapCommandForTerminalEmulator(
+            pSettings->environment().terminalPath(),
+            pSettings->environment().terminalArgumentsPattern(),
+            execArgs
+        );
+        //delete when thread finished
+        execRunner = new ExecutableRunner(filename, args, workDir);
+        mTempFileOwner = std::move(fileOwner);
     } else {
         //delete when thread finished
-        execRunner = new ExecutableRunner(filename, parseArgumentsWithoutVariables(arguments), workDir);
+        execRunner = new ExecutableRunner(execArgs[0], execArgs.mid(1), workDir);
     }
+    execRunner->setShareMemoryId(sharedMemoryId);
+    execRunner->setStartConsole(true);
+
+    // redirection: custom terminal has discrete tty, console pauser will handle redirection
     if (redirectInput && !useCustomTerminal) {
         execRunner->setRedirectInput(true);
         execRunner->setRedirectInputFilename(redirectInputFilename);
     }
-    execRunner->addBinDirs(binDirs);
 
+    execRunner->addBinDirs(binDirs);
     execRunner->addBinDir(pSettings->dirs().appDir());
 
     mRunner = execRunner;
-
     connect(mRunner, &Runner::finished, this ,&CompilerManager::onRunnerTerminated);
     connect(mRunner, &Runner::finished, mRunner ,&Runner::deleteLater);
     connect(mRunner, &Runner::finished, pMainWindow ,&MainWindow::onRunFinished);
@@ -336,6 +369,143 @@ void CompilerManager::run(
     mRunner->start();
 }
 
+#ifndef Q_OS_WIN
+void CompilerManager::runInBuiltInTerminal(
+        const QString &filename,
+        const QString &arguments,
+        const QString &workDir,
+        const QStringList& binDirs)
+{
+    struct AutoDestroyMainWindow : public QMainWindow
+    {
+        void closeEvent(QCloseEvent *event) override
+        {
+            deleteLater();
+            event->accept();
+        }
+    };
+
+    QMainWindow *mainWindow = new AutoDestroyMainWindow();
+    QTermWidget *console = new QTermWidget(0, mainWindow);
+
+    // set up terminal window
+    QMenuBar *menuBar = new QMenuBar(mainWindow);
+    QMenu *actionsMenu = new QMenu(QStringLiteral("Actions"), menuBar);
+    menuBar->addMenu(actionsMenu);
+    actionsMenu->addAction(QStringLiteral("Find..."), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_F), 
+        console, &QTermWidget::toggleShowSearchBar);
+    actionsMenu->addAction(QStringLiteral("Copy"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_C), 
+        console, &QTermWidget::copyClipboard);
+    actionsMenu->addAction(QStringLiteral("Paste"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_V), 
+        console, &QTermWidget::pasteClipboard);
+    mainWindow->setMenuBar(menuBar);
+    QFont font("Monospace", 12);
+    console->setTerminalFont(font);
+    console->setScrollBarPosition(QTermWidget::ScrollBarRight);
+    mainWindow->setCentralWidget(console);
+    mainWindow->resize(600, 400);
+
+    auto [
+        execArgs,
+        sharedMemoryId,
+        redirectInputFilename
+    ] = resolveExecArgs(filename, arguments);
+
+    if (execArgs.empty()) {
+        // error: console pauser not found
+        return;
+    }
+
+    console->setShellProgram(execArgs[0]);
+    console->setArgs(execArgs.mid(1));
+    console->setWorkingDirectory(workDir);
+
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    QString path = env.value("PATH");
+    QStringList pathAdded = binDirs;
+    if (!path.isEmpty()) {
+        path = pathAdded.join(PATH_SEPARATOR) + PATH_SEPARATOR + path;
+    } else {
+        path = pathAdded.join(PATH_SEPARATOR);
+    }
+    env.insert("PATH",path);
+    console->setEnvironment(env.toStringList());
+
+    constexpr size_t BUF_SIZE = BuiltInTerminalRunner::sharedMemorySize;
+    char* pBuf=nullptr;
+    int fd_shm = shm_open(sharedMemoryId.toLocal8Bit().data(),O_RDWR | O_CREAT,S_IRWXU);
+    if (fd_shm==-1) {
+        qDebug()<<QString("shm open failed %1:%2").arg(errno).arg(strerror(errno));
+    } else {
+        if (ftruncate(fd_shm, BUF_SIZE)==-1){
+            qDebug()<<QString("truncate failed %1:%2").arg(errno).arg(strerror(errno));
+        } else {
+            pBuf = (char*)mmap(NULL,BUF_SIZE,PROT_READ | PROT_WRITE, MAP_SHARED, fd_shm,0);
+            if (pBuf == MAP_FAILED) {
+                qDebug()<<QString("mmap failed %1:%2").arg(errno).arg(strerror(errno));
+                pBuf = nullptr;
+            }
+        }
+    }
+
+    mTerminalWindow = mainWindow;
+    mRunner = new BuiltInTerminalRunner(fd_shm, pBuf, sharedMemoryId);
+
+    connect(console, &QTermWidget::finished, mainWindow, &QMainWindow::close);
+    connect(console, &QTermWidget::finished, mRunner, &Runner::stop);
+
+    connect(mTerminalWindow, &QMainWindow::destroyed, mRunner, &Runner::stop);
+
+    connect(mRunner, &Runner::finished, this ,&CompilerManager::onRunnerTerminated);
+    connect(mRunner, &Runner::finished, mRunner ,&Runner::deleteLater);
+    connect(mRunner, &Runner::finished, pMainWindow ,&MainWindow::onRunFinished);
+    connect(mRunner, &Runner::pausingForFinish, pMainWindow ,&MainWindow::onRunPausingForFinish);
+    connect(mRunner, &Runner::pausingForFinish, this ,&CompilerManager::onRunnerPausing);
+    connect(mRunner, &Runner::runErrorOccurred, pMainWindow ,&MainWindow::onRunErrorOccured);
+    mRunner->start();
+
+    mainWindow->show();
+    console->startShellProgram();
+}
+#endif
+
+void CompilerManager::runWithoutTerminal(const QString &filename, const QString &arguments, const QString &workDir, const QStringList& binDirs)
+{
+    ExecutableRunner *execRunner = new ExecutableRunner(filename, parseArgumentsWithoutVariables(arguments), workDir);
+    execRunner->setStartConsole(false);
+    execRunner->addBinDirs(binDirs);
+    execRunner->addBinDir(pSettings->dirs().appDir());
+
+    mRunner = execRunner;
+    connect(mRunner, &Runner::finished, this ,&CompilerManager::onRunnerTerminated);
+    connect(mRunner, &Runner::finished, mRunner ,&Runner::deleteLater);
+    connect(mRunner, &Runner::finished, pMainWindow ,&MainWindow::onRunFinished);
+    connect(mRunner, &Runner::pausingForFinish, pMainWindow ,&MainWindow::onRunPausingForFinish);
+    connect(mRunner, &Runner::pausingForFinish, this ,&CompilerManager::onRunnerPausing);
+    connect(mRunner, &Runner::runErrorOccurred, pMainWindow ,&MainWindow::onRunErrorOccured);
+    mRunner->start();
+}
+
+void CompilerManager::run(const QString &filename, const QString &arguments, const QString &workDir, const QStringList& binDirs)
+{
+    using TerminalMode = Settings::Environment::TerminalMode;
+
+    if (!programHasConsole(filename))
+        return runWithoutTerminal(filename, arguments, workDir, binDirs);
+
+    switch (pSettings->environment().terminalMode()) {
+#ifndef Q_OS_WIN
+        case TerminalMode::BuiltInPanel:
+        case TerminalMode::BuiltInWindow:
+            runInBuiltInTerminal(filename, arguments, workDir, binDirs);
+            break;
+#endif
+        case TerminalMode::External:
+        case TerminalMode::WindowsDefault:
+            runInExternalTerminal(filename, arguments, workDir, binDirs);
+            break;
+    }
+}
 
 void CompilerManager::runProblem(const QString &filename, const QString &arguments, const QString &workDir, POJProblemCase problemCase,
                                  const POJProblem& problem
@@ -394,6 +564,10 @@ void CompilerManager::stopRun()
         mRunner=nullptr;
         mTempFileOwner=nullptr;
     }
+    if (mTerminalWindow != nullptr) {
+        mTerminalWindow->close();
+        mTerminalWindow = nullptr;
+    }
 }
 
 void CompilerManager::stopAllRunners()
@@ -409,6 +583,10 @@ void CompilerManager::stopPausing()
         mRunner->stop();
         mRunner=nullptr;
         mTempFileOwner=nullptr;
+    }
+    if (mTerminalWindow != nullptr) {
+        mTerminalWindow->close();
+        mTerminalWindow = nullptr;
     }
 }
 
@@ -444,6 +622,7 @@ void CompilerManager::onRunnerTerminated()
     QMutexLocker locker(&mRunnerMutex);
     mRunner=nullptr;
     mTempFileOwner=nullptr;
+    mTerminalWindow=nullptr;
 }
 
 void CompilerManager::onRunnerPausing()
@@ -455,6 +634,7 @@ void CompilerManager::onRunnerPausing()
     connect(this, &CompilerManager::signalStopAllRunners, mRunner, &Runner::stop);
     mRunner=nullptr;
     mTempFileOwner=nullptr;
+    mTerminalWindow = nullptr;
 }
 
 void CompilerManager::onCompileIssue(PCompileIssue issue)

@@ -3,9 +3,13 @@ set_languages("cxx17")
 target("RedPandaIDE")
     add_rules("qt.widgetapp", "qt.ts")
 
-    add_deps("redpanda_qt_utils", "qsynedit")
+    add_deps("better-enums", "redpanda_qt_utils", "qsynedit")
     add_frameworks("QtNetwork", "QtPrintSupport", "QtSvg", "QtXml")
     add_includedirs(".")
+
+    if not is_os("windows") then
+        add_deps("qtermwidget")
+    end
 
     -- defines
 
@@ -73,6 +77,7 @@ target("RedPandaIDE")
         "todoparser",
         "toolsmanager",
         -- compiler
+        "compiler/builtinterminalrunner",
         "compiler/compiler",
         "compiler/compilermanager",
         "compiler/executablerunner",

@@ -106,17 +106,20 @@ CONFIG(debug_and_release_target) {
     }
 }
 
-INCLUDEPATH += ../libs/qsynedit ../libs/redpanda_qt_utils ../libs/lua
+INCLUDEPATH += ../libs/qsynedit ../libs/redpanda_qt_utils ../libs/lua ../libs/better-enums ../libs/qtermwidget
 
 LIBS += -L$$OUT_PWD/../libs/qsynedit/$${OBJ_OUT_PWD} -lqsynedit \
         -L$$OUT_PWD/../libs/redpanda_qt_utils/$${OBJ_OUT_PWD} -lredpanda_qt_utils \
         -L$$OUT_PWD/../libs/lua/$${OBJ_OUT_PWD} -llua
+
+!win32: LIBS += -L$$OUT_PWD/../libs/qtermwidget/$${OBJ_OUT_PWD} -lqtermwidget
 
 SOURCES += \
     autolinkmanager.cpp \
     caretlist.cpp \
     codesnippetsmanager.cpp \
     colorscheme.cpp \
+    compiler/builtinterminalrunner.cpp \
     compiler/compilerinfo.cpp \
     compiler/ojproblemcasesrunner.cpp \
     compiler/projectcompiler.cpp \
@@ -253,6 +256,7 @@ HEADERS += \
     caretlist.h \
     codesnippetsmanager.h \
     colorscheme.h \
+    compiler/builtinterminalrunner.h \
     compiler/compiler.h \
     compiler/compilerinfo.h \
     compiler/compilermanager.h \

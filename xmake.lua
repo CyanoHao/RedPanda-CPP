@@ -6,6 +6,7 @@ add_rules("mode.debug", "mode.release")
 set_warnings("all", "extra", "pedantic")
 set_languages("cxx17", "c11")
 set_encodings("utf-8")
+set_policy("check.auto_ignore_flags", false)
 
 function is_xdg()
     return is_os("linux", "bsd")
@@ -167,6 +168,18 @@ function add_moc_classes(...)
     end
 end
 
+function add_moc_classes_with_private_slots(...)
+    local classes = {...}
+    for _, class in ipairs(classes) do
+        add_files(class .. ".h")
+        add_files(
+            class .. ".cpp",
+            {cxxflags = {
+                "-include",
+                "moc_" .. path.basename(class) .. ".cpp"}})
+    end
+end
+
 function add_ui_classes(...)
     local classes = {...}
     for _, class in ipairs(classes) do
@@ -184,10 +197,14 @@ function install_libexec(target)
 end
 
 includes("RedPandaIDE")
+includes("libs/better-enums")
 if has_config("lua-addon") then
     includes("libs/lua")
 end
 includes("libs/qsynedit")
+if not is_os("windows") then
+    includes("libs/qtermwidget")
+end
 includes("libs/redpanda_qt_utils")
 includes("tools/consolepauser")
 if has_config("vcs") then

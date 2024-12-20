@@ -3869,12 +3869,12 @@ void Settings::Environment::doLoad()
 #ifdef Q_OS_WINDOWS
 # ifdef WINDOWS_PREFER_OPENCONSOLE
     // prefer UTF-8 compatible OpenConsole.exe
-    mUseCustomTerminal = boolValue("use_custom_terminal", true);
+    mTerminalMode = enumValueFromString<TerminalMode>("terminal_mode", TerminalMode::External);
 # else
-    mUseCustomTerminal = boolValue("use_custom_terminal", false);
+    mTerminalMode = enumValueFromString<TerminalMode>("terminal_mode", TerminalMode::WindowsDefault);
 # endif
 #else // UNIX
-    mUseCustomTerminal = true;
+    mTerminalMode = enumValueFromString<TerminalMode>("terminal_mode", TerminalMode::BuiltInWindow);
 #endif
 
     // check saved terminal path
@@ -3963,6 +3963,16 @@ void Settings::Environment::setIconSet(const QString &newIconSet)
     mIconSet = newIconSet;
 }
 
+Settings::Environment::TerminalMode Settings::Environment::terminalMode() const
+{
+    return mTerminalMode;
+}
+
+void Settings::Environment::setTerminalMode(TerminalMode newTerminalMode)
+{
+    mTerminalMode = newTerminalMode;
+}
+
 QString Settings::Environment::terminalPath() const
 {
     return mTerminalPath;
@@ -4047,16 +4057,6 @@ QString Settings::Environment::queryPredefinedTerminalArgumentsPattern(const QSt
         if (termName.compare(execName,PATH_SENSITIVITY)==0) return item.param;
     }
     return QString();
-}
-
-bool Settings::Environment::useCustomTerminal() const
-{
-    return mUseCustomTerminal;
-}
-
-void Settings::Environment::setUseCustomTerminal(bool newUseCustomTerminal)
-{
-    mUseCustomTerminal = newUseCustomTerminal;
 }
 
 void Settings::Environment::checkAndSetTerminal()
@@ -4146,8 +4146,6 @@ QList<Settings::Environment::TerminalItem> Settings::Environment::loadTerminalLi
 
 bool Settings::Environment::isTerminalValid()
 {
-    // don't use custom terminal
-    if (!mUseCustomTerminal) return true;
     // terminal patter is empty
     if (mTerminalArgumentsPattern.isEmpty()) return false;
 
@@ -4189,6 +4187,7 @@ void Settings::Environment::doSave()
 
     saveValue("current_folder",mCurrentFolder);
     saveValue("default_open_folder",mDefaultOpenFolder);
+    saveEnumValueAsString("terminal_mode", mTerminalMode);
     QString terminalPath = mTerminalPath;
     if (isGreenEdition())
     {
@@ -4200,9 +4199,6 @@ void Settings::Environment::doSave()
 
     saveValue("terminal_path",terminalPath);
     saveValue("terminal_arguments_pattern",mTerminalArgumentsPattern);
-#ifdef Q_OS_WINDOWS
-    saveValue("use_custom_terminal",mUseCustomTerminal);
-#endif
     saveValue("astyle_path",mAStylePath);
 
     saveValue("hide_non_support_files_file_view",mHideNonSupportFilesInFileView);

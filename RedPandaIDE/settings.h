@@ -23,10 +23,17 @@
 #include <QColor>
 #include <QString>
 #include <QPair>
+#include <QObject>
 #include "qsynedit/qsynedit.h"
 #include "compiler/compilerinfo.h"
 #include "utils.h"
 #include "utils/font.h"
+
+#define BETTER_ENUMS_DEFAULT_CONSTRUCTOR(Enum) \
+  public: \
+    Enum() = default;
+
+#include "enum.h"
 
 /**
  * use the following command to get gcc's default bin/library folders:
@@ -56,6 +63,13 @@ extern const char ValueToChar[28];
 
 class Settings;
 
+BETTER_ENUM(
+    Settings_Environment_TerminalMode, int,
+        BuiltInPanel = 1,
+        BuiltInWindow = 2,
+        WindowsDefault = 3,
+        External = 4)
+
 class Settings
 {
 private:
@@ -78,6 +92,19 @@ private:
         QSet<QString> stringSetValue(const QString &key);
         QColor colorValue(const QString &key, const QColor& defaultValue);
         QString stringValue(const QString &key, const QString& defaultValue);
+
+        template <typename Enum>
+        void saveEnumValueAsString(const QString &key, Enum value) {
+            saveValue(key, value._to_string());
+        }
+
+        template <typename Enum>
+        Enum enumValueFromString(const QString &key, typename Enum::_enumerated defaultValue) {
+            QString valueString = stringValue(key, "");
+            auto value = Enum::_from_string_nothrow(valueString.toStdString().c_str());
+            return value ? *value : Enum(defaultValue);
+        }
+
         void save();
         void load();
     protected:
@@ -546,6 +573,8 @@ public:
             QString param;
         };
 
+        using TerminalMode = Settings_Environment_TerminalMode;
+
         explicit Environment(Settings * settings);
         QString theme() const;
         void setTheme(const QString &theme);
@@ -567,6 +596,9 @@ public:
 
         const QString &iconSet() const;
         void setIconSet(const QString &newIconSet);
+
+        TerminalMode terminalMode() const;
+        void setTerminalMode(TerminalMode newTerminalMode);
 
         QString terminalPath() const;
         void setTerminalPath(const QString &terminalPath);
@@ -593,9 +625,6 @@ public:
         void setAvailableTerminals(const QJsonArray &availableTerminals);
 
         QString queryPredefinedTerminalArgumentsPattern(const QString &executable) const;
-
-        bool useCustomTerminal() const;
-        void setUseCustomTerminal(bool newUseCustomTerminal);
 
         QList<TerminalItem> loadTerminalList() const;
 
@@ -624,7 +653,7 @@ public:
         QString mTerminalPath;
         QString mAStylePath;
         QString mTerminalArgumentsPattern;
-        bool mUseCustomTerminal;
+        TerminalMode mTerminalMode;
         bool mHideNonSupportFilesInFileView;
         bool mOpenFilesInSingleInstance;
 
