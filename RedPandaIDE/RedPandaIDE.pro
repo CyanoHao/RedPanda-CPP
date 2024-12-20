@@ -112,11 +112,14 @@ LIBS += -L$$OUT_PWD/../libs/qsynedit/$${OBJ_OUT_PWD} -lqsynedit \
         -L$$OUT_PWD/../libs/redpanda_qt_utils/$${OBJ_OUT_PWD} -lredpanda_qt_utils \
         -L$$OUT_PWD/../libs/lua/$${OBJ_OUT_PWD} -llua
 
+!win32: LIBS += -L$$OUT_PWD/../libs/qtermwidget/$${OBJ_OUT_PWD} -lqtermwidget
+
 SOURCES += \
     autolinkmanager.cpp \
     caretlist.cpp \
     codesnippetsmanager.cpp \
     colorscheme.cpp \
+    compiler/builtinterminalrunner.cpp \
     compiler/compilerinfo.cpp \
     compiler/nasmfilecompiler.cpp \
     compiler/ojproblemcasesrunner.cpp \
@@ -212,6 +215,7 @@ SOURCES += \
     utils/escape.cpp \
     utils/font.cpp \
     utils/parsearg.cpp \
+    utils/sharedmemory.cpp \
     widgets/coloredit.cpp \
     widgets/compileargumentswidget.cpp \
     widgets/customdisablediconengine.cpp \
@@ -256,6 +260,7 @@ HEADERS += \
     caretlist.h \
     codesnippetsmanager.h \
     colorscheme.h \
+    compiler/builtinterminalrunner.h \
     compiler/compiler.h \
     compiler/compilerinfo.h \
     compiler/compilermanager.h \
@@ -351,6 +356,7 @@ HEADERS += \
     utils/escape.h \
     utils/font.h \
     utils/parsearg.h \
+    utils/sharedmemory.h \
     common.h \
     widgets/coloredit.h \
     widgets/compileargumentswidget.h \

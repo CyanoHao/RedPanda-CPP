@@ -32,6 +32,10 @@ target("RedPandaIDE")
         "QtXml")
     add_includedirs(".")
 
+    if not is_os("windows") then
+        add_deps("qtermwidget")
+    end
+
     -- defines
 
     add_options("app-name", "prefix", "libexecdir", "glibc-hwcaps")
@@ -77,9 +81,11 @@ target("RedPandaIDE")
         -- problems
         "problems/freeprojectsetformat.cpp",
         "problems/problemcasevalidator.cpp",
+        -- utils
         "utils/escape.cpp",
         "utils/font.cpp",
-        "utils/parsearg.cpp")
+        "utils/parsearg.cpp",
+        "utils/sharedmemory.cpp")
 
     add_moc_classes(
         "caretlist",
@@ -99,12 +105,9 @@ target("RedPandaIDE")
         -- compiler
         "compiler/compiler",
         "compiler/compilermanager",
-        "compiler/executablerunner",
         "compiler/filecompiler",
         "compiler/nasmfilecompiler",
-        "compiler/ojproblemcasesrunner",
         "compiler/projectcompiler",
-        "compiler/runner",
         "compiler/stdincompiler",
         -- debugger
         "debugger/dapdebugger",
@@ -116,6 +119,11 @@ target("RedPandaIDE")
         -- problems
         "problems/competitivecompenionhandler",
         "problems/ojproblemset",
+        -- runner
+        "runner/builtinterminalrunner",
+        "runner/executablerunner",
+        "runner/ojproblemcasesrunner",
+        "runner/runner",
         -- settings dialog
         "settingsdialog/settingswidget",
         -- widgets

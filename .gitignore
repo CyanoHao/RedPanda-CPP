@@ -4,6 +4,7 @@
 /dist
 /packages/appimage/*/*.AppImage
 .xmake/
+.cache/
 build/
 *.bak
 *.pro.user

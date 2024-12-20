@@ -15,7 +15,7 @@
 #include "mainwindow.h"
 #include "project.h"
 #include "parser/cppparser.h"
-#include "compiler/executablerunner.h"
+#include "runner/hostexecutablerunner.h"
 #include <QComboBox>
 #include "utils/escape.h"
 #include "utils/parsearg.h"

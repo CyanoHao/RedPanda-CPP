@@ -17,7 +17,7 @@
 #include "executablerunner.h"
 
 #include <QDebug>
-#include "compilermanager.h"
+#include "compiler/compilermanager.h"
 #include "../settings.h"
 #include "../systemconsts.h"
 #ifdef Q_OS_WIN

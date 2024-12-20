@@ -3864,16 +3864,27 @@ void Settings::Environment::doLoad()
         mDefaultOpenFolder = QDir::currentPath();
     }
 
+    QString terminalMode = stringValue("terminal_mode", "");
+    if (terminalMode == "BuiltInPanel")
+        mTerminalMode = TerminalMode::BuiltInPanel;
+    else if (terminalMode == "BuiltInWindow")
+        mTerminalMode = TerminalMode::BuiltInWindow;
+    else if (terminalMode == "WindowsDefault")
+        mTerminalMode = TerminalMode::WindowsDefault;
+    else if (terminalMode == "External")
+        mTerminalMode = TerminalMode::External;
+    else {
 #ifdef Q_OS_WINDOWS
 # ifdef WINDOWS_PREFER_OPENCONSOLE
-    // prefer UTF-8 compatible OpenConsole.exe
-    mUseCustomTerminal = boolValue("use_custom_terminal", true);
+        // prefer UTF-8 compatible OpenConsole.exe
+        mTerminalMode = TerminalMode::External;
 # else
-    mUseCustomTerminal = boolValue("use_custom_terminal", false);
+        mTerminalMode = TerminalMode::WindowsDefault;
 # endif
 #else // UNIX
-    mUseCustomTerminal = true;
+        mTerminalMode = TerminalMode::BuiltInWindow;
 #endif
+    }
 
     // check saved terminal path
     mTerminalPath = stringValue("terminal_path", "");
@@ -3960,6 +3971,16 @@ const QString &Settings::Environment::iconSet() const
 void Settings::Environment::setIconSet(const QString &newIconSet)
 {
     mIconSet = newIconSet;
+}
+
+Settings::Environment::TerminalMode Settings::Environment::terminalMode() const
+{
+    return mTerminalMode;
+}
+
+void Settings::Environment::setTerminalMode(TerminalMode newTerminalMode)
+{
+    mTerminalMode = newTerminalMode;
 }
 
 QString Settings::Environment::terminalPath() const
@@ -4051,16 +4072,6 @@ QString Settings::Environment::queryPredefinedTerminalArgumentsPattern(const QSt
     return QString();
 }
 
-bool Settings::Environment::useCustomTerminal() const
-{
-    return mUseCustomTerminal;
-}
-
-void Settings::Environment::setUseCustomTerminal(bool newUseCustomTerminal)
-{
-    mUseCustomTerminal = newUseCustomTerminal;
-}
-
 void Settings::Environment::checkAndSetTerminal()
 {
     if (isTerminalValid()) return;
@@ -4148,8 +4159,6 @@ QList<Settings::Environment::TerminalItem> Settings::Environment::loadTerminalLi
 
 bool Settings::Environment::isTerminalValid()
 {
-    // don't use custom terminal
-    if (!mUseCustomTerminal) return true;
     // terminal patter is empty
     if (mTerminalArgumentsPattern.isEmpty()) return false;
 
@@ -4191,6 +4200,27 @@ void Settings::Environment::doSave()
 
     saveValue("current_folder",mCurrentFolder);
     saveValue("default_open_folder",mDefaultOpenFolder);
+
+    QString terminalMode;
+    switch (mTerminalMode) {
+        case BuiltInPanel:
+            terminalMode = "BuiltInPanel";
+            break;
+        case BuiltInWindow:
+            terminalMode = "BuiltInWindow";
+            break;
+        case WindowsDefault:
+            terminalMode = "WindowsDefault";
+            break;
+        case External:
+            terminalMode = "External";
+            break;
+        default:
+            __builtin_unreachable();
+    }
+
+    saveValue("terminal_mode", terminalMode);
+
     QString terminalPath = mTerminalPath;
     if (isGreenEdition())
     {
@@ -4202,9 +4232,6 @@ void Settings::Environment::doSave()
 
     saveValue("terminal_path",terminalPath);
     saveValue("terminal_arguments_pattern",mTerminalArgumentsPattern);
-#ifdef Q_OS_WINDOWS
-    saveValue("use_custom_terminal",mUseCustomTerminal);
-#endif
     saveValue("astyle_path",mAStylePath);
 
     saveValue("hide_non_support_files_file_view",mHideNonSupportFilesInFileView);

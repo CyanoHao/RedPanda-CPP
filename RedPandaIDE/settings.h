@@ -23,6 +23,7 @@
 #include <QColor>
 #include <QString>
 #include <QPair>
+#include <QObject>
 #include "qsynedit/qsynedit.h"
 #include "compiler/compilerinfo.h"
 #include "utils.h"
@@ -547,6 +548,14 @@ public:
             QString param;
         };
 
+        // NOTE: saved as string. update `doSave()` and `doLoad()` functions when changing.
+        enum TerminalMode {
+            BuiltInPanel = 1,
+            BuiltInWindow = 2,
+            WindowsDefault = 3,
+            External = 4,
+        };
+
         explicit Environment(Settings * settings);
         QString theme() const;
         void setTheme(const QString &theme);
@@ -568,6 +577,9 @@ public:
 
         const QString &iconSet() const;
         void setIconSet(const QString &newIconSet);
+
+        TerminalMode terminalMode() const;
+        void setTerminalMode(TerminalMode newTerminalMode);
 
         QString terminalPath() const;
         void setTerminalPath(const QString &terminalPath);
@@ -594,9 +606,6 @@ public:
         void setAvailableTerminals(const QJsonArray &availableTerminals);
 
         QString queryPredefinedTerminalArgumentsPattern(const QString &executable) const;
-
-        bool useCustomTerminal() const;
-        void setUseCustomTerminal(bool newUseCustomTerminal);
 
         QList<TerminalItem> loadTerminalList() const;
 
@@ -626,7 +635,7 @@ public:
         QString mAStylePath;
         QString mTerminalArgumentsPattern;
 
-        bool mUseCustomTerminal;
+        TerminalMode mTerminalMode;
         bool mHideNonSupportFilesInFileView;
         bool mOpenFilesInSingleInstance;
 

@@ -59,4 +59,3 @@ void Runner::setWaitForFinishTime(int newWaitForFinishTime)
 {
     mWaitForFinishTime = newWaitForFinishTime;
 }
-
