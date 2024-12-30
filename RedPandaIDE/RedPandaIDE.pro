@@ -212,6 +212,7 @@ SOURCES += \
     utils/escape.cpp \
     utils/font.cpp \
     utils/parsearg.cpp \
+    utils/sharedmemory.cpp \
     widgets/coloredit.cpp \
     widgets/compileargumentswidget.cpp \
     widgets/customdisablediconengine.cpp \
@@ -349,6 +350,7 @@ HEADERS += \
     utils/escape.h \
     utils/font.h \
     utils/parsearg.h \
+    utils/sharedmemory.h \
     common.h \
     widgets/coloredit.h \
     widgets/compileargumentswidget.h \

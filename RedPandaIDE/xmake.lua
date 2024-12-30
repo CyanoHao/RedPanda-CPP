@@ -57,9 +57,11 @@ target("RedPandaIDE")
         "problems/freeprojectsetformat.cpp",
         "problems/ojproblemset.cpp",
         "problems/problemcasevalidator.cpp",
+        -- utils
         "utils/escape.cpp",
         "utils/font.cpp",
-        "utils/parsearg.cpp")
+        "utils/parsearg.cpp",
+        "utils/sharedmemory.cpp")
 
     add_moc_classes(
         "caretlist",
