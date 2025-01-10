@@ -28,6 +28,16 @@
 using pIsWow64Process2_t = BOOL (WINAPI *)(
     HANDLE hProcess, USHORT *pProcessMachine, USHORT *pNativeMachine
 );
+
+// <ntifs.h> stuffs to avoid introduce WDK to build system
+typedef struct _FILE_FS_PERSISTENT_VOLUME_INFORMATION {
+    ULONG VolumeFlags;
+    ULONG FlagMask;
+    ULONG Version;
+    ULONG Reserved;
+} FILE_FS_PERSISTENT_VOLUME_INFORMATION, *PFILE_FS_PERSISTENT_VOLUME_INFORMATION;
+#define PERSISTENT_VOLUME_STATE_DEV_VOLUME 0x00002000
+#define FSCTL_QUERY_PERSISTENT_VOLUME_STATE CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 143, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #endif
 
 NonExclusiveTemporaryFileOwner::NonExclusiveTemporaryFileOwner(std::unique_ptr<QTemporaryFile> &tempFile) :
@@ -917,3 +927,52 @@ FileType nameToFileType(const QString &name)
 {
     return FileTypeMapping.value(name, FileType::None);
 }
+
+#ifdef Q_OS_WINDOWS
+QString findDevDrive()
+{
+    static const auto pGetVolumePathNamesForVolumeNameW = (decltype(&GetVolumePathNamesForVolumeNameW))
+        GetProcAddress(GetModuleHandleW(L"kernel32"), "GetVolumePathNamesForVolumeNameW");
+
+    QString result;
+
+    wchar_t volumeName[MAX_PATH];
+    HANDLE h = FindFirstVolumeW(volumeName, MAX_PATH);
+    bool ok = h != INVALID_HANDLE_VALUE;
+    while (ok) {
+        // check for dev drive
+        if (GetDriveTypeW(volumeName) != DRIVE_FIXED)
+            continue;
+        HANDLE hVolume = CreateFileW(volumeName, FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+        if (hVolume == INVALID_HANDLE_VALUE)
+            continue;
+        FILE_FS_PERSISTENT_VOLUME_INFORMATION volumeState = {0};
+        volumeState.Version = 1;
+        volumeState.FlagMask = PERSISTENT_VOLUME_STATE_DEV_VOLUME;
+        bool ioctlOk = DeviceIoControl(hVolume, FSCTL_QUERY_PERSISTENT_VOLUME_STATE, &volumeState, sizeof(volumeState), &volumeState, sizeof(volumeState), NULL, NULL);
+        CloseHandle(hVolume);
+        if (!ioctlOk) {
+            if (GetLastError() == ERROR_INVALID_PARAMETER)
+                break;  // oops, OS does not support dev drive, stop searching
+            else
+                continue;
+        }
+        if (!(volumeState.VolumeFlags & PERSISTENT_VOLUME_STATE_DEV_VOLUME))
+            continue;  // not dev drive
+
+        // dev drive, find mount point
+        wchar_t mountPoint[MAX_PATH];  // double null terminated
+        DWORD mountPointSize;
+        bool mountOk = pGetVolumePathNamesForVolumeNameW(volumeName, mountPoint, MAX_PATH, &mountPointSize);
+        if (mountOk && mountPointSize > 1 /* non-empty */) {
+            result = QString::fromWCharArray(mountPoint);
+            break;
+        }
+
+        ok = FindNextVolumeW(h, volumeName, MAX_PATH);
+    }
+    if (h != INVALID_HANDLE_VALUE)
+        FindVolumeClose(h);
+    return result;
+}
+#endif

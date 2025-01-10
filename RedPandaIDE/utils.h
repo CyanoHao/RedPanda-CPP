@@ -246,4 +246,8 @@ bool osSupportsUtf8Manifest();
 bool applicationIsUtf8(const QString &path);
 #endif
 
+#ifdef Q_OS_WINDOWS
+QString findDevDrive();
+#endif
+
 #endif // UTILS_H
