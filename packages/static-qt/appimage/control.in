@@ -1,0 +1,11 @@
+Section: devel
+Priority: optional
+Maintainer: royqh1979@gmail.com
+Standards-Version: 4.3.0
+Homepage: https://github.com/royqh1979/RedPanda-CPP
+Package: redpanda-cpp-static
+Version: __VERSION__
+Architecture: __ARCH__
+Depends: gcc, g++, make, gdb, gdbserver, astyle
+Suggests: clang
+Description: A lightweight but powerful C/C++ IDE (statically linked)

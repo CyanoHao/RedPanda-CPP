@@ -1,0 +1,8 @@
+bin/RedPandaIDE
+libexec/RedPandaCPP/consolepauser
+share/doc/RedPandaCPP/LICENSE
+share/doc/RedPandaCPP/NEWS.md
+share/doc/RedPandaCPP/README.md
+share/applications/RedPandaIDE.desktop
+share/icons/hicolor/scalable/apps/redpandaide.svg
+share/mime/packages/redpandaide.xml

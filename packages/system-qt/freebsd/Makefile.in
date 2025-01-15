@@ -1,0 +1,18 @@
+PORTNAME = redpanda-cpp
+DISTVERSION = __VERSION__
+CATEGORIES = devel
+
+MAINTAINER = redpanda-cpp@github.com
+COMMENT = A fast, lightweight, open source, and cross platform C++ IDE
+WWW = https://github.com/royqh1979/RedPanda-CPP
+LICENSE = GPLv3
+
+RUN_DEPENDS = astyle:devel/astyle
+
+DISTNAME = RedPanda-CPP
+DISTFILES = RedPanda-CPP.tar.gz
+
+USES = qt:6 qmake
+USE_QT = base svg tools
+
+.include <bsd.port.mk>

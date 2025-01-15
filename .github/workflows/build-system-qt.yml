@@ -1,0 +1,86 @@
+name: Build with system Qt
+
+on: [push, pull_request]
+
+jobs:
+  linux:
+    name: Linux
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - Alpine
+          - Arch
+          - Debian
+          - Fedora
+          - Gentoo
+          - KDE neon
+          - openSUSE
+        include:
+          - os: Alpine
+            template: alpine
+            image: docker.io/amd64/alpine:edge
+          - os: Arch
+            template: arch
+            image: docker.io/amd64/archlinux:latest
+          - os: Debian
+            template: debian
+            image: docker.io/amd64/debian:sid
+          - os: Fedora
+            template: fedora
+            image: docker.io/amd64/fedora:latest
+          - os: Gentoo
+            template: gentoo
+            image: docker.io/gentoo/stage3:latest
+          - os: KDE neon
+            template: debian
+            image: invent-registry.kde.org/neon/docker-images/plasma:user
+          - os: openSUSE
+            template: opensuse
+            image: docker.io/opensuse/tumbleweed:latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build
+        run: |
+          podman run \
+            --platform linux/amd64 \
+            --rm \
+            --security-opt seccomp=unconfined \
+            --user root \
+            --volume "$PWD":/mnt \
+            --workdir /mnt \
+            "${{ matrix.image }}" \
+            "packages/system-qt/${{ matrix.template }}/01-in-container.sh"
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: Linux - ${{ matrix.os }}
+          path: dist/*
+
+  freebsd:
+    name: FreeBSD
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build
+        uses: vmactions/freebsd-vm@v1
+        with:
+          sync: sshfs
+          run: |
+            packages/system-qt/freebsd/01-in-vmaction.sh
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: FreeBSD
+          path: dist/*

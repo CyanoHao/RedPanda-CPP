@@ -1,0 +1,39 @@
+name: Build with static Qt
+
+on: [push, pull_request]
+
+jobs:
+  appimage:
+    name: Linux AppImage + repackaged tgz, deb, rpm
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - x86_64
+          - aarch64
+          - riscv64
+          - loong64
+          - i686
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build
+        run: |
+          podman run \
+            --platform linux/amd64 \
+            --rm \
+            --security-opt seccomp=unconfined \
+            --volume $PWD:/mnt \
+            --workdir /mnt \
+            ghcr.io/redpanda-cpp/appimage-builder-${{ matrix.arch }}:20241204.0 \
+            ./packages/static-qt/appimage/01-in-docker.sh
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: Linux AppImage + repackaged tgz, deb, rpm - ${{ matrix.arch }}
+          path: dist/*

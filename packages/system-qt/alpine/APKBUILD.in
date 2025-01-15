@@ -1,0 +1,27 @@
+pkgname=redpanda-cpp
+pkgver=__VERSION__
+pkgrel=1
+pkgdesc='A fast, lightweight, open source, and cross platform C++ IDE (development version)'
+arch=all
+url=https://github.com/royqh1979/RedPanda-CPP
+license=GPL-3.0
+depends='qt6-qtbase qt6-qtsvg gcc g++ gdb astyle'
+makedepends='qt6-qtbase-dev qt6-qtsvg-dev qt6-qttools-dev'
+source='RedPanda-CPP.tar.gz'
+options='!check'
+
+build() {
+    mkdir "$srcdir/redpanda-build"
+    cd "$srcdir/redpanda-build"
+    qmake6 \
+        PREFIX=/usr \
+        "$srcdir/RedPanda-CPP/Red_Panda_CPP.pro"
+    make
+}
+
+package() {
+    cd "$srcdir/redpanda-build"
+    make INSTALL_ROOT="$pkgdir" install
+}
+
+sha512sums='0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 RedPanda-CPP.tar.gz'

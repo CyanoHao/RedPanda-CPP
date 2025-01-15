@@ -26,5 +26,5 @@ function gen-compiler-hint() {
 }
 
 gen-compiler-hint addon/compiler_hint/windows_llvm.tl packages/msys/compiler_hint.lua
-gen-compiler-hint addon/compiler_hint/archlinux.tl packages/archlinux/compiler_hint.lua
-gen-compiler-hint addon/compiler_hint/debian.tl packages/debian/compiler_hint.lua
+gen-compiler-hint addon/compiler_hint/archlinux.tl packages/system-qt/arch/compiler_hint.lua
+gen-compiler-hint addon/compiler_hint/debian.tl packages/system-qt/debian/compiler_hint.lua

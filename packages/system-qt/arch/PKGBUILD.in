@@ -1,0 +1,42 @@
+pkgname=redpanda-cpp
+pkgver=__VERSION__
+pkgrel=1
+pkgdesc='A fast, lightweight, open source, and cross platform C++ IDE'
+arch=(x86_64 aarch64 riscv64 loong64)
+url=https://github.com/royqh1979/RedPanda-CPP
+license=(GPL3)
+depends=(qt6-base qt6-svg gcc gdb astyle)
+makedepends=(qt6-tools)
+optdepends=(
+  'clang: C/C++ compiler (alternative)'
+)
+source=(
+  RedPanda-CPP.tar.gz
+  compiler_hint.lua
+)
+sha256sums=(
+  SKIP
+  SKIP
+)
+
+prepare() {
+  sed -i '/CONFIG += ENABLE_LUA_ADDON/ { s/^#\s*// }' RedPanda-CPP/RedPandaIDE/RedPandaIDE.pro
+}
+
+build() {
+  mkdir redpanda-build
+  cd redpanda-build
+  qmake6 \
+    PREFIX=/usr \
+    LIBEXECDIR=lib \
+    "$srcdir/RedPanda-CPP/Red_Panda_CPP.pro"
+  make
+}
+
+package() {
+  local _libexecdir="$pkgdir/usr/lib/RedPandaCPP"
+  install -Dm644 "compiler_hint.lua" "$_libexecdir/compiler_hint.lua"
+
+  cd redpanda-build
+  make INSTALL_ROOT="$pkgdir" install
+}

@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+#DH_VERBOSE = 1
+
+DESTDIR := $(CURDIR)/debian/redpanda-cpp
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%:
+	dh ${@} --buildsystem qmake6
+
+execute_before_dh_auto_configure:
+	sed -i '/CONFIG += ENABLE_LUA_ADDON/ { s/^#\s*// }' RedPandaIDE/RedPandaIDE.pro
+
+execute_after_dh_auto_install:
+	install -Dm644 compiler_hint.lua "$(DESTDIR)/usr/share/RedPandaCPP/compiler_hint.lua"

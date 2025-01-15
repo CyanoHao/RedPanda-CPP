@@ -1,0 +1,26 @@
+Name: redpanda-cpp-static
+Version: __VERSION__
+Release: 1%{?dist}
+Summary: A fast, lightweight, open source, and cross platform C++ IDE
+License: GPLv3+
+URL: https://github.com/royqh1979/RedPanda-CPP
+
+Requires: gcc gcc-c++ make gdb astyle
+Recommends: gdb-gdbserver gdbserver
+
+%description
+A lightweight but powerful C/C++ IDE (statically linked)
+
+%install
+cp -r "%{name}"/* "%{buildroot}"
+
+%files
+/usr/bin/RedPandaIDE
+/usr/libexec/RedPandaCPP/*
+/usr/share/RedPandaCPP/*
+/usr/share/doc/RedPandaCPP/*
+/usr/share/applications/RedPandaIDE.desktop
+/usr/share/icons/hicolor/scalable/apps/redpandaide.svg
+/usr/share/mime/packages/redpandaide.xml
+
+%changelog

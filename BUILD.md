@@ -1,6 +1,8 @@
 # General Development Notes
 
-Red Panda C++ need Qt 5.15 or 6.8+ to build.
+Red Panda C++ is a Qt application. To develop and build Red Panda C++, the following Qt version is required:
+- Windows - Qt 5.15.3+ or 6.8+;
+- Unix - Qt 6.8+.
 
 Recommended development environments:
 1. Visual Studio Code.
@@ -104,17 +106,15 @@ export MIRROR=mirrors.kernel.org  # optionally set mirror site
 These scripts accepts the same arguments as `build-mingw.sh`, plus:
 - `-p|--profile <profile>`: (REQUIRED) the profile of MinGW Lite as well as Qt library. Available profiles are `64-ucrt`, `64-msvcrt`, `32-ucrt`, `32-msvcrt`.
 
-# Linux
+# freedesktop.org (XDG)
+
+Red Panda C++ focus on XDG desktop systems in rolling release model, while basic compatibility is provided for older Linux systems with truly static AppImage (and repackaged tgz, deb, rpm).
 
 See also [more build instructions for freedesktop.org-conforming (XDG) desktop systems](./docs/detailed-build-xdg.md).
 
-## Alpine Linux, Arch Linux, Debian and Its Derivatives, Fedora, openSUSE
+## Build with system Qt
 
-1. Setup build environment (documentation for [Alpine](https://wiki.alpinelinux.org/wiki/Abuild_and_Helpers), [Arch](https://wiki.archlinux.org/title/Makepkg), [Debians](https://wiki.debian.org/BuildingTutorial), [RPM](https://rpm-packaging-guide.github.io/#prerequisites)).
-   - For Debians:
-     ```sh
-     sudo apt install --no-install-recommends build-essential debhelper devscripts equivs
-     ```
+1. Setup build environment (documentation for [Alpine](https://wiki.alpinelinux.org/wiki/Abuild_and_Helpers), [Arch](https://wiki.archlinux.org/title/Makepkg), [Debian](https://wiki.debian.org/BuildingTutorial), [RPM](https://rpm-packaging-guide.github.io/#prerequisites)).
 2. Call build script:
    - Alpine Linux: `./packages/alpine/buildapk.sh`
    - Arch Linux: `./packages/archlinux/buildpkg.sh`
@@ -144,7 +144,13 @@ podman run --rm -v $PWD:/mnt -w /mnt docker.io/archlinux:latest ./packages/archl
 
 The package will be placed in `dist/`.
 
-## Statically Linked Binary for Ubuntu 20.04 x86_64 (NOI Linux 2.0)
+## Build with static Qt
+
+```bash
+podman run --rm -v $PWD:/mnt -w /mnt ghcr.io/redpanda-cpp/appimage-builder-x86_64:20241204.0 ./packages/appimage/01-in-docker.sh
+```
+
+Dockerfiles are available in [redpanda-cpp/appimage-builder](https://github.com/redpanda-cpp/appimage-builder). Available architectures: `x86_64`, `aarch64`, `riscv64`, `loong64`, `i686`.
 
 The package `redpanda-cpp-bin` is roughly “AppImage repack”. The binary is actually built in a container. Thus the build host is not necessarily Ubuntu 20.04; any Linux distribution with Podman and dpkg should work.
 
@@ -159,14 +165,6 @@ The package `redpanda-cpp-bin` is roughly “AppImage repack”. The binary is a
    ```
 
 The package will be placed in `dist/`.
-
-## Linux AppImage
-
-```bash
-podman run --rm -v $PWD:/mnt -w /mnt ghcr.io/redpanda-cpp/appimage-builder-x86_64:20241204.0 ./packages/appimage/01-in-docker.sh
-```
-
-Dockerfiles are available in [redpanda-cpp/appimage-builder](https://github.com/redpanda-cpp/appimage-builder). Available architectures: `x86_64`, `aarch64`, `riscv64`, `loong64`, `i686`.
 
 # macOS
 
