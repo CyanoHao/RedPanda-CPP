@@ -65,6 +65,13 @@ using win32_filetime_duration = chrono::duration<int64_t, hundred_nano>;
 
 namespace WslApi
 {
+    BOOL (__stdcall *pIsWow64Process2)(
+        _In_ HANDLE hProcess,
+        _Out_ USHORT *pProcessMachine,
+        _Out_opt_ USHORT *pNativeMachine
+    ) = nullptr;
+
+    // WSL APIs are `cdecl`, comfirmed in Windows SDK and MinGW-w64 headers.
     BOOL (*pWslIsDistributionRegistered)(
         PCWSTR distributionName
     ) = nullptr;
@@ -82,20 +89,53 @@ namespace WslApi
         _Out_ HANDLE *process
     ) = nullptr;
 
-    bool Init()
+    enum InitStatus
     {
+        Success = 0,
+        ErrorGetNativeMachine,
+        ErrorNotNative64Bit,
+        ErrorLoadWslApi,
+    };
+
+    InitStatus Init()
+    {
+        pIsWow64Process2 = (decltype(pIsWow64Process2))GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "IsWow64Process2");
+        if (!pIsWow64Process2) {
+            // Windows prior to v1709:
+            // there exist other ways do detect native machine,
+            // but we do not mean to support old versions.
+            return ErrorGetNativeMachine;
+        }
+
+        USHORT processMachine;
+        USHORT nativeMachine;
+        if (!pIsWow64Process2(GetCurrentProcess(), &processMachine, &nativeMachine))
+            return ErrorGetNativeMachine;
+
+#if defined(__x86_64__) || defined (_M_AMD64)
+        if (nativeMachine != IMAGE_FILE_MACHINE_AMD64)
+#elif defined(__aarch64__) || defined (_M_ARM64)
+        if (nativeMachine != IMAGE_FILE_MACHINE_ARM64)
+#endif
+        {
+            // not native 64-bit:
+            // - case 1. x86 process - WSL APIs are not available;
+            // - case 2. x64 process on ARM64 - danger, refuse to load WSL APIs.
+            return ErrorNotNative64Bit;
+        }
+
         // Microsoft say we should detect API set availability before dynamic loading,
         // but we are targetting desktop only, simply load it, avoid dynamic loading too many APIs.
         // (yes, API set detection API `IsApiSetImplemented` requires dynamic loading.)
         HMODULE hModule = LoadLibraryW(L"api-ms-win-wsl-api-l1-1-0.dll");
         if (!hModule)
-            return false;
+            return ErrorLoadWslApi;
 
         // if an API set exists, the APIs are all available. further check is not necessary.
         pWslIsDistributionRegistered = (decltype(pWslIsDistributionRegistered))GetProcAddress(hModule, "WslIsDistributionRegistered");
         pWslRegisterDistribution = (decltype(pWslRegisterDistribution))GetProcAddress(hModule, "WslRegisterDistribution");
         pWslLaunch = (decltype(pWslLaunch))GetProcAddress(hModule, "WslLaunch");
-        return true;
+        return Success;
     }
 };
 
@@ -182,7 +222,18 @@ void PrintWin32ApiError(const wchar_t *function)
     PrintToStderr(L"%ls failed with error code %lu: %ls\n", function, errorCode, GetErrorMessage(errorCode).c_str());
 }
 
-void PauseExit(int exitcode, bool reInp) {
+void PrintHresultError(const wchar_t *function, HRESULT hr)
+{
+    PrintToStderr(L"%ls failed with HRESULT 0x%08lx", function, hr);
+    long facility = HRESULT_FACILITY(hr);
+    if (facility == FACILITY_WIN32) {
+        DWORD errorCode = HRESULT_CODE(hr);
+        PrintToStderr(L", possibly error code %lu: %ls", errorCode, GetErrorMessage(errorCode).c_str());
+    }
+    PrintToStderr(L"\n");
+}
+
+[[noreturn]] void PauseExit(int exitcode, bool reInp) {
     if (AP::gArgs.pauseConsole) {
         HANDLE hInp=NULL;
         INPUT_RECORD irec;
@@ -376,11 +427,27 @@ DWORD ExecuteWslCommand(wstring &command, bool reInp, LONGLONG &peakMemory, doub
 {
     const wchar_t *wslDistro = L"redpanda-cpp-linux-runner-v0";
     const wchar_t *wslDistroName = L"Red Panda C++ Linux Runner V0";
-    const wstring_view wslRootfsArchive = L"alpine-minirootfs.tar";
+#if defined (__x86_64__) || defined (_M_AMD64)
+    const wstring_view wslRootfsArchive = L"alpine-minirootfs-x86_64.tar";
+#elif defined (__aarch64__) || defined (_M_ARM64)
+    const wstring_view wslRootfsArchive = L"alpine-minirootfs-aarch64.tar";
+#else
+    const wstring_view wslRootfsArchive;  // dummy, `WslApi::Init()` will fail
+#endif
 
-    if (!WslApi::Init()) {
-        PrintToStderr(L"Error: WSL is not supported on this system\n");
-        PauseExit(EXIT_CREATE_PROCESS_FAILED, reInp);
+    WslApi::InitStatus status = WslApi::Init();
+    switch (status) {
+        case WslApi::Success:
+            break;
+        case WslApi::ErrorGetNativeMachine:
+            PrintToStderr(L"Error: WSL is not supported on this system - failed detecting native architecture\n");
+            PauseExit(EXIT_CREATE_PROCESS_FAILED, reInp);
+        case WslApi::ErrorNotNative64Bit:
+            PrintToStderr(L"Error: WSL support is intentionally disabled - native 64-bit mode required\n");
+            PauseExit(EXIT_CREATE_PROCESS_FAILED, reInp);
+        case WslApi::ErrorLoadWslApi:
+            PrintToStderr(L"Error: WSL is not supported on this system - failed loading API\n");
+            PauseExit(EXIT_CREATE_PROCESS_FAILED, reInp);
     }
 
     HRESULT hr;
@@ -403,8 +470,9 @@ DWORD ExecuteWslCommand(wstring &command, bool reInp, LONGLONG &peakMemory, doub
         hr = WslApi::pWslRegisterDistribution(wslDistro, path.c_str());
         if (FAILED(hr)) {
             PrintSplitLineToStderr();
-            PrintToStderr(L"WslRegisterDistribution failed with error 0x%08lx\n", hr);
-            PrintToStderr(L"Did you enable WSL? Search \"Turn Windows features on or off\" in Start Menu and enable \"Windows Subsystem for Linux\".");
+            PrintHresultError(L"WslRegisterDistribution", hr);
+            PrintSplitLineToStderr();
+            PrintToStderr(L"Did you enable WSL? In Start Menu, search \"Turn Windows features on or off\", and enable \"Windows Subsystem for Linux\".");
             PauseExit(EXIT_CREATE_PROCESS_FAILED, reInp);
         }
     }
@@ -416,7 +484,7 @@ DWORD ExecuteWslCommand(wstring &command, bool reInp, LONGLONG &peakMemory, doub
 
     hr = WslApi::pWslLaunch(wslDistro, command.c_str(), 1, hStdin, hStdout, hStderr, &hProcess);
     if (FAILED(hr)) {
-        PrintToStderr(L"WslLaunch failed with error 0x%08lx\n", hr);
+        PrintHresultError(L"WslLaunch", hr);
         PauseExit(EXIT_CREATE_PROCESS_FAILED, reInp);
     }
     WaitForSingleObject(hProcess, INFINITE); // Wait for it to finish

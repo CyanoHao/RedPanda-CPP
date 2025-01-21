@@ -178,7 +178,7 @@ SectionEnd
     SectionIn 1 3
     SetOutPath $INSTDIR
 
-    File "alpine-minirootfs.tar"
+    File "alpine-minirootfs-x86_64.tar"
     File /nonfatal /r "gcc-linux-x86-64"
   SectionEnd
 !endif
@@ -188,7 +188,7 @@ SectionEnd
     SectionIn 1 3
     SetOutPath $INSTDIR
 
-    File "alpine-minirootfs.tar"
+    File "alpine-minirootfs-aarch64.tar"
     File /nonfatal /r "gcc-linux-aarch64"
   SectionEnd
 !endif
@@ -476,11 +476,15 @@ Section "Uninstall"
   Delete "$INSTDIR\ucrtbase.dll"
   Delete "$INSTDIR\api-ms-win-core-*.dll"
   Delete "$INSTDIR\api-ms-win-crt-*.dll"
+  Delete "$INSTDIR\alpine-minirootfs-x86_64.tar"
+  Delete "$INSTDIR\alpine-minirootfs-aarch64.tar"
 
   RMDir /r "$INSTDIR\templates"
   RMDir /r "$INSTDIR\mingw32"
   RMDir /r "$INSTDIR\mingw64"
   RMDir /r "$INSTDIR\llvm-mingw"
+  RMDir /r "$INSTDIR\gcc-linux-x86-64"
+  RMDir /r "$INSTDIR\gcc-linux-aarch64"
 
   RMDir "$INSTDIR"
 

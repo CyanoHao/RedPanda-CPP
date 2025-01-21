@@ -369,11 +369,11 @@ if [[ ${COMPILER_MINGW64} -eq 1 ]]; then
 fi
 if [[ ${COMPILER_GCC_LINUX_X8664} -eq 1 ]]; then
   nsis_flags+=(-DHAVE_GCC_LINUX_X8664 -DSTRICT_ARCH_CHECK)
-  if [[ ! -d "gcc-linux-x86_64" ]]; then
+  if [[ ! -d "gcc-linux-x86-64" ]]; then
     "${_7Z}" x "${SOURCE_DIR}/assets/${GCC_LINUX_X8664_ARCHIVE}" -o"${PACKAGE_DIR}"
   fi
-  if [[ ! -d "alpine-minirootfs.tar" ]]; then
-    cp "${SOURCE_DIR}/assets/${ALPINE_X8664_ARCHIVE}" alpine-minirootfs.tar
+  if [[ ! -d "${ALPINE_X8664_ARCHIVE}" ]]; then
+    cp "${SOURCE_DIR}/assets/${ALPINE_X8664_ARCHIVE}" "${ALPINE_X8664_ARCHIVE}"
   fi
 fi
 if [[ ${COMPILER_GCC_LINUX_AARCH64} -eq 1 ]]; then
@@ -381,8 +381,8 @@ if [[ ${COMPILER_GCC_LINUX_AARCH64} -eq 1 ]]; then
   if [[ ! -d "gcc-linux-aarch64" ]]; then
     "${_7Z}" x "${SOURCE_DIR}/assets/${GCC_LINUX_AARCH64_ARCHIVE}" -o"${PACKAGE_DIR}"
   fi
-  if [[ ! -d "alpine-minirootfs.tar" ]]; then
-    cp "${SOURCE_DIR}/assets/${ALPINE_AARCH64_ARCHIVE}" alpine-minirootfs.tar
+  if [[ ! -d "${ALPINE_AARCH64_ARCHIVE}" ]]; then
+    cp "${SOURCE_DIR}/assets/${ALPINE_AARCH64_ARCHIVE}" "${ALPINE_AARCH64_ARCHIVE}"
   fi
 fi
 if [[ -n "${UCRT}" ]]; then
