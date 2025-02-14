@@ -4809,6 +4809,36 @@ void Settings::CodeCompletion::setShareParser(bool newShareParser)
     mShareParser = newShareParser;
 }
 
+bool Settings::CodeCompletion::enableLlm()
+{
+    return mEnableLlm;
+}
+
+void Settings::CodeCompletion::setEnableLlm(bool newEnableLlm)
+{
+    mEnableLlm = newEnableLlm;
+}
+
+QString Settings::CodeCompletion::llmModelName()
+{
+    return mLlmModelName;
+}
+
+void Settings::CodeCompletion::setLlmModelName(const QString &newLlmModelName)
+{
+    mLlmApiBase = newLlmModelName;
+}
+
+QString Settings::CodeCompletion::llmApiBase()
+{
+    return mLlmApiBase;
+}
+
+void Settings::CodeCompletion::setLlmApiBase(const QString &newLlmApiBase)
+{
+    mLlmApiBase = newLlmApiBase;
+}
+
 bool Settings::CodeCompletion::hideSymbolsStartsWithUnderLine() const
 {
     return mHideSymbolsStartsWithUnderLine;
@@ -4948,6 +4978,9 @@ void Settings::CodeCompletion::doSave()
     saveValue("hide_symbols_start_with_two_underline", mHideSymbolsStartsWithTwoUnderLine);
     saveValue("hide_symbols_start_with_underline", mHideSymbolsStartsWithUnderLine);
     saveValue("share_parser",mShareParser);
+    saveValue("enable_llm", mEnableLlm);
+    saveValue("llm_model_name", mLlmModelName);
+    saveValue("llm_api_base", mLlmApiBase);
 }
 
 
@@ -4973,6 +5006,13 @@ void Settings::CodeCompletion::doLoad()
     bool shouldShare= true;
     mShareParser = boolValue("share_parser",shouldShare);
     mClearWhenEditorHidden = boolValue("clear_when_editor_hidden", mShareParser);
+
+    mEnableLlm = boolValue("enable_llm", false);
+    // qwen2.5-coder is most pulled on ollama.com; with the not-so-open 3b edition excluded,
+    // there is an obvious gap between 7b and 1.5b -- qwen2.5-coder:7b can be a good choice.
+    // 6 GiB VRAM required (77% PCs as of 2025-01 by steam hardware survey).
+    mLlmModelName = stringValue("llm_model_name", "qwen2.5-coder:7b");
+    mLlmApiBase = stringValue("llm_api_base", "http://localhost:11434/v1");
 }
 
 Settings::CodeFormatter::CodeFormatter(Settings *settings):

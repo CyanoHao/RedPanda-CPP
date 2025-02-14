@@ -213,6 +213,38 @@
        </widget>
       </item>
       <item>
+       <widget class="QGroupBox" name="grpEnableLlm">
+        <property name="title">
+         <string>Enable completion with large language model (LLM)</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <layout class="QFormLayout" name="formLayout">
+         <item row="0" column="0">
+          <widget class="QLabel" name="lblLlmModelName">
+           <property name="text">
+            <string>Model</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="txtLlmModelName"/>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="lblLlmApiBase">
+           <property name="text">
+            <string>API base</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="txtLlmApiBase"/>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
        <widget class="QWidget" name="widget_2" native="true">
         <layout class="QGridLayout" name="gridLayout">
          <property name="leftMargin">

@@ -57,6 +57,10 @@ void EditorCodeCompletionWidget::doLoad()
 
     ui->chkEditorShareCodeParser->setChecked(pSettings->codeCompletion().shareParser());
     ui->spinMinCharRequired->setValue(pSettings->codeCompletion().minCharRequired());
+
+    ui->grpEnableLlm->setChecked(pSettings->codeCompletion().enableLlm());
+    ui->txtLlmModelName->setText(pSettings->codeCompletion().llmModelName());
+    ui->txtLlmApiBase->setText(pSettings->codeCompletion().llmApiBase());
 }
 
 void EditorCodeCompletionWidget::doSave()
@@ -85,6 +89,10 @@ void EditorCodeCompletionWidget::doSave()
     pSettings->codeCompletion().setHideSymbolsStartsWithUnderLine(ui->chkHideSymbolsStartWithUnderline->isChecked());
 
     pSettings->codeCompletion().setShareParser(ui->chkEditorShareCodeParser->isChecked());
+
+    pSettings->codeCompletion().setEnableLlm(ui->grpEnableLlm->isChecked());
+    pSettings->codeCompletion().setLlmModelName(ui->txtLlmModelName->text());
+    pSettings->codeCompletion().setLlmApiBase(ui->txtLlmApiBase->text());
 
     pSettings->codeCompletion().save();
 }

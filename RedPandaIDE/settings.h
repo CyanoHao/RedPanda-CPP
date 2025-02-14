@@ -689,6 +689,15 @@ public:
         bool shareParser();
         void setShareParser(bool newShareParser);
 
+        bool enableLlm();
+        void setEnableLlm(bool newEnableLlm);
+
+        QString llmModelName();
+        void setLlmModelName(const QString &newLlmModelName);
+
+        QString llmApiBase();
+        void setLlmApiBase(const QString &newLlmApiBase);
+
     private:
         int mWidthInColumns;
         int mHeightInLines;
@@ -707,6 +716,9 @@ public:
         bool mHideSymbolsStartsWithUnderLine;
         bool mClearWhenEditorHidden;
         bool mShareParser;
+        bool mEnableLlm;
+        QString mLlmModelName;
+        QString mLlmApiBase;
 
         // _Base interface
     protected:
