@@ -16,45 +16,68 @@ if is_os("windows") then
     add_defines("_WIN32_WINNT=0x0501")
 end
 
+-- filesystem options
+
 option("app-name")
+    set_category("Filesystem")
+    set_description("Application sub-directory in libexec and data directory for hierarchical layout.")
     set_default("RedPandaCPP")
-    set_showmenu(true)
     add_defines("APP_NAME=\"$(app-name)\"")
 
-option("prefix")
+option("layout")
+    set_category("Filesystem")
+    set_description('Filesystem layout, "hierarchical" or "flat".')
+    set_values("hierarchical", "flat")
     if is_xdg() then
-        set_showmenu(true)
+        set_default("hierarchical")
+    else
+        set_default("flat")
+    end
+    add_defines("FS_LAYOUT=FS_LAYOUT_$(layout)")
+
+option("libexecdir")
+    set_category("Filesystem")
+    set_description("Libexec directory for hierarchical layout. RELATIVE to prefix.")
+    set_default("libexec")
+    add_defines('LIBEXECDIR="$(libexecdir)"')
+
+option("prefix")
+    set_category("Filesystem")
+    if is_xdg() then
         set_default("/usr/local")
+        set_description('Prefix. Set path in XDG desktop entry. Do not affect "xmake install" (use "-o" instead).')
     else
         set_showmenu(false)
         set_default("")
     end
 
-option("libexecdir")
-    if is_xdg() then
-        set_default("libexec")
-        set_showmenu(true)
-    else
-        set_default("")
-        set_showmenu(false)
-    end
-    add_defines('LIBEXECDIR="$(libexecdir)"')
+-- portability options
+
+option("portable")
+    set_category("Portability")
+    set_description('Whether config files follow application, "yes", "no" or "runtime".')
+    set_values("yes", "no", "runtime")
+    set_default("runtime")
+    add_defines("PORTABLE_APP=PORTABLE_APP_$(portable)")
 
 -- feature flags
 
 option("lua-addon")
+    set_category("Feature")
+    set_description("Enable Lua addon support.")
     set_default(true)
-    set_showmenu(true)
     add_defines("ENABLE_LUA_ADDON")
 
 option("sdcc")
+    set_category("Feature")
+    set_description("Enable SDCC compiler support.")
     set_default(true)
-    set_showmenu(true)
     add_defines("ENABLE_SDCC")
 
 option("vcs")
+    set_category("Feature")
+    set_description("Enable Git VCS support.")
     set_default(false)
-    set_showmenu(true)
     add_defines("ENABLE_VCS")
 
 option_end()
@@ -229,10 +252,15 @@ target("resources")
     -- desktop entry
 
     if is_xdg() then
+        if get_config("layout") == "hierarchical" then
+            bindir = get_config("prefix") .. "/bin"
+        else
+            bindir = get_config("prefix")
+        end
         add_configfiles("platform/linux/RedPandaIDE.desktop.in", {
             pattern = "$${(.-)}",
             variables = {
-                PREFIX = get_config("prefix"),
+                BINDIR = bindir,
             },
         })
         add_installfiles("$(buildir)/RedPandaIDE.desktop", {prefixdir = "share/applications"})
@@ -240,12 +268,12 @@ target("resources")
 
     -- mime type
 
-    if is_xdg() then
+    if is_xdg() and get_config("layout") == "hierarchical" then
         add_installfiles("platform/linux/redpandaide.xml", {prefixdir = "share/mime/packages"})
     end
 
     -- qt.conf
 
-    if is_os("windows") then
+    if is_os("windows") and get_config("layout") == "flat" then
         add_installfiles("platform/windows/qt.conf", {prefixdir = "bin"})
     end

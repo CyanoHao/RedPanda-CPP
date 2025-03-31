@@ -210,28 +210,26 @@ QString Settings::Dirs::appDir() const
 
 QString Settings::Dirs::appResourceDir() const
 {
-#ifdef Q_OS_WIN
-    return appDir();
-#elif defined(Q_OS_MACOS)
-//    return QApplication::instance()->applicationDirPath();
-    return "";
-#else // XDG desktop
-    // in AppImage or tarball PREFIX is not true, resolve from relative path
+#if FS_LAYOUT == FS_LAYOUT_hierarchical
     const static QString absoluteResourceDir(QDir(appDir()).absoluteFilePath("../share/" APP_NAME));
     return absoluteResourceDir;
+#elif FS_LAYOUT == FS_LAYOUT_flat
+    return appDir();
+#else
+    #error "Invalid FS_LAYOUT value"
 #endif
 }
 
 
 QString Settings::Dirs::appLibexecDir() const
 {
-#ifdef Q_OS_WIN
-    return appDir();
-#elif defined(Q_OS_MACOS)
-    return QApplication::instance()->applicationDirPath();
-#else // XDG desktop
+#if FS_LAYOUT == FS_LAYOUT_hierarchical
     const static QString libExecDir(QDir(appDir()).absoluteFilePath("../" LIBEXECDIR "/" APP_NAME));
     return libExecDir;
+#elif FS_LAYOUT == FS_LAYOUT_flat
+    return appDir();
+#else
+    #error "Invalid FS_LAYOUT value"
 #endif
 }
 
@@ -294,7 +292,7 @@ void Settings::Dirs::doSave()
 void Settings::Dirs::doLoad()
 {
     QString defaultProjectDir;
-    if (isGreenEdition()) {
+    if (isPortableEdition()) {
         defaultProjectDir = getFilePath(appDir(), "projects");
     } else {
         QStringList docLocations = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation);
@@ -3542,7 +3540,7 @@ Settings::PCompilerSet Settings::CompilerSets::getSet(int index)
 }
 
 void Settings::CompilerSets::savePath(const QString& name, const QString& path) {
-    if (!isGreenEdition()) {
+    if (!isPortableEdition()) {
         mSettings->mSettings.setValue(name, path);
         return;
     }
@@ -3561,7 +3559,7 @@ void Settings::CompilerSets::savePath(const QString& name, const QString& path) 
 }
 
 void Settings::CompilerSets::savePathList(const QString& name, const QStringList& pathList) {
-    if (!isGreenEdition()) {
+    if (!isPortableEdition()) {
         mSettings->mSettings.setValue(name, pathList);
         return;
     }
@@ -4187,7 +4185,7 @@ void Settings::Environment::doSave()
     saveValue("current_folder",mCurrentFolder);
     saveValue("default_open_folder",mDefaultOpenFolder);
     QString terminalPath = mTerminalPath;
-    if (isGreenEdition())
+    if (isPortableEdition())
     {
         // APP_DIR trick for windows portable app
         // For non-portable app (other platform or Windows installer), multiple instances

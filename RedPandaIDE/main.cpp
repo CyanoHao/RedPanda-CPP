@@ -175,24 +175,29 @@ bool BlockWheelEventFiler::eventFilter(QObject *watched, QEvent *event)
     return false;
 }
 
-QString getSettingFilename(const QString& filepath, bool& firstRun) {
+QString getSettingFilename(bool& firstRun) {
+    QString configDir;
     QString filename;
-    if (filepath.isEmpty()) {
-        if (isGreenEdition()) {
-            filename = includeTrailingPathDelimiter(QApplication::applicationDirPath()) +
-                    "config/"  + APP_SETTSINGS_FILENAME;
-        } else {
-            QStringList appLocations = QStandardPaths::standardLocations(QStandardPaths::AppDataLocation);
-            filename =includeTrailingPathDelimiter(appLocations.first())
-                 + APP_SETTSINGS_FILENAME;
-        }
-    } else {
-        filename = filepath;
+
+#if defined (Q_OS_WIN)
+    if (isPortableEdition()) {
+        configDir = QDir(QApplication::applicationDirPath()).absoluteFilePath("config");
+    } else
+#elif defined (Q_OS_LINUX)
+    if (isPortableEdition()) {
+        configDir = QStandardPaths::standardLocations(QStandardPaths::AppConfigLocation).first();
+    } else
+#endif
+    {
+        // use local data dir for backward compatibility
+        // TODO: fix this on next breaking change (maybe refactor of compiler settings).
+        configDir = QStandardPaths::standardLocations(QStandardPaths::AppDataLocation).first();
     }
+    filename = includeTrailingPathDelimiter(configDir) + APP_SETTSINGS_FILENAME;
 
     QFileInfo fileInfo(filename);
     firstRun = !fileInfo.exists();
-    QDir dir(fileInfo.absoluteDir());
+    QDir dir(configDir);
     if (!dir.exists()) {
         if (!dir.mkpath(dir.absolutePath())) {
             QMessageBox::critical(nullptr, QObject::tr("Error"),
@@ -259,7 +264,7 @@ int main(int argc, char *argv[])
     QLockFile lockFile(QDir::tempPath()+QDir::separator()+"RedPandaDevCppStartUp.lock");
     {
         bool firstRun;
-        QString settingFilename = getSettingFilename(QString(), firstRun);
+        QString settingFilename = getSettingFilename(firstRun);
         bool openInSingleInstance = false;
         if (!settingFilename.isEmpty() && !firstRun) {
             QSettings envSetting(settingFilename,QSettings::IniFormat);
@@ -294,8 +299,8 @@ int main(int argc, char *argv[])
     //Translation must be loaded first
     QTranslator trans,transQt,transUtils;
     bool firstRun;
-    QString settingFilename = getSettingFilename(QString(), firstRun);
-    if (!isGreenEdition()) {
+    QString settingFilename = getSettingFilename(firstRun);
+    if (!isPortableEdition()) {
         QStringList documentLocations = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation);
         QDir::setCurrent(documentLocations.first());
     }

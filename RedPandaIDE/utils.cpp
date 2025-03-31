@@ -373,19 +373,24 @@ int getNewFileNumber()
     return count;
 }
 
-#ifdef Q_OS_WIN
-static bool gIsGreenEdition = true;
-static bool gIsGreenEditionInited = false;
-
-bool isGreenEdition()
+#if PORTABLE_APP == PORTABLE_APP_runtime
+bool isPortableEdition()
 {
-    if (!gIsGreenEditionInited) {
+#ifdef Q_OS_WIN
+    // Windows: Read registry system-wide/per-user uninstall key, if install location matches this is an installed, non-portable edition.
+
+    static bool registryInstallLocationMatch = false;
+    static bool registryInstallLocationMatchInited = false;
+
+    if (!registryInstallLocationMatchInited) {
         QString appPath = QApplication::instance()->applicationDirPath();
         appPath = excludeTrailingPathDelimiter(localizePath(appPath));
         QString keyString = R"(Software\Microsoft\Windows\CurrentVersion\Uninstall\RedPanda-C++)";
         QString systemInstallPath;
+        // try new InstallLocation value introduced in 3.0
         readRegistry(HKEY_LOCAL_MACHINE, keyString, "InstallLocation", systemInstallPath);
         if (systemInstallPath.isEmpty()) {
+            // and then fallback to old, unquoted UninstallString value
             readRegistry(HKEY_LOCAL_MACHINE, keyString, "UninstallString", systemInstallPath);
             systemInstallPath = excludeTrailingPathDelimiter(extractFileDir(systemInstallPath));
         } else
@@ -399,11 +404,33 @@ bool isGreenEdition()
             userInstallPath = excludeTrailingPathDelimiter(userInstallPath);
         systemInstallPath = localizePath(systemInstallPath);
         userInstallPath = localizePath(userInstallPath);
-        gIsGreenEdition = appPath.compare(systemInstallPath, Qt::CaseInsensitive) != 0 &&
-                appPath.compare(userInstallPath, Qt::CaseInsensitive) != 0;
-        gIsGreenEditionInited = true;
+        registryInstallLocationMatch = appPath.compare(systemInstallPath, Qt::CaseInsensitive) == 0 ||
+                appPath.compare(userInstallPath, Qt::CaseInsensitive) == 0;
+        registryInstallLocationMatchInited = true;
     }
-    return gIsGreenEdition;
+    return !registryInstallLocationMatch;
+#elif defined(Q_OS_LINUX)
+    // Linux: AppImage runtime automatically set $HOME and/or $XDG_CONFIG_HOME to portable home/config dir.
+    // Theoretically we can do nothing here and Qt will use them. But, Red Panda C++ use local DATA dir for historical reason (converted from Dev C++'s CSIDL_APPDATA).
+    // Here we do special check to correct this in portable edition allowing portable config with non-portable home, while keep backward compatibility in non-portable edition.
+
+    // TODO: remove this on next breaking change (maybe refactor of compiler settings).
+
+    static bool appImagePortableMode = [] {
+        QProcessEnvironment sysEnv = QProcessEnvironment::systemEnvironment();
+        if (!sysEnv.contains("APPIMAGE"))
+            return false;  // not an AppImage
+        QString appImage = sysEnv.value("APPIMAGE");
+        QString config = sysEnv.value("XDG_CONFIG_HOME");
+        QString home = sysEnv.value("HOME");
+        // undocumented: AppImage runtime simply append ".config"/".home" to $APPIMAGE.
+        return (config == appImage + ".config") || (home == appImage + ".home");
+    } ();
+
+    return appImagePortableMode;
+#else
+    return false;
+#endif
 }
 #endif
 

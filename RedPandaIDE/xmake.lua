@@ -9,7 +9,8 @@ target("RedPandaIDE")
 
     -- defines
 
-    add_options("app-name", "prefix", "libexecdir")
+    add_options("app-name", "layout", "libexecdir", "prefix")
+    add_options("portable")
     add_options("lua-addon", "sdcc", "vcs")
 
     if APP_VERSION_SUFFIX ~= "" then

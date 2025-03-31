@@ -33,6 +33,13 @@
 #include <windows.h>
 #endif
 
+#define PORTABLE_APP_yes 1
+#define PORTABLE_APP_no 2
+#define PORTABLE_APP_runtime 3
+
+#define FS_LAYOUT_hierarchical 1
+#define FS_LAYOUT_flat 2
+
 using SimpleIni = CSimpleIniA;
 using PSimpleIni = std::shared_ptr<SimpleIni>;
 
@@ -182,10 +189,14 @@ void executeFile(const QString& fileName,
                  const QString& workingDir,
                  const QString& tempFile);
 
-#ifdef Q_OS_WIN
-bool isGreenEdition();
+#if PORTABLE_APP == PORTABLE_APP_yes
+constexpr bool isPortableEdition() { return true; }
+#elif PORTABLE_APP == PORTABLE_APP_no
+constexpr bool isPortableEdition() { return false; }
+#elif PORTABLE_APP == PORTABLE_APP_runtime
+bool isPortableEdition();
 #else
-constexpr bool isGreenEdition() { return false; }
+    #error "Invalid PORTABLE_APP value"
 #endif
 
 #ifdef Q_OS_WIN
