@@ -1,7 +1,3 @@
-includes("./version.lua")
-
-TEST_VERSION = "$(shell git rev-list HEAD --count)"
-
 add_rules("mode.debug", "mode.release")
 set_warnings("all", "extra", "pedantic")
 set_languages("cxx17", "c11")
@@ -230,9 +226,8 @@ target("resources")
 
     if is_xdg() then
         add_configfiles("platform/linux/RedPandaIDE.desktop.in", {
-            pattern = "$${(.-)}",
             variables = {
-                PREFIX = get_config("prefix"),
+                CMAKE_INSTALL_PREFIX = get_config("prefix"),
             },
         })
         add_installfiles("$(buildir)/RedPandaIDE.desktop", {prefixdir = "share/applications"})

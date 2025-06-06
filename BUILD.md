@@ -1,27 +1,11 @@
 # General Development Notes
 
-Red Panda C++ need Qt 5.15 or 6.8+ to build.
+Prerequisites:
 
-Recommended development environments:
-1. Visual Studio Code.
-   * Better performance.
-2. Qt Creator.
-   * (Almost) zero configuration.
-   * Built-in UI designer.
-   * Debugger integration with Qt.
-
-To setup development environment in Visual Studio Code:
-0. (Windows only) Enable Developer Mode in Windows Settings, and enable `core.symlinks` in Git (`git config core.symlinks true`).
-1. Install [xmake](https://xmake.io/) and [XMake extension](https://marketplace.visualstudio.com/items?itemName=tboox.xmake-vscode).
-2. Install [C/C++ extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools) for language and debugging support.
-3. Optionally install [clangd](https://clangd.llvm.org/) and [clangd extension](https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd) for better analysis.
-4. Config workspace:
-   - Compile commands: `.vscode/compile_commands.json` (“C/C++: Edit Configurations (UI)” from the Command Palette);
-   - “Clangd: Arguments”: `--compile-commands-dir=.vscode`;
-   - “Xmake: Additional Config Arguments”: `--qt=/usr` for example.
-5. Run “XMake: UpdateIntellisense” (Command Palette) to generate compilation database.
-
-\* Note: xmake was introduced for compilation database generation and feature matrix test. It is not fully functional yet.
+- Qt 6.8+ or 5.15.
+- C++ development environment that support CMake and/or xmake. Recommended ones:
+  - Visual Studio Code -- better performance, better AI integration.
+  - Qt Creator -- (almost) zero configuration, Built-in UI designer, debugger integration with Qt.
 
 # Windows
 
@@ -39,8 +23,6 @@ Red Panda C++ should work with any 64-bit MinGW toolchain from MSYS2, including 
 - MINGW64 GCC,
 - UCRT64 GCC (recommended for x64)
 - CLANGARM64 Clang (the only and recommended toolchain for ARM64).
-
-Official distributions of Red Panda C++ are built with MINGW32 GCC (archived) and MINGW64 GCC.
 
 Prerequisites:
 

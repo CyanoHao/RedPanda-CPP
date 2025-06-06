@@ -1,27 +1,11 @@
 ﻿# 通用开发说明
 
-小熊猫C++ 需要 Qt 5.15 或 6.8+。
+前置条件：
 
-推荐开发环境：
-1. Visual Studio Code。
-   * 性能更好。
-2. Qt Creator。
-   * （几乎）无需配置。
-   * 内建 UI 设计器。
-   * 调试器的 Qt 集成。
-
-设置 Visual Studio Code 开发环境的步骤：
-0. 在 Windows 设置中，启用 “开发人员模式”。启用 Git 的 `core.symlinks` 选项（`git config core.symlinks true`）。
-1. 安装 [xmake](https://xmake.io/) 和 [XMake 扩展](https://marketplace.visualstudio.com/items?itemName=tboox.xmake-vscode)。
-2. 安装 [C/C++ 扩展](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools) 以支持语言和调试功能。
-3. 根据需要安装 [clangd](https://clangd.llvm.org/) 和 [clangd 扩展](https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd)以获得更好的代码分析能力。
-4. 配置工作区：
-   - 编译命令：`.vscode/compile_commands.json`（命令面板中的 “C/C++: 编辑配置(UI)”）；
-   - “Clangd: Arguments”：`--compile-commands-dir=.vscode`；
-   - “Xmake: Additional Config Arguments”：如 `--qt=/usr`。
-5. 在命令面板中执行 “XMake: UpdateIntellisense” 以生成编译数据库。
-
-\* 提示：xmake 的引入是为了支持编译数据库的生成和功能测试矩阵，目前并不完备。
+- Qt 6.8+ 或 5.15。
+- 支持 CMake 或 xmake 的 C++ 开发环境，推荐：
+  - Visual Studio Code -- 性能更好，与 AI 紧密集成。
+  - Qt Creator -- （几乎）无需配置，内建 UI 设计器，调试器的 Qt 集成。
 
 # Windows
 
@@ -39,8 +23,6 @@
 - MINGW64 GCC，
 - UCRT64 GCC（x64 推荐），
 - CLANGARM64 Clang（ARM64 唯一可用且推荐的工具链）。
-
-小熊猫C++ 官方版本使用 MINGW32 GCC（已归档）和 MINGW64 GCC 构建。
 
 前置条件：
 

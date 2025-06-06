@@ -1,27 +1,11 @@
 # Основые замечания по вопросу разработки
 
-Red Panda C++ требует для сборки Qt 5.15 или 6.8+.
+Prerequisites:
 
-Рекомендуемые окружения разработчика:
-1. Visual Studio Code.
-   * Лучшая производительность.
-2. Qt Creator.
-   * (Обычно) не требует настройки.
-   * Встроенный дизайнер пользовательского интерфейса (UI designer).
-   * Интеграция отладчика с Qt.
-
-Для установки окружения разработки в Visual Studio Code:
-0. (Только для Windows) Включить Режим разработчика (Developer Mode) в настройках Windows, включить параметр `core.symlinks` в Git (`git config core.symlinks true`).
-1. Установить [xmake](https://xmake.io/) и [XMake extension](https://marketplace.visualstudio.com/items?itemName=tboox.xmake-vscode).
-2. Установить [C/C++ extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools) для поддержки языка и отладки.
-3. По возможности установить [clangd](https://clangd.llvm.org/) и [clangd extension](https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd) для лучшего анализа.
-4. Настройка рабочего окружения:
-   - Compile commands: `.vscode/compile_commands.json` (“C/C++: Edit Configurations (UI)” из Палитры комманд);
-   - “Clangd: Arguments”: `--compile-commands-dir=.vscode`;
-   - “Xmake: Additional Config Arguments”: например, `--qt=/usr`.
-5. Запустить “XMake: UpdateIntellisense” (из Палитры комманд) для создания базы данных компиляции.
-
-\* Примечание: xmake был упомянут для создания базы данных компиляции и тестирования матрицы возможностей. Он еще не полностью функционален.
+- Qt 6.8+ или 5.15.
+- C++ development environment that support CMake and/or xmake. Рекомендуемые:
+  - Visual Studio Code -- лучшая производительность, better AI integration.
+  - Qt Creator -- (обычно) не требует настройки, встроенный дизайнер пользовательского интерфейса (UI designer), интеграция отладчика с Qt.
 
 # Windows
 
@@ -40,8 +24,6 @@ Red Panda C++ должна работать с любым 64-битным наб
 - MINGW64 GCC,
 - UCRT64 GCC (рекомендуется для x64)
 - CLANGARM64 Clang (единственный и рекомендуемый набор инструментов для ARM64).
-
-Официальные дистрибутивы Red Panda C++ построены с MINGW32 GCC (в архиве) и MINGW64 GCC.
 
 Подготовительный этап:
 
