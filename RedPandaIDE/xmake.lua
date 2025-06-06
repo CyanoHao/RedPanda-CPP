@@ -22,11 +22,8 @@ target("RedPandaIDE")
         add_defines('REDPANDA_CPP_VERSION="' .. APP_VERSION .. '"')
     end
 
-    if is_arch("x86_64") then
-        add_defines("ARCH_X86_64=1")
-    elseif is_arch("i[3456]86") then
-        add_defines("ARCH_X86=1")
-    end
+    add_defines("ARCH_X86_64=1")
+    add_defines("ARCH_X86=1")
 
     -- files
 
@@ -53,6 +50,7 @@ target("RedPandaIDE")
         "problems/freeprojectsetformat.cpp",
         "problems/ojproblemset.cpp",
         "problems/problemcasevalidator.cpp",
+        -- utils
         "utils/escape.cpp",
         "utils/font.cpp",
         "utils/parsearg.cpp")
