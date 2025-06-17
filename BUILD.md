@@ -126,6 +126,7 @@ podman run --rm -v $PWD:/mnt -w /mnt docker.io/archlinux:latest ./packages/archl
 
 The package will be placed in `dist/`.
 
+<!--
 ## Statically Linked Binary for Ubuntu 20.04 x86_64 (NOI Linux 2.0)
 
 The package `redpanda-cpp-bin` is roughly “AppImage repack”. The binary is actually built in a container. Thus the build host is not necessarily Ubuntu 20.04; any Linux distribution with Podman and dpkg should work.
@@ -149,7 +150,9 @@ podman run --rm -v $PWD:/mnt -w /mnt ghcr.io/redpanda-cpp/appimage-builder-x86_6
 ```
 
 Dockerfiles are available in [redpanda-cpp/appimage-builder](https://github.com/redpanda-cpp/appimage-builder). Available architectures: `x86_64`, `aarch64`, `riscv64`, `loong64`, `i686`.
+-->
 
+<!--
 # macOS
 
 ## Qt.io Qt Library
@@ -172,3 +175,4 @@ To build, run one of:
 ./packages/macos/build.sh -a arm64 --qt-version 6.8.0
 ./packages/macos/build.sh -a universal --qt-version 6.8.0
 ```
+-->

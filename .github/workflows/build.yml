@@ -29,6 +29,7 @@ env:
 jobs:
   windows:
     name: Windows MSYS2
+    if: false
     strategy:
       fail-fast: false
       matrix:
@@ -87,6 +88,7 @@ jobs:
 
   windows_legacy_native:
     name: Windows NT 5.x native
+    if: false
     strategy:
       fail-fast: false
       matrix:
@@ -132,6 +134,7 @@ jobs:
 
   windows_legacy_cross:
     name: Windows NT 5.x cross
+    if: false
     strategy:
       fail-fast: false
       matrix:
@@ -158,6 +161,7 @@ jobs:
 
   windows_msvc_x64:
     name: Windows MSVC x64
+    if: false
     runs-on: windows-2019
 
     steps:
@@ -201,12 +205,11 @@ jobs:
       fail-fast: false
       matrix:
         arch: [amd64, i386]
-        version: ["11", "12"]
         include:
           - { arch: amd64, platform: linux/amd64 }
           - { arch: i386, platform: linux/386 }
     env:
-      IMAGE: docker.io/${{ matrix.arch }}/debian:${{ matrix.version }}
+      IMAGE: docker.io/${{ matrix.arch }}/debian:sid
       PLATFORM: ${{ matrix.platform }}
 
     runs-on: ubuntu-latest
@@ -223,17 +226,13 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: Debian ${{ matrix.version }} ${{ matrix.arch }}
+          name: Debian sid ${{ matrix.arch }}
           path: dist/*.deb
 
   ubuntu:
     name: Ubuntu
-    strategy:
-      fail-fast: false
-      matrix:
-        version: ["22.04", "24.04", "24.10", "devel"]
     env:
-      IMAGE: docker.io/amd64/ubuntu:${{ matrix.version }}
+      IMAGE: docker.io/amd64/ubuntu:devel
       PLATFORM: linux/amd64
 
     runs-on: ubuntu-latest
@@ -250,7 +249,7 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: Ubuntu ${{ matrix.version }} amd64
+          name: Ubuntu devel amd64
           path: dist/*.deb
 
   archlinux:
@@ -304,8 +303,6 @@ jobs:
   opensuse:
     name: openSUSE
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
     env:
       IMAGE: docker.io/opensuse/tumbleweed:latest
       PLATFORM: linux/amd64
@@ -329,7 +326,7 @@ jobs:
     name: Alpine Linux
     runs-on: ubuntu-latest
     env:
-      IMAGE: docker.io/amd64/alpine:latest
+      IMAGE: docker.io/amd64/alpine:edge
       PLATFORM: linux/amd64
 
     steps:
@@ -349,6 +346,7 @@ jobs:
 
   appimage:
     name: Linux AppImage
+    if: false
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -380,6 +378,7 @@ jobs:
 
   static-deb:
     name: Static Deb
+    if: false
     runs-on: ubuntu-latest
 
     steps:
@@ -399,6 +398,7 @@ jobs:
 
   macos:
     name: macOS
+    if: false
     strategy:
       fail-fast: false
       matrix:

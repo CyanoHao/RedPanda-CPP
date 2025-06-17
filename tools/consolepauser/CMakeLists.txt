@@ -17,5 +17,5 @@ if(UNIX)
 endif()
 
 install(TARGETS consolepauser
-    DESTINATION ${LIBEXECDIR}/${APP_NAME}
+    DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/${APP_NAME}
 )

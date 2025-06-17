@@ -126,6 +126,7 @@ podman run --rm -v $PWD:/mnt -w /mnt docker.io/archlinux:latest ./packages/archl
 
 软件包位于 `dist/` 目录下。
 
+<!--
 ## Ubuntu 20.04 x86_64（NOI Linux 2.0）静态链接包
 
 `redpanda-cpp-bin` 包大体上就是 “AppImage 重新打包”。真正的构建过程在容器中进行，因此构建主机不一定要 Ubuntu 20.04，任何 Linux 发行版只要有 Podman 和 dpkg 就行。
@@ -149,7 +150,9 @@ podman run --rm -v $PWD:/mnt -w /mnt ghcr.io/redpanda-cpp/appimage-builder-x86_6
 ```
 
 Dockerfile 位于 [redpanda-cpp/appimage-builder](https://github.com/redpanda-cpp/appimage-builder)。可用架构：`x86_64`、`aarch64`、`riscv64`、`loong64`、`i686`。
+-->
 
+<!--
 # macOS
 
 ## Qt.io 的 Qt 库
@@ -172,3 +175,4 @@ Dockerfile 位于 [redpanda-cpp/appimage-builder](https://github.com/redpanda-cp
 ./packages/macos/build.sh -a arm64 --qt-version 6.8.0
 ./packages/macos/build.sh -a universal --qt-version 6.8.0
 ```
+-->

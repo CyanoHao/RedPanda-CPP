@@ -154,7 +154,7 @@ target_ui_classes(RedPandaIDE
 
 target_compile_definitions(RedPandaIDE PRIVATE
     APP_NAME=\"${APP_NAME}\"
-    LIBEXECDIR=\"${LIBEXECDIR}\"
+    LIBEXECDIR=\"${CMAKE_INSTALL_LIBEXECDIR}\"
     ARCH_X86_64=1
     ARCH_X86=1
 )
@@ -293,12 +293,37 @@ target_sources(RedPandaIDE PRIVATE
     projecttemplates.qrc
 )
 
+# translation
+
 target_embed_translations(RedPandaIDE
     translations/RedPandaIDE_pt_BR.ts
     translations/RedPandaIDE_ru_RU.ts
     translations/RedPandaIDE_zh_CN.ts
     translations/RedPandaIDE_zh_TW.ts
 )
+
+if(QT_FEATURE_static)
+    set(qtbase_translation_filenames
+        qtbase_pt_BR.qm
+        qtbase_ru_RU.qm
+        qtbase_zh_CN.qm
+        qtbase_zh_TW.qm
+    )
+
+    set(qtbase_translation_files)
+
+    foreach(filename IN LIST qtbase_translation_filenames)
+        if(EXISTS ${QT6_INSTALL_TRANSLATIONS}/${filename})
+            list(APPEND qtbase_translation_files ${QT6_INSTALL_TRANSLATIONS}/${filename})
+        endif()
+    endforeach()
+
+    target_embed_resources(RedPandaIDE "qtbase_translation"
+        ${qtbase_translation_files}
+    )
+endif()
+
+# appereance
 
 file(GLOB_RECURSE resource_iconset_files
     "resources/iconsets/*.json"
@@ -324,23 +349,19 @@ target_embed_resources(RedPandaIDE colorschemes
     ${resource_colorscheme_files}
 )
 
-if(QT_FEATURE_static)
-    set(qtbase_translation_filenames
-        qtbase_pt_BR.qm
-        qtbase_ru_RU.qm
-        qtbase_zh_CN.qm
-        qtbase_zh_TW.qm
+# app icon
+
+if(WIN32)
+    target_sources(RedPandaIDE PRIVATE
+        resources/windows_icon.rc
     )
-
-    set(qtbase_translation_files)
-
-    foreach(filename IN LIST qtbase_translation_filenames)
-        if(EXISTS ${QT6_INSTALL_TRANSLATIONS}/${filename})
-            list(APPEND qtbase_translation_files ${QT6_INSTALL_TRANSLATIONS}/${filename})
-        endif()
-    endforeach()
-
-    target_embed_resources(RedPandaIDE "qtbase_translation"
-        ${qtbase_translation_files}
+elseif(MACOS)
+    set(app_icon ../platform/macos/RedPandaIDE.icns)
+    set_source_files_properties(${app_icon}
+        PROPERTIES
+            MACOSX_PACKAGE_LOCATION "Resources"
+    )
+    target_sources(RedPandaIDE PRIVATE
+        ${app_icon}
     )
 endif()

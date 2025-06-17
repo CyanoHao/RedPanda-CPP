@@ -13,11 +13,10 @@ cp -r RedPandaIDE $TMP_FOLDER
 cp README.md $TMP_FOLDER
 cp LICENSE $TMP_FOLDER
 cp NEWS.md $TMP_FOLDER
-cp version.inc $TMP_FOLDER
+cp version.json $TMP_FOLDER
 cp -r platform $TMP_FOLDER
-cp Red_Panda_CPP.pro $TMP_FOLDER
+cp CMakeLists.txt $TMP_FOLDER
 
 cd $TMP_FOLDER
 command -v mk-build-deps && mk-build-deps -i -t "apt -y --no-install-recommends" debian/control
-sed -i '/CONFIG += ENABLE_LUA_ADDON/ { s/^#\s*// }' RedPandaIDE/RedPandaIDE.pro
 dpkg-buildpackage -us -uc

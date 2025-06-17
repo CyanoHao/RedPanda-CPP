@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.19)  # for string(JSON)
 project(Red_Panda_CPP
     LANGUAGES C CXX
 )
@@ -151,6 +151,21 @@ endif()
 #############
 # Resources #
 #############
+
+# templates
+if (XDG)
+    install(
+        DIRECTORY platform/linux/templates
+        DESTINATION share/${APP_NAME}
+        FILES_MATCHING PATTERN "*"
+    )
+elseif(WIN32)
+    install(
+        DIRECTORY platform/windows/templates
+        DESTINATION .
+        FILES_MATCHING PATTERN "*"
+    )
+endif()
 
 # docs
 if (XDG)

@@ -130,6 +130,7 @@ podman run --rm -v $PWD:/mnt -w /mnt docker.io/archlinux:latest ./packages/archl
 
 Пакет будет помещен в `dist/`.
 
+<!--
 ## Статическая сборка двоичных файлов для Ubuntu 20.04 x86_64 (NOI Linux 2.0)
 
 Пакет `redpanda-cpp-bin` подобен “AppImage repack”. Двоичный файл фактически собран в контейнере. Таким образом, хост сборки - это не обязательно Ubuntu 20.04; должен работать любой дистрибутив Linux с Podman и dpkg.
@@ -153,7 +154,9 @@ podman run --rm -v $PWD:/mnt -w /mnt ghcr.io/redpanda-cpp/appimage-builder-x86_6
 ```
 
 Dockerfiles доступны в [redpanda-cpp/appimage-builder](https://github.com/redpanda-cpp/appimage-builder). Доступные архитектуры: `x86_64`, `aarch64`, `riscv64`, `loong64`, `i686`.
+-->
 
+<!--
 # macOS
 
 ## Qt.io библиотека Qt
@@ -176,3 +179,4 @@ Dockerfiles доступны в [redpanda-cpp/appimage-builder](https://github.c
 ./packages/macos/build.sh -a arm64 --qt-version 6.8.0
 ./packages/macos/build.sh -a universal --qt-version 6.8.0
 ```
+-->
