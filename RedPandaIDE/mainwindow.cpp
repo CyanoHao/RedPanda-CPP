@@ -93,6 +93,8 @@
 #include "visithistorymanager.h"
 #include "widgets/projectalreadyopendialog.h"
 #include "widgets/searchdialog.h"
+#include "llm/llmservice.h"
+#include "widgets/llmresultwindow.h"
 
 
 #include "settingsdialog/settingsdialog.h"
@@ -361,6 +363,16 @@ MainWindow::MainWindow(QWidget *parent)
     ui->replacePanel->setVisible(false);
     ui->tabProblem->setEnabled(false);
 
+    // Initialize LLM service
+    mLLMService = new LLMService(this);
+    mLLMResultWindow = nullptr;
+    connect(mLLMService, &LLMService::responseChunk, this, &MainWindow::onLLMResponseChunk);
+    connect(mLLMService, &LLMService::responseComplete, this, &MainWindow::onLLMResponseComplete);
+    connect(mLLMService, &LLMService::errorOccurred, this, &MainWindow::onLLMError);
+    
+    // Update button state
+    ui->btnInvokeLLM->setEnabled(false);
+
     //problem set
     mOJProblemSetNameCounter=1;
     mOJProblemSetModel = new OJProblemSetModel{this};
@@ -534,6 +546,10 @@ MainWindow::~MainWindow()
     mQuitting=true;
     if (mProject)
         mProject=nullptr;
+    if (mLLMResultWindow) {
+        delete mLLMResultWindow;
+        mLLMResultWindow = nullptr;
+    }
     delete mProjectProxyModel;
     delete mEditorManager;
     delete ui;
@@ -6289,6 +6305,9 @@ void MainWindow::onCompileFinished(QString filename, bool isCheckSyntax)
     }
     updateCompileActions();
     updateAppTitle();
+    
+    // Update LLM button state
+    ui->btnInvokeLLM->setEnabled(ui->tableIssues->count() > 0 && pSettings->llm().enabled());
 }
 
 void MainWindow::onCompileErrorOccured(const QString& reason)
@@ -10688,5 +10707,94 @@ OJProblemModel *MainWindow::getOJProblemModel() const
 OJProblemSetModel *MainWindow::getOJProblemSetModel() const
 {
     return mOJProblemSetModel;
+}
+
+void MainWindow::on_btnInvokeLLM_clicked()
+{
+    // Check if LLM is configured
+    if (!mLLMService->isConfigured()) {
+        QString error = mLLMService->validateConfiguration();
+        QMessageBox::information(this, tr("LLM Not Configured"), error);
+        return;
+    }
+    
+    // Get current editor and its content
+    Editor *editor = mEditorManager->getEditor();
+    if (!editor) {
+        QMessageBox::warning(this, tr("No Editor"), 
+                           tr("No active editor found. Please open a file first."));
+        return;
+    }
+    
+    // Get issues from table
+    const QVector<PCompileIssue> &issues = ui->tableIssues->issues();
+    if (issues.isEmpty()) {
+        QMessageBox::information(this, tr("No Errors"), 
+                               tr("No compilation errors to diagnose."));
+        return;
+    }
+    
+    // Get source code
+    QString sourceCode = editor->text();
+    QString filename = editor->filename();
+    
+    // Check source code length (limit to reasonable size)
+    const int MAX_CODE_LENGTH = 200000; // 200KB
+    if (sourceCode.length() > MAX_CODE_LENGTH) {
+        QMessageBox::warning(this, tr("Code Too Large"),
+                           tr("The source code is too large to send to LLM (over 200KB). "
+                              "Please consider shortening it or splitting into multiple files."));
+        return;
+    }
+    
+    // Create result window if not exists
+    if (!mLLMResultWindow) {
+        mLLMResultWindow = new LLMResultWindow(this);
+    }
+    
+    // Show window and start request
+    mLLMResultWindow->clearText();
+    mLLMResultWindow->show();
+    mLLMResultWindow->raise();
+    mLLMResultWindow->activateWindow();
+    
+    // Disable button during request
+    ui->btnInvokeLLM->setEnabled(false);
+    
+    // Start diagnosis
+    mLLMService->diagnoseErrors(sourceCode, filename, issues);
+}
+
+void MainWindow::onLLMResponseChunk(const QString &chunk)
+{
+    if (mLLMResultWindow) {
+        mLLMResultWindow->appendText(chunk);
+    }
+}
+
+void MainWindow::onLLMResponseComplete()
+{
+    if (mLLMResultWindow) {
+        mLLMResultWindow->setComplete(true);
+    }
+    
+    // Re-enable button
+    if (ui->tableIssues->count() > 0) {
+        ui->btnInvokeLLM->setEnabled(true);
+    }
+}
+
+void MainWindow::onLLMError(const QString &error)
+{
+    if (mLLMResultWindow) {
+        mLLMResultWindow->showError(error);
+    } else {
+        QMessageBox::critical(this, tr("LLM Error"), error);
+    }
+    
+    // Re-enable button
+    if (ui->tableIssues->count() > 0) {
+        ui->btnInvokeLLM->setEnabled(true);
+    }
 }
 

@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>LLMSettingsWidget</class>
+ <widget class="QWidget" name="LLMSettingsWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>400</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>LLM Assistant</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QGroupBox" name="grpFeatureControl">
+     <property name="title">
+      <string>Feature Control</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QCheckBox" name="chkEnabled">
+        <property name="text">
+         <string>Enable LLM Assistant</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblHelpText">
+        <property name="text">
+         <string>LLM Assistant can help diagnose compilation errors by sending your code and error messages to a Large Language Model API. Your code will be sent to an external service.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="grpAPIConfiguration">
+     <property name="title">
+      <string>API Configuration</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="lblEndpoint">
+        <property name="text">
+         <string>API Endpoint:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="txtEndpoint">
+        <property name="placeholderText">
+         <string>https://api.openai.com/v1/chat/completions</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="QLabel" name="lblEndpointWarning">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="styleSheet">
+         <string>color: red;</string>
+        </property>
+        <property name="visible">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="lblApiKey">
+        <property name="text">
+         <string>API Key:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="txtApiKey">
+        <property name="echoMode">
+         <enum>QLineEdit::Password</enum>
+        </property>
+        <property name="placeholderText">
+         <string>Enter your API key</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="lblModelName">
+        <property name="text">
+         <string>Model Name:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLineEdit" name="txtModelName">
+        <property name="placeholderText">
+         <string>gpt-3.5-turbo</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="lblTimeout">
+        <property name="text">
+         <string>Timeout (seconds):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QSpinBox" name="spinTimeout">
+        <property name="minimum">
+         <number>30</number>
+        </property>
+        <property name="maximum">
+         <number>300</number>
+        </property>
+        <property name="value">
+         <number>120</number>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0" colspan="2">
+       <widget class="QLabel" name="lblSecurityWarning">
+        <property name="text">
+         <string>Note: Your API key is stored locally and your code will be sent to the configured endpoint. Please ensure you trust the service provider.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+        <property name="styleSheet">
+         <string>color: gray; font-style: italic;</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>chkEnabled</tabstop>
+  <tabstop>txtEndpoint</tabstop>
+  <tabstop>txtApiKey</tabstop>
+  <tabstop>txtModelName</tabstop>
+  <tabstop>spinTimeout</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>chkEnabled</sender>
+   <signal>stateChanged(int)</signal>
+   <receiver>LLMSettingsWidget</receiver>
+   <slot>on_chkEnabled_stateChanged(int)</slot>
+  </connection>
+  <connection>
+   <sender>txtEndpoint</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>LLMSettingsWidget</receiver>
+   <slot>on_txtEndpoint_textChanged(QString)</slot>
+  </connection>
+ </connections>
+ <slots>
+  <slot>on_chkEnabled_stateChanged(int)</slot>
+  <slot>on_txtEndpoint_textChanged(QString)</slot>
+ </slots>
+</ui>

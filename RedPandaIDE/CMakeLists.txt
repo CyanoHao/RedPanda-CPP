@@ -60,6 +60,8 @@ target_moc_classes(RedPandaIDE
     debugger/dapdebugger
     debugger/debugger
     debugger/gdbmidebugger
+    # llm
+    llm/llmservice
     # parser
     parser/cppparser
     parser/statementmodel
@@ -124,6 +126,7 @@ target_ui_classes(RedPandaIDE
     settingsdialog/formattergeneralwidget
     settingsdialog/formatterpathwidget
     settingsdialog/languageasmgenerationwidget
+    settingsdialog/llmsettingswidget
     settingsdialog/projectcompileparamaterswidget
     settingsdialog/projectcompilerwidget
     settingsdialog/projectdirectorieswidget
@@ -143,6 +146,7 @@ target_ui_classes(RedPandaIDE
     widgets/editorfontdialog
     widgets/filepropertiesdialog
     widgets/infomessagebox
+    widgets/llmresultwindow
     widgets/newclassdialog
     widgets/newheaderdialog
     widgets/newprojectdialog

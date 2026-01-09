@@ -62,7 +62,8 @@ Settings::Settings(const QString &filename):
 #ifdef ENABLE_VCS
     mVCS(this),
 #endif
-    mLanguages(this)
+    mLanguages(this),
+    mLLM(this)
 {
     //load();
 }
@@ -130,6 +131,7 @@ void Settings::load()
     mVCS.load();
 #endif
     mLanguages.load();
+    mLLM.load();
 }
 
 QSettings::Status Settings::sync()
@@ -171,6 +173,11 @@ QString Settings::filename() const
 Settings::Languages &Settings::languages()
 {
     return mLanguages;
+}
+
+Settings::LLM &Settings::llm()
+{
+    return mLLM;
 }
 
 Settings::CodeCompletion& Settings::codeCompletion()
@@ -6777,4 +6784,82 @@ bool Settings::Languages::noDebugDirectivesWhenGenerateASM() const
 void Settings::Languages::setNoDebugDirectivesWhenGenerateASM(bool newNoDebugDirectivesWhenGenerateASM)
 {
     mNoDebugDirectivesWhenGenerateASM = newNoDebugDirectivesWhenGenerateASM;
+}
+
+Settings::LLM::LLM(Settings *settings):
+    _Base(settings, SETTING_LLM),
+    mEnabled(false),
+    mEndpoint(""),
+    mApiKey(""),
+    mModelName("gpt-3.5-turbo"),
+    mTimeout(120)
+{
+}
+
+bool Settings::LLM::enabled() const
+{
+    return mEnabled;
+}
+
+void Settings::LLM::setEnabled(bool enabled)
+{
+    mEnabled = enabled;
+}
+
+QString Settings::LLM::endpoint() const
+{
+    return mEndpoint;
+}
+
+void Settings::LLM::setEndpoint(const QString &endpoint)
+{
+    mEndpoint = endpoint;
+}
+
+QString Settings::LLM::apiKey() const
+{
+    return mApiKey;
+}
+
+void Settings::LLM::setApiKey(const QString &apiKey)
+{
+    mApiKey = apiKey;
+}
+
+QString Settings::LLM::modelName() const
+{
+    return mModelName;
+}
+
+void Settings::LLM::setModelName(const QString &modelName)
+{
+    mModelName = modelName;
+}
+
+int Settings::LLM::timeout() const
+{
+    return mTimeout;
+}
+
+void Settings::LLM::setTimeout(int timeout)
+{
+    mTimeout = timeout;
+}
+
+void Settings::LLM::doSave()
+{
+    saveValue("enabled", mEnabled);
+    saveValue("endpoint", mEndpoint);
+    saveValue("apiKey", mApiKey);
+    saveValue("modelName", mModelName);
+    saveValue("timeout", mTimeout);
+}
+
+void Settings::LLM::doLoad()
+{
+    mEnabled = boolValue("enabled", false);
+    mEndpoint = stringValue("endpoint", "");
+    mApiKey = stringValue("apiKey", "");
+    mModelName = stringValue("modelName", "gpt-3.5-turbo");
+    mTimeout = intValue("timeout", 120);
 }

@@ -46,6 +46,7 @@
 #define SETTING_CODE_COMPLETION "CodeCompletion"
 #define SETTING_CODE_FORMATTER "CodeFormatter"
 #define SETTING_COMPILTER_SETS "CompilerSets"
+#define SETTING_LLM "LLM"
 #define SETTING_COMPILTER_SETS_DEFAULT_INDEX "defaultIndex"
 #define SETTING_COMPILTER_SETS_DEFAULT_INDEX_TIMESTAMP "defaultIndexTimestamp"
 #define SETTING_COMPILTER_SETS_COUNT "count"
@@ -1671,6 +1672,39 @@ public:
     Languages &languages();
     QString filename() const;
 
+    class LLM: public _Base {
+    public:
+        explicit LLM(Settings * settings);
+        
+        bool enabled() const;
+        void setEnabled(bool enabled);
+        
+        QString endpoint() const;
+        void setEndpoint(const QString &endpoint);
+        
+        QString apiKey() const;
+        void setApiKey(const QString &apiKey);
+        
+        QString modelName() const;
+        void setModelName(const QString &modelName);
+        
+        int timeout() const;
+        void setTimeout(int timeout);
+        
+    private:
+        bool mEnabled;
+        QString mEndpoint;
+        QString mApiKey;
+        QString mModelName;
+        int mTimeout;
+        
+    protected:
+        void doSave() override;
+        void doLoad() override;
+    };
+    
+    LLM &llm();
+
 private:
     QString mFilename;
     QSettings mSettings;
@@ -1688,6 +1722,7 @@ private:
     VCS mVCS;
 #endif
     Languages mLanguages;
+    LLM mLLM;
 };
 
 extern Settings* pSettings;

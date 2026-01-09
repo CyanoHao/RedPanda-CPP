@@ -55,6 +55,7 @@
 #include "projectmakefilewidget.h"
 #include "projectdllhostwidget.h"
 #include "toolsgeneralwidget.h"
+#include "llmsettingswidget.h"
 #ifdef ENABLE_VCS
 #include "toolsgitwidget.h"
 #endif
@@ -237,6 +238,9 @@ PSettingsDialog SettingsDialog::optionDialog(QWidget *parent)
     dialog->addWidget(widget);
 
     widget = new ToolsGeneralWidget(tr("General"),tr("Tools"));
+    dialog->addWidget(widget);
+
+    widget = new LLMSettingsWidget(tr("LLM Assistant"),tr("Tools"));
     dialog->addWidget(widget);
 
 #ifdef ENABLE_VCS

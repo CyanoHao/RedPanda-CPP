@@ -72,6 +72,8 @@ struct ProjectModelNode;
 class ProjectUnit;
 class ColorSchemeItem;
 class VisitHistoryManager;
+class LLMService;
+class LLMResultWindow;
 
 #define DPI_CHANGED_EVENT ((QEvent::Type)(QEvent::User+1))
 
@@ -1079,6 +1081,16 @@ public:
 
     OJProblemSetModel *getOJProblemSetModel() const;
     OJProblemModel *getOJProblemModel() const;
+
+private slots:
+    void on_btnInvokeLLM_clicked();
+    void onLLMResponseChunk(const QString &chunk);
+    void onLLMResponseComplete();
+    void onLLMError(const QString &error);
+
+private:
+    LLMService *mLLMService;
+    LLMResultWindow *mLLMResultWindow;
 };
 
 extern MainWindow* pMainWindow;
