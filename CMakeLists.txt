@@ -256,6 +256,7 @@ if (LUA_ADDON)
     add_subdirectory(libs/lua)
 endif()
 add_subdirectory(libs/qsynedit)
+add_subdirectory(libs/qtermwidget)
 add_subdirectory(libs/redpanda_qt_utils)
 add_subdirectory(tools/consolepauser)
 

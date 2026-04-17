@@ -267,6 +267,7 @@ void CompilerManager::run(
         redirectInputFilename = pSettings->executor().inputFilename();
     }
     bool useCustomTerminal = pSettings->environment().useCustomTerminal();
+    QString wslDistro = pSettings->environment().wslDistro();
     ExecutableRunner * execRunner;
     if (!PortableExecutable(filename).isWin32GuiApp()) {
         QString consolePauserPath = getFilePath(pSettings->dirs().appLibexecDir(), CONSOLE_PAUSER);
@@ -334,6 +335,8 @@ void CompilerManager::run(
         execRunner->setStartConsole(true);
         if (requireConsolePauser)
             execRunner->setShareMemoryId(sharedMemoryId);
+        if (!wslDistro.isEmpty())
+            execRunner->setWSLDistro(wslDistro);
     } else {
         //delete when thread finished
         execRunner = new ExecutableRunner(filename, parseArgumentsWithoutVariables(arguments), workDir);

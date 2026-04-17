@@ -79,6 +79,8 @@ target_moc_classes(RedPandaIDE
     src/compiler/ojproblemcasesrunner
     src/compiler/projectcompiler
     src/compiler/runner
+    src/runner/wslrunner
+    src/runner/builtinterminalrunner
     src/compiler/stdincompiler
     # debugger
     src/debugger/dapdebugger
@@ -206,6 +208,7 @@ target_link_libraries(RedPandaIDE PRIVATE
     Qt::Widgets
     Qt::Xml
     qsynedit
+    qtermwidget6
     redpanda_qt_utils)
 
 #target_link_options(RedPandaIDE PRIVATE
@@ -277,6 +280,7 @@ target_link_libraries(test-editor PRIVATE
         Qt::Widgets
         Qt::Xml
         qsynedit
+        qtermwidget6
         redpanda_qt_utils)
 
 if (QT_FEATURE_static)
@@ -330,6 +334,7 @@ target_link_libraries(test-cppparser PRIVATE
         Qt::Core
         Qt::Test
         qsynedit
+        qtermwidget6
         redpanda_qt_utils)
 
 if (QT_FEATURE_static)
@@ -550,6 +555,23 @@ file(GLOB resource_colorscheme_files
 target_embed_resources(RedPandaIDE
     RESOURCE_NAME colorschemes
     FILES ${resource_colorscheme_files})
+
+# qtermwidget resources
+file(GLOB qtermwidget_kb_layouts "libs/qtermwidget/lib/kb-layouts/*.keytab")
+file(GLOB qtermwidget_color_schemes "libs/qtermwidget/lib/color-schemes/*.colorscheme")
+file(GLOB qtermwidget_translations "libs/qtermwidget/lib/translations/*.qm")
+
+target_embed_resources(RedPandaIDE
+    RESOURCE_NAME qtermwidget_kb_layouts
+    FILES ${qtermwidget_kb_layouts})
+
+target_embed_resources(RedPandaIDE
+    RESOURCE_NAME qtermwidget_color_schemes
+    FILES ${qtermwidget_color_schemes})
+
+target_embed_resources(RedPandaIDE
+    RESOURCE_NAME qtermwidget_translations
+    FILES ${qtermwidget_translations})
 
 # app icon
 

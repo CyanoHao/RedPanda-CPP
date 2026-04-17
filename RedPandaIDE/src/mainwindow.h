@@ -46,6 +46,7 @@
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
+class QTermWidget;
 QT_END_NAMESPACE
 
 enum class CompileTarget {
@@ -174,6 +175,9 @@ public:
     void updateTools();
 
     void openFiles(const QStringList& files);
+
+    // Terminal support
+    QTermWidget* terminalWidget() const;
 
     void newEditor(const QString& suffix="");
 
@@ -1090,6 +1094,12 @@ public:
     OJProblemModel *getOJProblemModel() const;
     ColorManager* colorManager() const;
     IconsManager* iconsManager() const;
+
+    // Terminal widget for built-in terminal support
+    class QTermWidget;
+    QTermWidget* mTerminalWidget;
+
+    void initTerminalWidget();
 };
 
 extern MainWindow* pMainWindow;

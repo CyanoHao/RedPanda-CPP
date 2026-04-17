@@ -78,6 +78,28 @@ void EnvironmentSettings::doLoad()
 
     checkAndSetTerminal();
 
+    // load terminal mode
+    QString terminalMode = stringValue("terminal_mode", "");
+    if (terminalMode == "BuiltInPanel")
+        mTerminalMode = TerminalMode::BuiltInPanel;
+    else if (terminalMode == "BuiltInWindow")
+        mTerminalMode = TerminalMode::BuiltInWindow;
+    else if (terminalMode == "WindowsDefault")
+        mTerminalMode = TerminalMode::WindowsDefault;
+    else if (terminalMode == "External")
+        mTerminalMode = TerminalMode::External;
+    else {
+#ifdef Q_OS_WINDOWS
+# ifdef WINDOWS_PREFER_OPENCONSOLE
+        mTerminalMode = TerminalMode::External;
+# else
+        mTerminalMode = TerminalMode::WindowsDefault;
+# endif
+#else // UNIX
+        mTerminalMode = TerminalMode::BuiltInWindow;
+#endif
+    }
+
     mAStylePath = stringValue("astyle_path","");
     if (mAStylePath.isEmpty()
             /* compatibily for old configuration */
@@ -106,6 +128,7 @@ void EnvironmentSettings::doLoad()
 
     mHideNonSupportFilesInFileView=boolValue("hide_non_support_files_file_view",true);
     mOpenFilesInSingleInstance = boolValue("open_files_in_single_instance",false);
+    mWSLDistro = stringValue("wsl_distro", "Ubuntu");
 }
 
 int EnvironmentSettings::interfaceFontSize() const
@@ -391,8 +414,19 @@ void EnvironmentSettings::doSave()
     saveValue("terminal_arguments_pattern",mTerminalArgumentsPattern);
 #ifdef Q_OS_WINDOWS
     saveValue("use_custom_terminal",mUseCustomTerminal);
+    saveValue("wsl_distro", mWSLDistro);
 #endif
     saveValue("astyle_path",astylePath);
+
+    // save terminal mode
+    QString terminalModeStr;
+    switch (mTerminalMode) {
+    case TerminalMode::BuiltInPanel: terminalModeStr = "BuiltInPanel"; break;
+    case TerminalMode::BuiltInWindow: terminalModeStr = "BuiltInWindow"; break;
+    case TerminalMode::WindowsDefault: terminalModeStr = "WindowsDefault"; break;
+    case TerminalMode::External: terminalModeStr = "External"; break;
+    }
+    saveValue("terminal_mode", terminalModeStr);
 
     saveValue("hide_non_support_files_file_view",mHideNonSupportFilesInFileView);
     saveValue("open_files_in_single_instance",mOpenFilesInSingleInstance);
@@ -418,7 +452,7 @@ void EnvironmentSettings::setTheme(const QString &theme)
     mTheme = theme;
 }
 
-const QMap<QString, QString> EnvironmentSettings::mTerminalArgsPatternMagicVariables = {
+ const QMap<QString, QString> EnvironmentSettings::mTerminalArgsPatternMagicVariables = {
     {"term", "$term"},
     {"integrated_term", "$integrated_term"},
     {"argv", "$argv"},
@@ -429,3 +463,24 @@ const QMap<QString, QString> EnvironmentSettings::mTerminalArgsPatternMagicVaria
     {"tmpfile", "$tmpfile"},
     {"sequential_app_id", "$sequential_app_id"},
 };
+
+EnvironmentSettings::TerminalMode EnvironmentSettings::terminalMode() const
+{
+    return mTerminalMode;
+}
+
+void EnvironmentSettings::setTerminalMode(TerminalMode newTerminalMode)
+{
+    mTerminalMode = newTerminalMode;
+}
+
+QString EnvironmentSettings::wslDistro() const
+{
+    return mWSLDistro;
+}
+
+void EnvironmentSettings::setWSLDistro(const QString &wslDistro)
+{
+    mWSLDistro = wslDistro;
+}
+

@@ -48,6 +48,7 @@
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <qtermwidget.h>
 #include "editormanager.h"
 #include "editor.h"
 #include "systemconsts.h"
@@ -150,6 +151,10 @@ MainWindow::MainWindow(QWidget *parent)
 // #endif
     /** **/
     resize(960, 628);
+
+    // Initialize built-in terminal widget
+    mTerminalWidget = new QTermWidget();
+    initTerminalWidget();
 
     ui->cbProblemCaseValidateType->blockSignals(true);
     ui->cbProblemCaseValidateType->addItem(tr("Exact"));
@@ -10808,3 +10813,32 @@ OJProblemSetModel *MainWindow::getOJProblemSetModel() const
     return mOJProblemSetModel;
 }
 
+
+void MainWindow::initTerminalWidget()
+{
+    if (!mTerminalWidget) return;
+    
+    QFont font = QApplication::font();
+#ifdef Q_OS_MACOS
+    font.setFamily(QStringLiteral("Monaco"));
+#elif defined(Q_OS_LINUX)
+    font.setFamily(QStringLiteral("Monospace"));
+#else
+    font.setFamily(QStringLiteral("Consolas"));
+#endif
+    font.setPointSize(10);
+    mTerminalWidget->setTerminalFont(font);
+    mTerminalWidget->setScrollBarPosition(QTermWidget::ScrollBarRight);
+    mTerminalWidget->setHistorySize(-1); // Infinite history
+    
+    // Add terminal to console tab
+    QVBoxLayout* lay = qobject_cast<QVBoxLayout*>(ui->tabConsole->layout());
+    if (lay) {
+        lay->addWidget(mTerminalWidget);
+    }
+}
+
+QTermWidget* MainWindow::terminalWidget() const
+{
+    return mTerminalWidget;
+}

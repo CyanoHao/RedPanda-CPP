@@ -78,6 +78,25 @@ void EnvironmentProgramsWidget::doLoad()
 #endif
     ui->txtTerminal->setText(pSettings->environment().terminalPath());
     ui->txtArgsPattern->setText(pSettings->environment().terminalArgumentsPattern());
+
+    // load terminal mode
+    switch (pSettings->environment().terminalMode()) {
+    case EnvironmentSettings::TerminalMode::BuiltInPanel:
+        ui->rbTerminalBuiltInPanel->setChecked(true);
+        break;
+    case EnvironmentSettings::TerminalMode::BuiltInWindow:
+        ui->rbTerminalBuiltInWindow->setChecked(true);
+        break;
+    case EnvironmentSettings::TerminalMode::WindowsDefault:
+        ui->rbTerminalWindowsDefault->setChecked(true);
+        break;
+    case EnvironmentSettings::TerminalMode::External:
+        ui->rbTerminalExternal->setChecked(true);
+        break;
+    }
+
+    // Enable external terminal options if External mode is selected
+    ui->grpUseCustomTerminal->setEnabled(ui->rbTerminalExternal->isChecked());
 }
 
 void EnvironmentProgramsWidget::doSave()
@@ -87,6 +106,19 @@ void EnvironmentProgramsWidget::doSave()
 #endif
     pSettings->environment().setTerminalPath(ui->txtTerminal->text());
     pSettings->environment().setTerminalArgumentsPattern(ui->txtArgsPattern->text());
+
+    // save terminal mode
+    EnvironmentSettings::TerminalMode mode = EnvironmentSettings::TerminalMode::External;
+    if (ui->rbTerminalBuiltInPanel->isChecked())
+        mode = EnvironmentSettings::TerminalMode::BuiltInPanel;
+    else if (ui->rbTerminalBuiltInWindow->isChecked())
+        mode = EnvironmentSettings::TerminalMode::BuiltInWindow;
+    else if (ui->rbTerminalWindowsDefault->isChecked())
+        mode = EnvironmentSettings::TerminalMode::WindowsDefault;
+    else if (ui->rbTerminalExternal->isChecked())
+        mode = EnvironmentSettings::TerminalMode::External;
+    pSettings->environment().setTerminalMode(mode);
+
     pSettings->environment().save();
 }
 
@@ -137,3 +169,11 @@ void EnvironmentProgramsWidget::on_btnTest_clicked()
     runner.start();
     runner.wait();
 }
+
+void EnvironmentProgramsWidget::on_rbTerminalMode_toggled()
+{
+    // 根据选择的终端模式显示/隐藏外部终端选项
+    bool useExternal = ui->rbTerminalExternal->isChecked();
+    ui->grpUseCustomTerminal->setEnabled(useExternal);
+}
+

@@ -54,6 +54,7 @@ private slots:
     void on_txtArgsPattern_textChanged(const QString &argsPattern);
     void on_btnAutoDetectArgsPattern_clicked();
     void on_btnTest_clicked();
+    void on_rbTerminalMode_toggled();
 };
 
 #endif // ENVIRONMENTPROGRAMSWIDGET_H

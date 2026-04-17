@@ -18,12 +18,16 @@
 #define EXECUTABLERUNNER_H
 
 #include "runner.h"
+#include "../irunner.h"
 #include <QProcess>
 #include <QSemaphore>
 #include <memory>
 
-class ExecutableRunner : public Runner
-{
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
+
+class ExecutableRunner : public Runner, public IRunner {
     Q_OBJECT
 public:
     ExecutableRunner(const QString& filename, const QStringList& arguments, const QString& workDir,
@@ -41,12 +45,25 @@ public:
     void setStartConsole(bool newStartConsole);
 
     const QString &shareMemoryId() const;
-
     void setShareMemoryId(const QString &newShareMemoryId);
 
     const QStringList &binDirs() const;
     void addBinDirs(const QStringList &binDirs);
     void addBinDir(const QString &binDir);
+
+    // WSL support
+    void setWSLDistro(const QString& distro);
+    bool isWSLMode() const;
+    QString wslDistro() const;
+
+    // Terminal mode support
+    void setTerminalMode(int mode);
+    int terminalMode() const;
+
+    // IRunner interface
+    void start() override;
+    void stop() override;
+    bool isRunning() const override;
 
 private:
     QString mRedirectInputFilename;
@@ -55,6 +72,12 @@ private:
     bool mStartConsole;
     QSemaphore mQuitSemaphore;
     QStringList mBinDirs;
+    QString mWSLDistro;
+    int mTerminalMode;
+    std::shared_ptr<QProcess> mProcess;
+#ifdef Q_OS_WIN
+    HANDLE mSharedMemoryHandle;
+#endif
 
     // QThread interface
 protected:

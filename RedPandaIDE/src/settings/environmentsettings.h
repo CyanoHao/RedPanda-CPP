@@ -87,6 +87,19 @@ public:
     bool comboboxWheel() const;
     void setComboboxWheel(bool newComboboxWheel);
 
+    enum class TerminalMode {
+        BuiltInPanel = 1,
+        BuiltInWindow,
+        WindowsDefault,
+        External
+    };
+
+    TerminalMode terminalMode() const;
+    void setTerminalMode(TerminalMode newTerminalMode);
+
+    QString wslDistro() const;
+    void setWSLDistro(const QString &wslDistro);
+
 private:
     bool isTerminalValid();
     void checkAndSetTerminal();
@@ -112,6 +125,8 @@ private:
     bool mUseCustomTerminal;
     bool mHideNonSupportFilesInFileView;
     bool mOpenFilesInSingleInstance;
+    TerminalMode mTerminalMode;
+    QString mWSLDistro;
 
     static const QMap<QString, QString> mTerminalArgsPatternMagicVariables;
     // _Base interface
