@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>BuildConfigSettingsWidget</class>
+ <widget class="QWidget" name="BuildConfigSettingsWidget">
+  <property name="geometry">
+   <rect><x>0</x><y>0</y><width>1005</width><height>607</height></rect>
+  </property>
+  <property name="windowTitle"><string>Form</string></property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title"><string>Build configuration</string></property>
+     <layout class="QVBoxLayout" name="groupLayout">
+      <item>
+       <layout class="QHBoxLayout" name="familyLayout">
+        <item><widget class="QLabel" name="lbCompilerFamily"><property name="text"><string>Compiler family:</string></property></widget></item>
+        <item><widget class="QComboBox" name="cbCompilerFamily"/></item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="configLayout">
+        <item><widget class="QLabel" name="lbBuildConfig"><property name="text"><string>Build config:</string></property></widget></item>
+        <item><widget class="QComboBox" name="cbBuildConfig"/></item>
+        <item><widget class="QToolButton" name="btnAdd"><property name="text"><string>Add</string></property></widget></item>
+        <item><widget class="QToolButton" name="btnCopy"><property name="text"><string>Copy</string></property></widget></item>
+        <item><widget class="QToolButton" name="btnRename"><property name="text"><string>Rename</string></property></widget></item>
+        <item><widget class="QToolButton" name="btnRemove"><property name="text"><string>Remove</string></property></widget></item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QTabWidget" name="settingTabs">
+     <widget class="QWidget" name="tabGeneral">
+      <attribute name="title"><string>General</string></attribute>
+      <layout class="QVBoxLayout" name="generalLayout">
+       <item>
+        <layout class="QHBoxLayout" name="linkModelLayout">
+         <item><widget class="QLabel" name="lbLinkModel"><property name="text"><string>Link model:</string></property></widget></item>
+         <item><widget class="QComboBox" name="cmbLinkModel"/></item>
+         <item><spacer name="linkModelSpacer"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property></spacer></item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QWidget" name="panelCharset" native="true">
+         <layout class="QHBoxLayout" name="charsetLayout">
+          <property name="leftMargin"><number>0</number></property>
+          <property name="topMargin"><number>0</number></property>
+          <property name="rightMargin"><number>0</number></property>
+          <property name="bottomMargin"><number>0</number></property>
+          <item><widget class="QCheckBox" name="chkAutoAddCharset"><property name="text"><string>Convert Executable's Charset as</string></property></widget></item>
+          <item><widget class="QComboBox" name="cbEncoding"/></item>
+          <item><widget class="QComboBox" name="cbEncodingDetails"/></item>
+          <item><spacer name="charsetSpacer"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property></spacer></item>
+         </layout>
+        </widget>
+       </item>
+       <item><widget class="QCheckBox" name="chkForceEnglishOutput"><property name="text"><string>Don't localize compiler output messages</string></property></widget></item>
+       <item><widget class="QCheckBox" name="chkUseCustomCompilerParams"><property name="text"><string>Add the following arguments when calling the compiler</string></property></widget></item>
+       <item><widget class="QPlainTextEdit" name="txtCustomCompileParams"/></item>
+       <item><widget class="QCheckBox" name="chkUseCustomLinkParams"><property name="text"><string>Add the following arguments when calling the linker</string></property></widget></item>
+       <item><widget class="QPlainTextEdit" name="txtCustomLinkParams"/></item>
+       <item><spacer name="generalSpacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property></spacer></item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabOptions">
+      <attribute name="title"><string>Compiler Options</string></attribute>
+      <layout class="QHBoxLayout" name="optionsLayout">
+       <property name="leftMargin"><number>2</number></property>
+       <property name="topMargin"><number>2</number></property>
+       <property name="rightMargin"><number>2</number></property>
+       <property name="bottomMargin"><number>2</number></property>
+       <item>
+        <widget class="CompileArgumentsWidget" name="optionTabs">
+         <property name="documentMode"><bool>true</bool></property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>CompileArgumentsWidget</class>
+   <extends>QTabWidget</extends>
+   <header location="global">src/widgets/compileargumentswidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

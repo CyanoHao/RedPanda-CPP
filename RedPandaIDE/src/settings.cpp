@@ -48,7 +48,6 @@ Settings::Settings(const QString &filename):
     mDirs{&mPersistor},
     mEditor{&mPersistor},
     mEnvironment{&mPersistor, &mDirs},
-    mCompilerSets{&mPersistor, &mDirs},
     mExecutor{&mPersistor},
     mDebugger{&mPersistor},
     mCodeCompletion{&mPersistor},
@@ -65,7 +64,6 @@ Settings::Settings(const QString &filename):
 
 void Settings::load()
 {
-    mCompilerSets.loadSets();
     mEnvironment.load();
     mEditor.load();
     mExecutor.load();
@@ -75,10 +73,32 @@ void Settings::load()
     mCompile.load();
     mUI.load();
     mDirs.load();
-#ifdef ENABLE_VCS
-    mVCS.load();
-#endif
     mLanguages.load();
+
+    // Load new toolchain/buildconfig JSON files (after mDirs is loaded)
+    QString configDir = mDirs.config(DirSettings::DataType::None);
+    QString toolchainPath = configDir + "/toolchains.json";
+    QString buildConfigPath = configDir + "/build_configs.json";
+
+    mToolchainManager.load(toolchainPath);
+    mBuildConfigManager.load(buildConfigPath);
+
+    // If toolchains are empty, auto-detect (deferred to first use or explicit trigger)
+    // Create builtin defaults for each detected toolchain's compiler type
+    if (mBuildConfigManager.configsFor(CompilerType::GCC).isEmpty()) {
+        mBuildConfigManager.createBuiltinDefaults(CompilerType::GCC);
+    }
+    if (mBuildConfigManager.configsFor(CompilerType::AppleClang).isEmpty()) {
+        mBuildConfigManager.createBuiltinDefaults(CompilerType::AppleClang);
+    }
+#ifdef ENABLE_SDCC
+    if (mBuildConfigManager.configsFor(CompilerType::SDCC).isEmpty()) {
+        mBuildConfigManager.createBuiltinDefaults(CompilerType::SDCC);
+    }
+#endif
+
+    // Save builtin defaults so they persist
+    mBuildConfigManager.save(buildConfigPath);
 }
 
 QSettings::Status Settings::sync()
@@ -97,9 +117,14 @@ EditorSettings &Settings::editor()
     return mEditor;
 }
 
-CompilerSets &Settings::compilerSets()
+ToolchainManager &Settings::toolchainManager()
 {
-    return mCompilerSets;
+    return mToolchainManager;
+}
+
+BuildConfigManager &Settings::buildConfigManager()
+{
+    return mBuildConfigManager;
 }
 
 EnvironmentSettings &Settings::environment()

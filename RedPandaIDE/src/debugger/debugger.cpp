@@ -79,7 +79,7 @@ Debugger::~Debugger()
     cleanUp();
 }
 
-bool Debugger::startClient(int compilerSetIndex,
+bool Debugger::startClient(const Toolchain& toolchain,
                            const QString& inferior,
                            bool inferiorHasSymbols,
                            bool inferiorHasBreakpoints,
@@ -90,25 +90,15 @@ bool Debugger::startClient(int compilerSetIndex,
     if (mClient!=nullptr)
         return false;
     mCurrentSourceFile = sourceFile;
-    PCompilerSet compilerSet = pSettings->compilerSets().getSet(compilerSetIndex);
-    if (!compilerSet) {
-        compilerSet = pSettings->compilerSets().defaultSet();
-    }
-    if (!compilerSet) {
-        QMessageBox::critical(pMainWindow,
-                              tr("No compiler set"),
-                              tr("No compiler set is configured.")+tr("Can't start debugging."));
-        return false;
-    }
-    setForceUTF8(compilerSet->isDebuggerUsingUTF8());
-    setDebugInfosUsingUTF8(compilerSet->isCompilerUsingUTF8());
-    if (compilerSet->debugger().endsWith(LLDB_MI_PROGRAM))
+    setForceUTF8(toolchain.isDebuggerUsingUTF8());
+    setDebugInfosUsingUTF8(toolchain.isCompilerUsingUTF8());
+    if (toolchain.debugger.endsWith(LLDB_MI_PROGRAM))
         setDebuggerType(DebuggerType::LLDB_MI);
     else
         setDebuggerType(DebuggerType::GDB);
-    // force to lldb-server if using lldb-mi, which creates new console but does not bind inferior’s stdio to the new console on Windows.
+    // force to lldb-server if using lldb-mi, which creates new console but does not bind inferior's stdio to the new console on Windows.
     setUseDebugServer(pSettings->debugger().useGDBServer() || mDebuggerType == DebuggerType::LLDB_MI);
-    QString debuggerPath = compilerSet->debugger();
+    QString debuggerPath = toolchain.debugger;
     //QFile debuggerProgram(debuggerPath);
 //    if (!isTextAllAscii(debuggerPath)) {
 //        mExecuting = false;
@@ -129,19 +119,19 @@ bool Debugger::startClient(int compilerSetIndex,
         return false;
     }
     if (useDebugServer()) {
-        if (!isTextAllAscii(compilerSet->debugServer())) {
+        if (!isTextAllAscii(toolchain.debugServer)) {
             QMessageBox::critical(pMainWindow,
                                   tr("GDB Server path error"),
                                   tr("GDB Server's path \"%1\" contains non-ascii characters.")
-                                  .arg(compilerSet->debugServer())
+                                  .arg(toolchain.debugServer)
                                   + "<br />"
                                   + tr("This prevents it from executing."));
             return false;
         }
-        if (!fileExists(compilerSet->debugServer())) {
+        if (!fileExists(toolchain.debugServer)) {
             QMessageBox::critical(pMainWindow,
                                   tr("GDB Server not exists"),
-                                  tr("Can''t find gdb server in : \"%1\"").arg(compilerSet->debugServer()));
+                                  tr("Can''t find gdb server in : \"%1\"").arg(toolchain.debugServer));
             return false;
         }
 
@@ -152,7 +142,7 @@ bool Debugger::startClient(int compilerSetIndex,
         QStringList params;
         if (pSettings->executor().useParams())
             params = parseArgumentsWithoutVariables(pSettings->executor().params());
-        mTarget = new DebugTarget(inferior,compilerSet->debugServer(),pSettings->debugger().GDBServerPort(),params);
+        mTarget = new DebugTarget(inferior,toolchain.debugServer,pSettings->debugger().GDBServerPort(),params);
         if (pSettings->executor().redirectInput())
             mTarget->setInputFile(pSettings->executor().inputFilename());
         mTarget->addBinDirs(binDirs);
@@ -212,15 +202,15 @@ bool Debugger::startClient(int compilerSetIndex,
     mClient->waitStart();
 
     mClient->initialize(inferior, inferiorHasSymbols);
-    includeOrSkipDirsInSymbolSearch(compilerSet->libDirs(), pSettings->debugger().skipCustomLibraries());
-    includeOrSkipDirsInSymbolSearch(compilerSet->CIncludeDirs(), pSettings->debugger().skipCustomLibraries());
-    includeOrSkipDirsInSymbolSearch(compilerSet->CppIncludeDirs(), pSettings->debugger().skipCustomLibraries());
+    includeOrSkipDirsInSymbolSearch(toolchain.libDirs, pSettings->debugger().skipCustomLibraries());
+    includeOrSkipDirsInSymbolSearch(toolchain.cIncludeDirs, pSettings->debugger().skipCustomLibraries());
+    includeOrSkipDirsInSymbolSearch(toolchain.cppIncludeDirs, pSettings->debugger().skipCustomLibraries());
 
     //gcc system libraries is auto loaded by gdb
     if (pSettings->debugger().skipSystemLibraries()) {
-        includeOrSkipDirsInSymbolSearch(compilerSet->defaultCIncludeDirs(),true);
-        includeOrSkipDirsInSymbolSearch(compilerSet->defaultCIncludeDirs(),true);
-        includeOrSkipDirsInSymbolSearch(compilerSet->defaultCppIncludeDirs(),true);
+        includeOrSkipDirsInSymbolSearch(toolchain.defaultCIncludeDirs(),true);
+        includeOrSkipDirsInSymbolSearch(toolchain.defaultLibDirs(),true);
+        includeOrSkipDirsInSymbolSearch(toolchain.defaultCppIncludeDirs(),true);
 
         //skip C++ Stardard Libraries
         mClient->skipStandardLibraryFunctions();

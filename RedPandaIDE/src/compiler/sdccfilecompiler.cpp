@@ -36,10 +36,10 @@ SDCCFileCompiler::SDCCFileCompiler(const QString &filename, const QByteArray &en
 
 bool SDCCFileCompiler::prepareForCompile()
 {
-    //compilerSet()->setCompilationStage(CompilerSet::CompilationStage::GenerateExecutable);
+    //compilerSet()->setCompilationStage(CompilationStage::GenerateExecutable);
 
     if (mOnlyCheckSyntax) {
-        mCompiler = compilerSet()->CCompiler();
+        mCompiler = mToolchain->ccompiler;
         mArguments += getCCompileArguments(false);
         mArguments += getCIncludeArguments();
         mArguments += getProjectIncludeArguments();
@@ -50,11 +50,11 @@ bool SDCCFileCompiler::prepareForCompile()
     log(tr("Compiling single file..."));
     log("------------------");
     log(tr("- Filename: %1").arg(mFilename));
-    log(tr("- Compiler Set Name: %1").arg(compilerSet()->name()));
+    log(tr("- Compiler Set Name: %1").arg(mToolchain->name));
     log("");
 
     QString strFileType = "C";
-    mCompiler = compilerSet()->CCompiler();
+    mCompiler = mToolchain->ccompiler;
     mArguments += getCCompileArguments(false);
     mArguments += getCIncludeArguments();
     mArguments += getProjectIncludeArguments();
@@ -66,10 +66,10 @@ bool SDCCFileCompiler::prepareForCompile()
                     +tr("Please check the \"program\" page of compiler settings."));
     }
 
-    mOutputFile=changeFileExt(mFilename, compilerSet()->executableSuffix());
+    mOutputFile=changeFileExt(mFilename, mToolchain->executableSuffix);
     mIhxFilename = changeFileExt(mFilename,SDCC_IHX_SUFFIX);
 
-    QString val = compilerSet()->compileOptions().value(SDCC_OPT_NOSTARTUP);
+    QString val = mMergedOptions.value(SDCC_OPT_NOSTARTUP);
     mNoStartup = (val==COMPILER_OPTION_ON);
     if (mNoStartup) {
         mRelFilename = changeFileExt(mFilename,SDCC_REL_SUFFIX);
@@ -84,8 +84,8 @@ bool SDCCFileCompiler::prepareForCompile()
         mArguments += {mFilename, "-o", mIhxFilename};
     }
 
-    if (compilerSet()->executableSuffix() == SDCC_HEX_SUFFIX) {
-        QString packihx = compilerSet()->findProgramInBinDirs(PACKIHX_PROGRAM);
+    if (mToolchain->executableSuffix == SDCC_HEX_SUFFIX) {
+        QString packihx = mToolchain->findProgramInDirs(PACKIHX_PROGRAM);
         if (packihx.isEmpty()) {
             error(tr("Can't find \"%1\".\n").arg(PACKIHX_PROGRAM));
             return false;
@@ -94,8 +94,8 @@ bool SDCCFileCompiler::prepareForCompile()
         QStringList args{mIhxFilename};
         mExtraArgumentsList << args;
         mExtraOutputFilesList << mOutputFile;
-    } else if (compilerSet()->executableSuffix() == SDCC_BIN_SUFFIX) {
-        QString makebin = compilerSet()->findProgramInBinDirs(MAKEBIN_PROGRAM);
+    } else if (mToolchain->executableSuffix == SDCC_BIN_SUFFIX) {
+        QString makebin = mToolchain->findProgramInDirs(MAKEBIN_PROGRAM);
         if (makebin.isEmpty()) {
             error(tr("Can't find \"%1\".\n").arg(PACKIHX_PROGRAM));
             return false;
@@ -137,7 +137,7 @@ bool SDCCFileCompiler::beforeRunExtraCommand(int idx)
 
 bool SDCCFileCompiler::prepareForRebuild()
 {
-    QString exeName=compilerSet()->getOutputFilename(mFilename);
+    QString exeName=mToolchain->getOutputFilename(mFilename);
 
     QFile file(exeName);
 

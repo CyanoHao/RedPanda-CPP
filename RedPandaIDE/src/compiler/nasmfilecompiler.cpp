@@ -32,7 +32,7 @@ NASMFileCompiler::NASMFileCompiler(const QString &filename):
 
 bool NASMFileCompiler::prepareForCompile()
 {
-    //compilerSet()->setCompilationStage(CompilerSet::CompilationStage::GenerateExecutable);
+    //compilerSet()->setCompilationStage(CompilationStage::GenerateExecutable);
 
     if (mOnlyCheckSyntax) {
         qFatal("NASM can't check syntax!");
@@ -40,7 +40,7 @@ bool NASMFileCompiler::prepareForCompile()
     log(tr("Compiling single file..."));
     log("------------------");
     log(tr("- Filename: %1").arg(mFilename));
-    log(tr("- Compiler Set Name: %1").arg(compilerSet()->name()));
+    log(tr("- Compiler Set Name: %1").arg(mToolchain->name));
     log("");
 
     QString strFileType = "C";
@@ -48,8 +48,8 @@ bool NASMFileCompiler::prepareForCompile()
 
     QStringList arguments = getCCompileArguments(false);
 #ifdef Q_OS_WIN
-    if (arguments.contains("-m32") || QString("i686").compare(compilerSet()->target(), Qt::CaseInsensitive)==0
-            || QString("i386").compare(compilerSet()->target(), Qt::CaseInsensitive)==0) {
+    if (arguments.contains("-m32") || QString("i686").compare(mToolchain->target, Qt::CaseInsensitive)==0
+            || QString("i386").compare(mToolchain->target, Qt::CaseInsensitive)==0) {
         mArguments += {"-f","elf32"};
     } else if (arguments.contains("-m64")) {
         mArguments += {"-f","elf64"};
@@ -69,11 +69,11 @@ bool NASMFileCompiler::prepareForCompile()
                     +tr("Please check NASM settings."));
     }
 
-    mOutputFile=changeFileExt(mFilename, compilerSet()->executableSuffix());
+    mOutputFile=changeFileExt(mFilename, mToolchain->executableSuffix);
     mObjFilename= changeFileExt(mFilename, DEFAULT_ASSEMBLING_SUFFIX );
 
     mArguments += {mFilename, "-o", mObjFilename};
-    mExtraCompilersList << compilerSet()->CCompiler();
+    mExtraCompilersList << mToolchain->ccompiler;
     QStringList args = getLibraryArguments(FileType::CSource);
     if (pSettings->compile().NASMLinkCStandardLib()) {
         args.removeAll("-nostdlib");
@@ -104,7 +104,7 @@ bool NASMFileCompiler::beforeRunExtraCommand(int idx)
 
 bool NASMFileCompiler::prepareForRebuild()
 {
-    QString exeName=compilerSet()->getOutputFilename(mFilename);
+    QString exeName=mToolchain->getOutputFilename(mFilename);
 
     QFile file(exeName);
 

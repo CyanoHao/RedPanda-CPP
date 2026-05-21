@@ -31,9 +31,15 @@ target_qt_plain_cpp(RedPandaIDE
     src/problems/problemcasevalidator
     # settings
     src/settings/basesettings
+    src/settings/buildconfig_json
+    src/settings/buildconfigmanager
     src/settings/codecompletionsettings
     src/settings/codeformattersettings
-    src/settings/compilersetsettings
+    src/settings/compileoptionsassembler
+    src/settings/toolchain
+    src/settings/toolchain_detect
+    src/settings/toolchain_json
+    src/settings/toolchainmanager
     src/settings/compilesettings
     src/settings/debuggersettings
     src/settings/dirsettings
@@ -46,12 +52,14 @@ target_qt_plain_cpp(RedPandaIDE
     src/utils/escape
     src/utils/file
     src/utils/font
+    src/utils/llvm-triple
     src/utils/os
     src/utils/parsearg
     src/utils/parser
     src/utils/parsemacros
     src/utils/pe
     src/utils/terminal
+    src/utils/toolchain
     src/utils/ui
     )
 
@@ -127,8 +135,9 @@ target_ui_classes(RedPandaIDE
     src/settingsdialog/compilerautolinkwidget
     src/settingsdialog/compilergaswidget
     src/settingsdialog/compilernasmwidget
-    src/settingsdialog/compilersetdirectorieswidget
-    src/settingsdialog/compilersetoptionwidget
+    src/settingsdialog/directorylistwidget
+    src/settingsdialog/toolchainsettingswidget
+    src/settingsdialog/buildconfigsettingswidget
     src/settingsdialog/debuggeneralwidget
     src/settingsdialog/editorautosavewidget
     src/settingsdialog/editorclipboardwidget

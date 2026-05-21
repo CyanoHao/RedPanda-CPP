@@ -38,22 +38,18 @@ FileCompiler::FileCompiler(const QString &filename, const QByteArray &encoding,
 
 bool FileCompiler::prepareForCompile()
 {
-    QString oldDebugOptionValue = compilerSet()->getCompileOptionValue(CC_CMD_OPT_DEBUG_INFO);
-    auto action = finally([this, oldDebugOptionValue]{
-       compilerSet()->setCompileOption(CC_CMD_OPT_DEBUG_INFO,oldDebugOptionValue);
-    });
-    CompilerSet::CompilationStage stage = CompilerSet::CompilationStage::GenerateExecutable;
+    CompilationStage stage = CompilationStage::GenerateExecutable;
     switch(mCompileType) {
     case CppCompileType::PreprocessOnly:
-        stage = CompilerSet::CompilationStage::PreprocessingOnly;
+        stage = CompilationStage::PreprocessingOnly;
         break;
     case CppCompileType::GenerateAssemblyOnly:
-        stage = CompilerSet::CompilationStage::CompilationProperOnly;
+        stage = CompilationStage::CompilationProperOnly;
         if (pSettings->languages().noDebugDirectivesWhenGenerateASM())
-            compilerSet()->setCompileOption(CC_CMD_OPT_DEBUG_INFO,COMPILER_OPTION_OFF);
+            mMergedOptions[CC_CMD_OPT_DEBUG_INFO] = COMPILER_OPTION_OFF;
         break;
     case CppCompileType::GenerateGimpleOnly:
-        stage = CompilerSet::CompilationStage::GenerateGimple;
+        stage = CompilationStage::GenerateGimple;
         break;
     default:
         break;
@@ -65,10 +61,10 @@ bool FileCompiler::prepareForCompile()
     }
     log("------------------");
     log(tr("- Filename: %1").arg(mFilename));
-    log(tr("- Compiler Set Name: %1").arg(compilerSet()->name()));
+    log(tr("- Compiler Set Name: %1").arg(mToolchain->name));
     log("");
 
-    CompilerType compilerType = compilerSet()->compilerType();
+    CompilerType compilerType = mToolchain->compilerType;
 
     // GCC `import std;` sources should be added before the main file to generate GCM cache
     if (mFileType == FileType::CppSource &&
@@ -79,28 +75,28 @@ bool FileCompiler::prepareForCompile()
     mArguments += QStringList{localizePath(mFilename)};
     if (!mOnlyCheckSyntax) {
         switch(stage) {
-        case CompilerSet::CompilationStage::PreprocessingOnly:
-            mOutputFile=changeFileExt(mFilename,compilerSet()->preprocessingSuffix());
+        case CompilationStage::PreprocessingOnly:
+            mOutputFile=changeFileExt(mFilename,mToolchain->preprocessingSuffix);
             mArguments << "-E";
             break;
-        case CompilerSet::CompilationStage::CompilationProperOnly:
-            mOutputFile=changeFileExt(mFilename,compilerSet()->compilationProperSuffix());
+        case CompilationStage::CompilationProperOnly:
+            mOutputFile=changeFileExt(mFilename,mToolchain->compilationProperSuffix);
             mArguments += {"-S", "-fverbose-asm"};
             break;
-        case CompilerSet::CompilationStage::GenerateGimple:
-            mOutputFile=changeFileExt(mFilename,compilerSet()->compilationProperSuffix());
+        case CompilationStage::GenerateGimple:
+            mOutputFile=changeFileExt(mFilename,mToolchain->compilationProperSuffix);
             mArguments += {"-S", QString("-fdump-tree-gimple=%1").arg(localizePath(changeFileExt(mFilename,"gimple")))};
             break;
-        case CompilerSet::CompilationStage::AssemblingOnly:
-            mOutputFile=changeFileExt(mFilename,compilerSet()->assemblingSuffix());
+        case CompilationStage::AssemblingOnly:
+            mOutputFile=changeFileExt(mFilename,mToolchain->assemblingSuffix);
             mArguments << "-c";
             break;
-        case CompilerSet::CompilationStage::GenerateExecutable:
-            mOutputFile = changeFileExt(mFilename,compilerSet()->executableSuffix());
+        case CompilationStage::GenerateExecutable:
+            mOutputFile = changeFileExt(mFilename,mToolchain->executableSuffix);
         }
 #ifdef ENABLE_SDCC
-        if (compilerSet()->compilerType()==CompilerType::SDCC) {
-            if (compilerSet()->executableSuffix()==SDCC_IHX_SUFFIX) {
+        if (mToolchain->compilerType==CompilerType::SDCC) {
+            if (mToolchain->executableSuffix==SDCC_IHX_SUFFIX) {
 
             }
         }
@@ -139,21 +135,21 @@ bool FileCompiler::prepareForCompile()
             mArguments += "-nostdlib";
         }
         strFileType = tr("GNU Assembler");
-        mCompiler = compilerSet()->CCompiler();
+        mCompiler = mToolchain->ccompiler;
         break;
     case FileType::CSource:
         mArguments += getCCompileArguments(mOnlyCheckSyntax);
         mArguments += getCIncludeArguments();
         mArguments += getProjectIncludeArguments();
         strFileType = "C";
-        mCompiler = compilerSet()->CCompiler();
+        mCompiler = mToolchain->ccompiler;
         break;
     case FileType::CppSource:
         mArguments += getCppCompileArguments(mOnlyCheckSyntax);
         mArguments += getCppIncludeArguments();
         mArguments += getProjectIncludeArguments();
         strFileType = "C++";
-        mCompiler = compilerSet()->cppCompiler();
+        mCompiler = mToolchain->cppCompiler;
         break;
     default:
         throw CompileError(tr("Can't find the compiler for file %1").arg(mFilename));
@@ -212,7 +208,7 @@ bool FileCompiler::prepareForCompile()
 
 bool FileCompiler::prepareForRebuild()
 {
-    QString exeName=compilerSet()->getOutputFilename(mFilename);
+    QString exeName=mToolchain->getOutputFilename(mFilename);
 
     QFile file(exeName);
 

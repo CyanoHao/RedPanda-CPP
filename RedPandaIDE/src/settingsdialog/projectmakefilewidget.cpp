@@ -16,7 +16,7 @@
  */
 #include "projectmakefilewidget.h"
 #include "ui_projectmakefilewidget.h"
-#include "compilersetdirectorieswidget.h"
+#include "directorylistwidget.h"
 #include "../mainwindow.h"
 #include "../project.h"
 #include "../widgets/custommakefileinfodialog.h"
@@ -31,7 +31,7 @@ ProjectMakefileWidget::ProjectMakefileWidget(const QString &name, const QString 
 {
     ui->setupUi(this);
 
-    mIncludesDirWidget = new CompilerSetDirectoriesWidget(iconsManager,this);
+    mIncludesDirWidget = new DirectoryListWidget(iconsManager,this);
     ui->verticalLayout->addWidget(mIncludesDirWidget);
 }
 

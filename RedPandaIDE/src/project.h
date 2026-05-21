@@ -32,6 +32,11 @@ class CppParser;
 class EditorManager;
 class QFileSystemWatcher;
 class IconsManager;
+class Toolchain;
+class BuildConfiguration;
+
+using PToolchain = std::shared_ptr<Toolchain>;
+using PBuildConfiguration = std::shared_ptr<BuildConfiguration>;
 
 enum ProjectModelNodeType {
     DUMMY_HEADERS_FOLDER,
@@ -270,6 +275,11 @@ public:
 
     void updateFolders();
     void setCompilerSet(int compilerSetIndex);
+
+    PToolchain resolveToolchain() const;
+    PBuildConfiguration resolveBuildConfig() const;
+    void setToolchainId(const QString& id);
+    void setBuildConfigName(const QString& name);
 
     bool saveAsTemplate(const QString& templateFolder,
                         const QString& name,

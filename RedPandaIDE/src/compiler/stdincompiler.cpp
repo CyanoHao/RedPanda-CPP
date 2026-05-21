@@ -35,7 +35,7 @@ bool StdinCompiler::prepareForCompile()
         log(tr("Compiling..."));
     log("------------------");
     log(tr("- Filename: %1").arg(mFilename));
-    log(tr("- Compiler Set Name: %1").arg(compilerSet()->name()));
+    log(tr("- Compiler Set Name: %1").arg(mToolchain->name));
     log("");
     FileType fileType = getFileType(mFilename);
     if (fileType == FileType::Other)
@@ -51,7 +51,7 @@ bool StdinCompiler::prepareForCompile()
         mArguments += getCIncludeArguments();
         mArguments += getProjectIncludeArguments();
         strFileType = "C";
-        mCompiler = compilerSet()->CCompiler();
+        mCompiler = mToolchain->ccompiler;
         break;
     case FileType::GAS:
         mArguments += {"-x", "assembler", "-"};
@@ -59,7 +59,7 @@ bool StdinCompiler::prepareForCompile()
         mArguments += getCIncludeArguments();
         mArguments += getProjectIncludeArguments();
         strFileType = "GAS";
-        mCompiler = compilerSet()->CCompiler();
+        mCompiler = mToolchain->ccompiler;
         break;
     case FileType::CppSource:
     case FileType::CCppHeader:
@@ -68,7 +68,7 @@ bool StdinCompiler::prepareForCompile()
         mArguments += getCppIncludeArguments();
         mArguments += getProjectIncludeArguments();
         strFileType = "C++";
-        mCompiler = compilerSet()->cppCompiler();
+        mCompiler = mToolchain->cppCompiler;
         break;
     default:
         //throw CompileError(tr("Can't find the compiler for file %1").arg(mFilename));

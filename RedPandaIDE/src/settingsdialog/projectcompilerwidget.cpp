@@ -22,7 +22,7 @@
 #include <qt_utils/charsetinfo.h>
 #include <QMessageBox>
 
-ProjectCompilerWidget::ProjectCompilerWidget(const QString &name, const QString &group, IconsManager *iconsManager, QWidget *parent) :
+ProjectCompilerWidget::ProjectCompilerWidget(const QString &name, const QString& group, IconsManager *iconsManager, QWidget *parent) :
     SettingsWidget(name,group,iconsManager,parent),
     ui(new Ui::ProjectCompilerWidget)
 {
@@ -34,17 +34,77 @@ ProjectCompilerWidget::~ProjectCompilerWidget()
     delete ui;
 }
 
+PToolchain ProjectCompilerWidget::currentToolchain() const
+{
+    int idx = ui->cbToolchain->currentIndex();
+    if (idx < 0)
+        return nullptr;
+    QString tid = ui->cbToolchain->currentData().toString();
+    return pSettings->toolchainManager().findById(tid);
+}
+
+void ProjectCompilerWidget::populateBuildConfigCombo(const PToolchain& tc)
+{
+    ui->cbBuildConfig->blockSignals(true);
+    ui->cbBuildConfig->clear();
+    if (tc) {
+        QList<BuildConfiguration> configs = pSettings->buildConfigManager().configsFor(tc->compilerType);
+        for (const BuildConfiguration& cfg : configs) {
+            ui->cbBuildConfig->addItem(cfg.name);
+        }
+        // Select current build config
+        QString currentName = pMainWindow->project()->options().buildConfigName;
+        if (!currentName.isEmpty()) {
+            int idx = ui->cbBuildConfig->findText(currentName);
+            if (idx >= 0)
+                ui->cbBuildConfig->setCurrentIndex(idx);
+        } else {
+            // Select active config
+            QString activeName = pSettings->buildConfigManager().activeConfigName();
+            if (!activeName.isEmpty()) {
+                int idx = ui->cbBuildConfig->findText(activeName);
+                if (idx >= 0)
+                    ui->cbBuildConfig->setCurrentIndex(idx);
+            }
+        }
+    }
+    ui->cbBuildConfig->blockSignals(false);
+}
+
 void ProjectCompilerWidget::refreshOptions()
 {
-    PCompilerSet pSet = pSettings->compilerSets().getSet(ui->cbCompilerSet->currentIndex());
-    if (!pSet)
+    PToolchain tc = currentToolchain();
+    if (!tc)
         return;
-    ui->panelAddCharset->setVisible(pSet->compilerType()!=CompilerType::Clang);
-    //ui->chkAddCharset->setEnabled(pSet->compilerType()!=COMPILER_CLANG);
 
-    ui->tabOptions->resetUI(pSet,mOptions);
+    ui->panelAddCharset->setVisible(tc->compilerType != CompilerType::Clang);
 
+    // Merge toolchain and build config options
+    QMap<QString, QString> mergedOptions = tc->compilerOptions;
+    QString bcName = ui->cbBuildConfig->currentText();
+    if (!bcName.isEmpty()) {
+        QList<BuildConfiguration> configs = pSettings->buildConfigManager().configsFor(tc->compilerType);
+        for (const BuildConfiguration& cfg : configs) {
+            if (cfg.name == bcName) {
+                for (auto it = cfg.compilerOptions.begin(); it != cfg.compilerOptions.end(); ++it)
+                    mergedOptions[it.key()] = it.value();
+                break;
+            }
+        }
+    }
+
+    ui->tabOptions->resetUI(tc->compilerType, mergedOptions);
+
+    // Map linkModel to staticLink
+    PBuildConfiguration cfg = pMainWindow->project()->resolveBuildConfig();
+    if (cfg) {
+        LinkModel model = cfg->linkModelOverride.value_or(tc->defaultLinkModel);
+        mStaticLink = (model == LinkModel::Static || model == LinkModel::StaticPIE);
+    } else {
+        mStaticLink = (tc->defaultLinkModel == LinkModel::Static || tc->defaultLinkModel == LinkModel::StaticPIE);
+    }
     ui->chkStaticLink->setChecked(mStaticLink);
+
     ui->chkAddCharset->setChecked(mAddCharset);
 
     QByteArray execEncoding = mExecCharset;
@@ -72,27 +132,47 @@ void ProjectCompilerWidget::refreshOptions()
 
 void ProjectCompilerWidget::doLoad()
 {
-    mOptions = pMainWindow->project()->options().compilerOptions;
-    PCompilerSet pSet = pSettings->compilerSets().getSet(ui->cbCompilerSet->currentIndex());
-    if (mOptions.isEmpty() && pSet)
-        mOptions = pSet->compileOptions();
-    mStaticLink = pMainWindow->project()->options().staticLink;
-    mAddCharset = pMainWindow->project()->options().addCharset;
-    mExecCharset = pMainWindow->project()->options().execEncoding;
-    ui->cbCompilerSet->blockSignals(true);
-    ui->cbCompilerSet->setCurrentIndex(pMainWindow->project()->options().compilerSet);
-    ui->cbCompilerSet->blockSignals(false);
+    std::shared_ptr<Project> project = pMainWindow->project();
+    mOptions = project->options().compilerOptions;
+
+    // Load toolchain selection
+    QString tid = project->options().toolchainId;
+    if (!tid.isEmpty()) {
+        int idx = ui->cbToolchain->findData(tid);
+        if (idx >= 0)
+            ui->cbToolchain->setCurrentIndex(idx);
+    }
+
+    // Populate build config combo
+    PToolchain tc = currentToolchain();
+    populateBuildConfigCombo(tc);
+
+    // Load staticLink, charset settings
+    PBuildConfiguration cfg = project->resolveBuildConfig();
+    if (cfg && tc) {
+        LinkModel model = cfg->linkModelOverride.value_or(tc->defaultLinkModel);
+        mStaticLink = (model == LinkModel::Static || model == LinkModel::StaticPIE);
+        mAddCharset = cfg->autoAddCharsetParams;
+        mExecCharset = cfg->execCharset.toUtf8();
+    } else {
+        mStaticLink = false;
+        mAddCharset = true;
+        mExecCharset = ENCODING_SYSTEM_DEFAULT;
+    }
+
     refreshOptions();
 }
 
 void ProjectCompilerWidget::doSave()
 {
-    PCompilerSet pSet = pSettings->compilerSets().getSet(ui->cbCompilerSet->currentIndex());
-    if (!pSet)
+    PToolchain tc = currentToolchain();
+    if (!tc)
         return;
-    pMainWindow->project()->setCompilerSet(ui->cbCompilerSet->currentIndex());
+
+    pMainWindow->project()->setToolchainId(tc->id);
+    pMainWindow->project()->options().buildConfigName = ui->cbBuildConfig->currentText();
     pMainWindow->project()->options().compilerOptions = ui->tabOptions->arguments(true);
-    if (pSet->compilerType()!=CompilerType::Clang)
+    if (tc->compilerType != CompilerType::Clang)
         pMainWindow->project()->options().addCharset = ui->chkAddCharset->isChecked();
     pMainWindow->project()->options().staticLink = ui->chkStaticLink->isChecked();
 
@@ -110,12 +190,12 @@ void ProjectCompilerWidget::doSave()
 
 void ProjectCompilerWidget::init()
 {
-    ui->cbCompilerSet->blockSignals(true);
-    ui->cbCompilerSet->clear();
-    for (size_t i=0;i<pSettings->compilerSets().size();i++) {
-        ui->cbCompilerSet->addItem(pSettings->compilerSets().getSet(i)->name());
+    ui->cbToolchain->blockSignals(true);
+    ui->cbToolchain->clear();
+    for (const Toolchain& tc : pSettings->toolchainManager().toolchains()) {
+        ui->cbToolchain->addItem(tc.name, tc.id);
     }
-    ui->cbCompilerSet->blockSignals(false);
+    ui->cbToolchain->blockSignals(false);
     ui->cbEncodingDetails->setVisible(false);
     ui->cbEncoding->clear();
     ui->cbEncoding->addItem(tr("System Default(%1)").arg(QString(pCharsetInfoManager->getDefaultSystemEncoding())),ENCODING_SYSTEM_DEFAULT);
@@ -129,38 +209,38 @@ void ProjectCompilerWidget::init()
     SettingsWidget::init();
 }
 
-void ProjectCompilerWidget::on_cbCompilerSet_currentIndexChanged(int index)
+void ProjectCompilerWidget::on_cbToolchain_currentIndexChanged(int index)
 {
     if (index<0)
         return;
     std::shared_ptr<Project> project = pMainWindow->project();
     clearSettingsChanged();
     disconnectInputs();
-    ui->cbCompilerSet->blockSignals(true);
+    ui->cbToolchain->blockSignals(true);
     auto action = finally([this]{
-        ui->cbCompilerSet->blockSignals(false);
+        ui->cbToolchain->blockSignals(false);
+        populateBuildConfigCombo(currentToolchain());
         refreshOptions();
         connectInputs();
     });
-    PCompilerSet pSet=pSettings->compilerSets().getSet(index);
+
+    PToolchain tc = currentToolchain();
 #ifdef ENABLE_SDCC
-    if (pSet) {
+    if (tc) {
         if (project->options().type==ProjectType::MicroController) {
-            if (pSet->compilerType()!=CompilerType::SDCC) {
+            if (tc->compilerType!=CompilerType::SDCC) {
                 QMessageBox::information(this,
                                          tr("Wrong Compiler Type"),
-                                         tr("Compiler %1 can't compile a microcontroller project.").arg(pSet->name())
-                                         );
-                ui->cbCompilerSet->setCurrentIndex(project->options().compilerSet);
+                                         tr("Compiler %1 can't compile a microcontroller project.").arg(tc->name));
+                ui->cbToolchain->setCurrentIndex(0); // Reset to first
                 return;
             }
         } else {
-            if (pSet->compilerType()==CompilerType::SDCC) {
+            if (tc->compilerType==CompilerType::SDCC) {
                 QMessageBox::information(this,
                                          tr("Wrong Compiler Type"),
-                                         tr("Compiler %1 can only compile microcontroller project.").arg(pSet->name())
-                                         );
-                ui->cbCompilerSet->setCurrentIndex(project->options().compilerSet);
+                                         tr("Compiler %1 can only compile microcontroller project.").arg(tc->name));
+                ui->cbToolchain->setCurrentIndex(0); // Reset to first
                 return;
             }
         }
@@ -168,22 +248,41 @@ void ProjectCompilerWidget::on_cbCompilerSet_currentIndexChanged(int index)
 #endif
     if (QMessageBox::warning(
                 this,
-                tr("Change Project Compiler Set"),
-                tr("Change the project's compiler set will lose all custom compiler set options.")
+                tr("Change Project Toolchain"),
+                tr("Change the project's toolchain will reset all custom compiler options.")
                 +"<br />"
                 + tr("Do you really want to do that?"),
                 QMessageBox::Yes | QMessageBox::No,
                 QMessageBox::No) != QMessageBox::Yes) {
-        ui->cbCompilerSet->setCurrentIndex(project->options().compilerSet);
+        // Revert to original selection
+        QString originalId = project->options().toolchainId;
+        if (!originalId.isEmpty()) {
+            int idx = ui->cbToolchain->findData(originalId);
+            if (idx >= 0)
+                ui->cbToolchain->setCurrentIndex(idx);
+        }
         return;
     }
-    mOptions = pSet->compileOptions();
-    mStaticLink = pSet->staticLink();
-    mAddCharset = pSet->autoAddCharsetParams();
-    mExecCharset = pSet->execCharset().toUtf8();
+
+    // Reset options to toolchain defaults
+    if (tc) {
+        mOptions = tc->compilerOptions;
+        LinkModel model = tc->defaultLinkModel;
+        mStaticLink = (model == LinkModel::Static || model == LinkModel::StaticPIE);
+        mAddCharset = true;
+        mExecCharset = ENCODING_SYSTEM_DEFAULT;
+    }
 
     setSettingsChanged();
-    //project->saveOptions();
+}
+
+void ProjectCompilerWidget::on_cbBuildConfig_currentIndexChanged(int index)
+{
+    if (index < 0)
+        return;
+    // Build config change resets options to that config's defaults
+    refreshOptions();
+    setSettingsChanged();
 }
 
 void ProjectCompilerWidget::on_cbEncoding_currentTextChanged(const QString &/*arg1*/)
@@ -210,4 +309,3 @@ void ProjectCompilerWidget::on_cbEncodingDetails_currentTextChanged(const QStrin
 {
 
 }
-

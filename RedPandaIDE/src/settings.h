@@ -20,7 +20,6 @@
 #include "settings/basesettings.h"
 #include "settings/codecompletionsettings.h"
 #include "settings/codeformattersettings.h"
-#include "settings/compilersetsettings.h"
 #include "settings/compilesettings.h"
 #include "settings/debuggersettings.h"
 #include "settings/dirsettings.h"
@@ -29,6 +28,8 @@
 #include "settings/executorsettings.h"
 #include "settings/languagesettings.h"
 #include "settings/uisettings.h"
+#include "settings/toolchainmanager.h"
+#include "settings/buildconfigmanager.h"
 #ifdef ENABLE_VCS
 #include "settings/vcssettings.h"
 #endif
@@ -62,7 +63,8 @@ public:
 
     DirSettings& dirs();
     EditorSettings& editor();
-    CompilerSets& compilerSets();
+    ToolchainManager& toolchainManager();
+    BuildConfigManager& buildConfigManager();
     EnvironmentSettings& environment();
     ExecutorSettings& executor();
     DebuggerSettings& debugger();
@@ -82,7 +84,6 @@ private:
     DirSettings mDirs;
     EditorSettings mEditor;
     EnvironmentSettings mEnvironment;
-    CompilerSets mCompilerSets;
     ExecutorSettings mExecutor;
     DebuggerSettings mDebugger;
     CodeCompletionSettings mCodeCompletion;
@@ -93,6 +94,8 @@ private:
     VCSSetting mVCS;
 #endif
     LanguageSettings mLanguages;
+    ToolchainManager mToolchainManager;
+    BuildConfigManager mBuildConfigManager;
 };
 
 extern Settings* pSettings;

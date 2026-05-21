@@ -81,7 +81,7 @@ void CompilerInfo::init()
 
 void CompilerInfo::prepareCompilerOptions()
 {
-    QList<QPair<QString,QString>> sl;
+    CompileOptionChoiceList sl;
     QString groupName;
 //    // C options
 //    groupName = QObject::tr("C options");
@@ -92,108 +92,113 @@ void CompilerInfo::prepareCompilerOptions()
     groupName = QObject::tr("Code Generation");
     // Optimization
     sl.clear();
-    sl.append(QPair<QString,QString>("Low (-O1)","1"));
-    sl.append(QPair<QString,QString>("Med (-O2)","2"));
-    sl.append(QPair<QString,QString>("High (-O3)","3"));
-    sl.append(QPair<QString,QString>("Highest (-Ofast)","fast"));
-    sl.append(QPair<QString,QString>("Size (-Os)","s"));
-    sl.append(QPair<QString,QString>("Debug (-Og)","g"));
+    sl.append(CompilerOptionChoice("Low (-O1)","1"));
+    sl.append(CompilerOptionChoice("Med (-O2)","2"));
+    sl.append(CompilerOptionChoice("High (-O3)","3"));
+    sl.append(CompilerOptionChoice("Highest (-Ofast)","fast"));
+    sl.append(CompilerOptionChoice("Size (-Os)","s"));
+    sl.append(CompilerOptionChoice("Debug (-Og)","g"));
     addOption(CC_CMD_OPT_OPTIMIZE, QObject::tr("Optimization level (-Ox)"), groupName, true, true, false, "-O", CompilerOptionType::Choice, sl);
 
     // C++ Language Standards
     sl.clear();
-    sl.append(QPair<QString,QString>("ISO C++","c++98"));
-    sl.append(QPair<QString,QString>("ISO C++11","c++11"));
-    sl.append(QPair<QString,QString>("ISO C++14","c++14"));
-    sl.append(QPair<QString,QString>("ISO C++17","c++17"));
-    sl.append(QPair<QString,QString>("ISO C++20","c++2a"));
-    sl.append(QPair<QString,QString>("ISO C++23","c++2b"));
-    sl.append(QPair<QString,QString>("ISO C++26","c++2c"));
-    sl.append(QPair<QString,QString>("GNU C++","gnu++98"));
-    sl.append(QPair<QString,QString>("GNU C++11","gnu++11"));
-    sl.append(QPair<QString,QString>("GNU C++14","gnu++14"));
-    sl.append(QPair<QString,QString>("GNU C++17","gnu++17"));
-    sl.append(QPair<QString,QString>("GNU C++20","gnu++2a"));
-    sl.append(QPair<QString,QString>("GNU C++23","gnu++2b"));
-    sl.append(QPair<QString,QString>("GNU C++26","gnu++2c"));
-    addOption(CC_CMD_OPT_STD, QObject::tr("C++ Language standard (-std)"), groupName, false, true, false, "-std=",CompilerOptionType::Choice, sl);
+    sl.append(CompilerOptionChoice("ISO C++","c++98"));
+    sl.append(CompilerOptionChoice("ISO C++11","c++11"));
+    sl.append(CompilerOptionChoice("ISO C++14","c++14"));
+    sl.append(CompilerOptionChoice("ISO C++17","c++17"));
+    sl.append(CompilerOptionChoice("ISO C++20","c++2a"));
+    sl.append(CompilerOptionChoice("ISO C++23","c++2b"));
+    sl.append(CompilerOptionChoice("ISO C++26","c++2c"));
+    sl.append(CompilerOptionChoice("GNU C++","gnu++98"));
+    sl.append(CompilerOptionChoice("GNU C++11","gnu++11"));
+    sl.append(CompilerOptionChoice("GNU C++14","gnu++14"));
+    sl.append(CompilerOptionChoice("GNU C++17","gnu++17"));
+    sl.append(CompilerOptionChoice("GNU C++20","gnu++2a"));
+    sl.append(CompilerOptionChoice("GNU C++23","gnu++2b"));
+    sl.append(CompilerOptionChoice("GNU C++26","gnu++2c"));
+    addOption(CC_CMD_OPT_STD, QObject::tr("C++ Language standard (-std)"), groupName, false, true, false, "-std=",CompilerOptionType::Choice, sl)
+        ->level = CompilerOptionLevel::Toolchain;
 
     sl.clear();
-    sl.append(QPair<QString,QString>("ISO C90","c90"));
-    sl.append(QPair<QString,QString>("ISO C99","c99"));
-    sl.append(QPair<QString,QString>("ISO C11","c11"));
-    sl.append(QPair<QString,QString>("ISO C17","c17"));
-    sl.append(QPair<QString,QString>("ISO C23","c2x"));
-    sl.append(QPair<QString,QString>("ISO C2Y","c2y"));
-    sl.append(QPair<QString,QString>("GNU C90","gnu90"));
-    sl.append(QPair<QString,QString>("GNU C99","gnu99"));
-    sl.append(QPair<QString,QString>("GNU C11","gnu11"));
-    sl.append(QPair<QString,QString>("GNU C17","gnu17"));
-    sl.append(QPair<QString,QString>("GNU C23","gnu2x"));
-    sl.append(QPair<QString,QString>("GNU C2Y","gnu2y"));
-    addOption(C_CMD_OPT_STD, QObject::tr("C Language standard (-std)"), groupName, true, false, false, "-std=", CompilerOptionType::Choice, sl);
+    sl.append(CompilerOptionChoice("ISO C90","c90"));
+    sl.append(CompilerOptionChoice("ISO C99","c99"));
+    sl.append(CompilerOptionChoice("ISO C11","c11"));
+    sl.append(CompilerOptionChoice("ISO C17","c17"));
+    sl.append(CompilerOptionChoice("ISO C23","c2x"));
+    sl.append(CompilerOptionChoice("ISO C2Y","c2y"));
+    sl.append(CompilerOptionChoice("GNU C90","gnu90"));
+    sl.append(CompilerOptionChoice("GNU C99","gnu99"));
+    sl.append(CompilerOptionChoice("GNU C11","gnu11"));
+    sl.append(CompilerOptionChoice("GNU C17","gnu17"));
+    sl.append(CompilerOptionChoice("GNU C23","gnu2x"));
+    sl.append(CompilerOptionChoice("GNU C2Y","gnu2y"));
+    addOption(C_CMD_OPT_STD, QObject::tr("C Language standard (-std)"), groupName, true, false, false, "-std=", CompilerOptionType::Choice, sl)
+        ->level = CompilerOptionLevel::Toolchain;
 
     // Optimization for cpu type
 //    sl.clear();
-//    sl.append(QPair<QString,QString>(QObject::tr("This CPU"),"native"));
-//    sl.append(QPair<QString,QString>("i386","i386"));
-//    sl.append(QPair<QString,QString>("i486","i486"));
-//    sl.append(QPair<QString,QString>("i586","i586"));
-//    sl.append(QPair<QString,QString>("i686","i686"));
-//    sl.append(QPair<QString,QString>("Pentium","pentium"));
-//    sl.append(QPair<QString,QString>("Pentium MMX","pentium-mmx"));
-//    sl.append(QPair<QString,QString>("Pentium Pro","pentiumpro"));
-//    sl.append(QPair<QString,QString>("Pentium 2","pentium2"));
-//    sl.append(QPair<QString,QString>("Pentium 3","pentium3"));
-//    sl.append(QPair<QString,QString>("Pentium 4","pentium4"));
-//    sl.append(QPair<QString,QString>("Conroe","core2"));
-//    sl.append(QPair<QString,QString>("Nehalem","corei7"));
-//    sl.append(QPair<QString,QString>("Sandy","corei7-avx"));
-//    sl.append(QPair<QString,QString>("K6","k6"));
-//    sl.append(QPair<QString,QString>("K6-2","k6-2"));
-//    sl.append(QPair<QString,QString>("K6-3","k6-3"));
-//    sl.append(QPair<QString,QString>("Athlon","athlon"));
-//    sl.append(QPair<QString,QString>("Athlon Tbird","athlon-tbird"));
-//    sl.append(QPair<QString,QString>("Athlon 4","athlon-4"));
-//    sl.append(QPair<QString,QString>("Athlon XP","athlon-xp"));
-//    sl.append(QPair<QString,QString>("Athlon MP","athlon-mp"));
-//    sl.append(QPair<QString,QString>("K8","k8"));
-//    sl.append(QPair<QString,QString>("K8 Rev.E","k8-sse3"));
-//    sl.append(QPair<QString,QString>("K10","barcelona"));
-//    sl.append(QPair<QString,QString>("Bulldozer","bdver1"));
+//    sl.append(CompilerOptionChoice(QObject::tr("This CPU"),"native"));
+//    sl.append(CompilerOptionChoice("i386","i386"));
+//    sl.append(CompilerOptionChoice("i486","i486"));
+//    sl.append(CompilerOptionChoice("i586","i586"));
+//    sl.append(CompilerOptionChoice("i686","i686"));
+//    sl.append(CompilerOptionChoice("Pentium","pentium"));
+//    sl.append(CompilerOptionChoice("Pentium MMX","pentium-mmx"));
+//    sl.append(CompilerOptionChoice("Pentium Pro","pentiumpro"));
+//    sl.append(CompilerOptionChoice("Pentium 2","pentium2"));
+//    sl.append(CompilerOptionChoice("Pentium 3","pentium3"));
+//    sl.append(CompilerOptionChoice("Pentium 4","pentium4"));
+//    sl.append(CompilerOptionChoice("Conroe","core2"));
+//    sl.append(CompilerOptionChoice("Nehalem","corei7"));
+//    sl.append(CompilerOptionChoice("Sandy","corei7-avx"));
+//    sl.append(CompilerOptionChoice("K6","k6"));
+//    sl.append(CompilerOptionChoice("K6-2","k6-2"));
+//    sl.append(CompilerOptionChoice("K6-3","k6-3"));
+//    sl.append(CompilerOptionChoice("Athlon","athlon"));
+//    sl.append(CompilerOptionChoice("Athlon Tbird","athlon-tbird"));
+//    sl.append(CompilerOptionChoice("Athlon 4","athlon-4"));
+//    sl.append(CompilerOptionChoice("Athlon XP","athlon-xp"));
+//    sl.append(CompilerOptionChoice("Athlon MP","athlon-mp"));
+//    sl.append(CompilerOptionChoice("K8","k8"));
+//    sl.append(CompilerOptionChoice("K8 Rev.E","k8-sse3"));
+//    sl.append(CompilerOptionChoice("K10","barcelona"));
+//    sl.append(CompilerOptionChoice("Bulldozer","bdver1"));
 //    addOption(CC_CMD_OPT_ARCH, QObject::tr("Optimize for the following machine (-march)"), groupName, true, true, false, "-march=", sl);
 //    addOption(CC_CMD_OPT_TUNE, QObject::tr("Optimize less, while maintaining full compatibility (-tune)"), groupName, true, true, false, "-mtune=", sl);
 
     // Enable use of the specific instructions
     sl.clear();
-    sl.append(QPair<QString,QString>("MMX","mmx"));
-    sl.append(QPair<QString,QString>("3D Now","3dnow"));
-    sl.append(QPair<QString,QString>("SSE","sse"));
-    sl.append(QPair<QString,QString>("SSE2","sse2"));
-    sl.append(QPair<QString,QString>("SSE3","sse3"));
-    sl.append(QPair<QString,QString>("SSSE3","ssse3"));
-    sl.append(QPair<QString,QString>("SSE4","sse4"));
-    sl.append(QPair<QString,QString>("SSE4A","sse4a"));
-    sl.append(QPair<QString,QString>("SSE4.1","sse4.1"));
-    sl.append(QPair<QString,QString>("SSE4.2","sse4.2"));
-    sl.append(QPair<QString,QString>("AVX","avx"));
-    sl.append(QPair<QString,QString>("AVX2","avx2"));
-    sl.append(QPair<QString,QString>("FMA4","fma4"));
-    sl.append(QPair<QString,QString>("XOP","xop"));
-    sl.append(QPair<QString,QString>("AES","aes"));
-    addOption(CC_CMD_OPT_INSTRUCTION,QObject::tr("Enable use of specific instructions (-mx)"), groupName, true, true, false, "-m", CompilerOptionType::Choice, sl);
+    sl.append(CompilerOptionChoice("MMX","mmx"));
+    sl.append(CompilerOptionChoice("3D Now","3dnow"));
+    sl.append(CompilerOptionChoice("SSE","sse"));
+    sl.append(CompilerOptionChoice("SSE2","sse2"));
+    sl.append(CompilerOptionChoice("SSE3","sse3"));
+    sl.append(CompilerOptionChoice("SSSE3","ssse3"));
+    sl.append(CompilerOptionChoice("SSE4","sse4"));
+    sl.append(CompilerOptionChoice("SSE4A","sse4a"));
+    sl.append(CompilerOptionChoice("SSE4.1","sse4.1"));
+    sl.append(CompilerOptionChoice("SSE4.2","sse4.2"));
+    sl.append(CompilerOptionChoice("AVX","avx"));
+    sl.append(CompilerOptionChoice("AVX2","avx2"));
+    sl.append(CompilerOptionChoice("FMA4","fma4"));
+    sl.append(CompilerOptionChoice("XOP","xop"));
+    sl.append(CompilerOptionChoice("AES","aes"));
+    addOption(CC_CMD_OPT_INSTRUCTION,QObject::tr("Enable use of specific instructions (-mx)"), groupName, true, true, false, "-m", CompilerOptionType::Choice, sl)
+        ->level = CompilerOptionLevel::Toolchain;
 
     // 32bit/64bit
     sl.clear();
-    sl.append(QPair<QString,QString>(QObject::tr("32-bit pointer, 32-bit instruction (-m32)"), "32"));
-    sl.append(QPair<QString,QString>(QObject::tr("32-bit pointer, 64-bit instruction (-mx32)"), "x32"));
-    sl.append(QPair<QString,QString>(QObject::tr("64-bit pointer, 64-bit instruction (-m64)"), "64"));
-    addOption(CC_CMD_OPT_POINTER_SIZE, QObject::tr("x86 multilib (-mx)"), groupName, true, true, true, "-m", CompilerOptionType::Choice, sl);
+    sl.append(CompilerOptionChoice(QObject::tr("32-bit pointer, 32-bit instruction (-m32)"), "32"));
+    sl.append(CompilerOptionChoice(QObject::tr("32-bit pointer, 64-bit instruction (-mx32)"), "x32"));
+    sl.append(CompilerOptionChoice(QObject::tr("64-bit pointer, 64-bit instruction (-m64)"), "64"));
+    addOption(CC_CMD_OPT_POINTER_SIZE, QObject::tr("x86 multilib (-mx)"), groupName, true, true, true, "-m", CompilerOptionType::Choice, sl)
+        ->level = CompilerOptionLevel::Toolchain;
 
     addOption(CC_CMD_OPT_DEBUG_INFO, QObject::tr("Generate debugging information (-g3)"), groupName, true, true, false, "-g3");
     addOption(CC_CMD_OPT_PROFILE_INFO, QObject::tr("Generate profiling info for analysis (-pg)"), groupName, true, true, true, "-pg");
     addOption(CC_CMD_OPT_SYNTAX_ONLY, QObject::tr("Only check the code for syntax errors (-fsyntax-only)"), groupName, true, true, false, "-fsyntax-only");
-    addOption(CC_CMD_OPT_ENABLE_GCC_IMPORT_STD, QObject::tr("Enable experimental support for GCC standard library modules (-fmodules)"), groupName, false, true, false, "-fmodules");
+    addOption(CC_CMD_OPT_ENABLE_GCC_IMPORT_STD, QObject::tr("Enable experimental support for GCC standard library modules (-fmodules)"), groupName, false, true, false, "-fmodules")
+        ->level = CompilerOptionLevel::Toolchain;
 
     // Warnings
     groupName = QObject::tr("Warnings");
@@ -205,17 +210,17 @@ void CompilerInfo::prepareCompilerOptions()
     addOption(CC_CMD_OPT_WARNING_AS_ERROR, QObject::tr("Make all warnings into errors (-Werror)"), groupName, true, true, false, "-Werror");
     addOption(CC_CMD_OPT_ABORT_ON_ERROR , QObject::tr("Abort compilation on first error (-Wfatal-errors)"), groupName, true, true, false, "-Wfatal-errors");
     sl.clear();
-    sl.append(QPair<QString,QString>("Normal","protector"));
-    sl.append(QPair<QString,QString>("Explicit","protector-explicit"));
-    sl.append(QPair<QString,QString>("Strong","protector-strong"));
-    sl.append(QPair<QString,QString>("All","protector-all"));
+    sl.append(CompilerOptionChoice("Normal","protector"));
+    sl.append(CompilerOptionChoice("Explicit","protector-explicit"));
+    sl.append(CompilerOptionChoice("Strong","protector-strong"));
+    sl.append(CompilerOptionChoice("All","protector-all"));
     addOption(CC_CMD_OPT_STACK_PROTECTOR , QObject::tr("Check for stack smashing attacks (-fstack-protector)"), groupName, false, false, true, "-fstack-", CompilerOptionType::Choice, sl);
     sl.clear();
-    sl.append(QPair<QString,QString>("Address","address"));
-    sl.append(QPair<QString,QString>("Hwaddress","hwaddress"));
-    sl.append(QPair<QString,QString>("Thread","thread"));
-    sl.append(QPair<QString,QString>("Leak","leak"));
-    sl.append(QPair<QString,QString>("Undefined","undefined"));
+    sl.append(CompilerOptionChoice("Address","address"));
+    sl.append(CompilerOptionChoice("Hwaddress","hwaddress"));
+    sl.append(CompilerOptionChoice("Thread","thread"));
+    sl.append(CompilerOptionChoice("Leak","leak"));
+    sl.append(CompilerOptionChoice("Undefined","undefined"));
     addOption(CC_CMD_OPT_ADDRESS_SANITIZER , QObject::tr("Enable Sanitizer (-fsanitize=)"), groupName, true, true, true, "-fsanitize=",CompilerOptionType::Choice,sl);
 
     // Errors
@@ -232,12 +237,16 @@ void CompilerInfo::prepareCompilerOptions()
 
     // Linker
     groupName = QObject::tr("Linker");
-    addNumberOption(LINK_CMD_OPT_STACK_SIZE, QObject::tr("PE Stack Size"), groupName, false, false, true, "-Wl,--stack,","MB",1024*1024,0,0,99999);
+    addNumberOption(LINK_CMD_OPT_STACK_SIZE, QObject::tr("PE Stack Size"), groupName, false, false, true, "-Wl,--stack,","MB",1024*1024,0,0,99999)
+        ->level = CompilerOptionLevel::Both;
 
-    addOption(CC_CMD_OPT_USE_PIPE, QObject::tr("Use pipes instead of temporary files during compilation (-pipe)"), groupName, true, true, false, "-pipe");
+    addOption(CC_CMD_OPT_USE_PIPE, QObject::tr("Use pipes instead of temporary files during compilation (-pipe)"), groupName, true, true, false, "-pipe")
+        ->level = CompilerOptionLevel::Toolchain;
     //addOption(LINK_CMD_OPT_LINK_OBJC, QObject::tr("Link an Objective C program (-lobjc)"), groupName, false, false, true, "-lobjc");
-    addOption(LINK_CMD_OPT_NO_LINK_STDLIB,QObject::tr("Do not use standard system libraries (-nostdlib)"), groupName, false, false, true, "-nostdlib");
-    addOption(LINK_CMD_OPT_NO_CONSOLE, QObject::tr("Do not create a console window (-mwindows)"), groupName,false, false, true, "-mwindows");
+    addOption(LINK_CMD_OPT_NO_LINK_STDLIB,QObject::tr("Do not use standard system libraries (-nostdlib)"), groupName, false, false, true, "-nostdlib")
+        ->level = CompilerOptionLevel::Both;
+    addOption(LINK_CMD_OPT_NO_CONSOLE, QObject::tr("Do not create a console window (-mwindows)"), groupName,false, false, true, "-mwindows")
+        ->level = CompilerOptionLevel::Both;
     addOption(LINK_CMD_OPT_STRIP_EXE, QObject::tr("Strip executable (-s)"), groupName, false, false, true, "-s");
 }
 
@@ -355,7 +364,7 @@ bool SDCCCompilerInfo::supportSyntaxCheck()
 
 void SDCCCompilerInfo::prepareCompilerOptions()
 {
-    QList<QPair<QString,QString>> sl;
+    CompileOptionChoiceList sl;
     QString groupName;
 //    // C options
 //    groupName = QObject::tr("C options");
@@ -366,44 +375,44 @@ void SDCCCompilerInfo::prepareCompilerOptions()
     groupName = QObject::tr("Code Generation");
     // Optimization
     sl.clear();
-    sl.append(QPair<QString,QString>("Intel MCS51","mcs51"));
-    sl.append(QPair<QString,QString>("Dallas DS80C390","ds390"));
-    sl.append(QPair<QString,QString>("Dallas DS80C400","ds400"));
-    sl.append(QPair<QString,QString>("Freescale/Motorola HC08","hc08"));
-    sl.append(QPair<QString,QString>("Freescale/Motorola S08","s08"));
-    sl.append(QPair<QString,QString>("Zilog Z80","z80"));
-    sl.append(QPair<QString,QString>("Zilog Z180","z180"));
-    sl.append(QPair<QString,QString>("Rabbit 2000/3000","r2k"));
-    sl.append(QPair<QString,QString>("Rabbit 3000","r3ka"));
-    sl.append(QPair<QString,QString>("Sharp SM83","sm83"));
-    sl.append(QPair<QString,QString>("Toshiba TLCS-90","tlcs90"));
-    sl.append(QPair<QString,QString>("Zilog eZ80","ez80_z80"));
-    sl.append(QPair<QString,QString>("STM8","stm8"));
-    sl.append(QPair<QString,QString>("Padauk processors-13bit width memory","pdk13"));
-    sl.append(QPair<QString,QString>("Padauk processors-14bit width memory","pdk14"));
-    sl.append(QPair<QString,QString>("Padauk processors-15bit width memory","pdk15"));
+    sl.append(CompilerOptionChoice("Intel MCS51","mcs51"));
+    sl.append(CompilerOptionChoice("Dallas DS80C390","ds390"));
+    sl.append(CompilerOptionChoice("Dallas DS80C400","ds400"));
+    sl.append(CompilerOptionChoice("Freescale/Motorola HC08","hc08"));
+    sl.append(CompilerOptionChoice("Freescale/Motorola S08","s08"));
+    sl.append(CompilerOptionChoice("Zilog Z80","z80"));
+    sl.append(CompilerOptionChoice("Zilog Z180","z180"));
+    sl.append(CompilerOptionChoice("Rabbit 2000/3000","r2k"));
+    sl.append(CompilerOptionChoice("Rabbit 3000","r3ka"));
+    sl.append(CompilerOptionChoice("Sharp SM83","sm83"));
+    sl.append(CompilerOptionChoice("Toshiba TLCS-90","tlcs90"));
+    sl.append(CompilerOptionChoice("Zilog eZ80","ez80_z80"));
+    sl.append(CompilerOptionChoice("STM8","stm8"));
+    sl.append(CompilerOptionChoice("Padauk processors-13bit width memory","pdk13"));
+    sl.append(CompilerOptionChoice("Padauk processors-14bit width memory","pdk14"));
+    sl.append(CompilerOptionChoice("Padauk processors-15bit width memory","pdk15"));
     addOption(SDCC_CMD_OPT_PROCESSOR, QObject::tr("Processor (-m)"), groupName, true, false, false, "-m", CompilerOptionType::Choice,sl);
 
     // C++ Language Standards
     sl.clear();
-    sl.append(QPair<QString,QString>("ANSI C89/ISO C90","c89"));
-    sl.append(QPair<QString,QString>("ISO C99","c99"));
-    sl.append(QPair<QString,QString>("ISO C11","c11"));
-    sl.append(QPair<QString,QString>("ISO C17","c17"));
-    sl.append(QPair<QString,QString>("ISO C2x","c2x"));
-    sl.append(QPair<QString,QString>("SDCC C89","sdcc89"));
-    sl.append(QPair<QString,QString>("SDCC C99","sdcc99"));
-    sl.append(QPair<QString,QString>("SDCC C11","sdcc11"));
-    sl.append(QPair<QString,QString>("SDCC C17","sdcc17"));
-    sl.append(QPair<QString,QString>("SDCC C2x","sdcc2x"));
+    sl.append(CompilerOptionChoice("ANSI C89/ISO C90","c89"));
+    sl.append(CompilerOptionChoice("ISO C99","c99"));
+    sl.append(CompilerOptionChoice("ISO C11","c11"));
+    sl.append(CompilerOptionChoice("ISO C17","c17"));
+    sl.append(CompilerOptionChoice("ISO C2x","c2x"));
+    sl.append(CompilerOptionChoice("SDCC C89","sdcc89"));
+    sl.append(CompilerOptionChoice("SDCC C99","sdcc99"));
+    sl.append(CompilerOptionChoice("SDCC C11","sdcc11"));
+    sl.append(CompilerOptionChoice("SDCC C17","sdcc17"));
+    sl.append(CompilerOptionChoice("SDCC C2x","sdcc2x"));
     addOption(SDCC_CMD_OPT_STD, QObject::tr("Language standard (--std)"), groupName, true, false, false, "--std-", CompilerOptionType::Choice,sl);
 
     // Memory Model
     sl.clear();
-    sl.append(QPair<QString,QString>("Small","-small"));
-    sl.append(QPair<QString,QString>("Medium","-medium"));
-    sl.append(QPair<QString,QString>("Large","-large"));
-    sl.append(QPair<QString,QString>("Huge","-huge"));
+    sl.append(CompilerOptionChoice("Small","-small"));
+    sl.append(CompilerOptionChoice("Medium","-medium"));
+    sl.append(CompilerOptionChoice("Large","-large"));
+    sl.append(CompilerOptionChoice("Huge","-huge"));
     addOption(SDCC_OPT_MEMORY_MODEL, QObject::tr("Memory model (--model)"), groupName, true, false, false, "--model", CompilerOptionType::Choice,sl);
 
     addOption(SDCC_OPT_XSTACK, QObject::tr("Use external stack"),groupName,true,false,false,"--xstack");

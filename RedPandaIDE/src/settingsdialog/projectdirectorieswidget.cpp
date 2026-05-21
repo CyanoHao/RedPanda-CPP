@@ -16,7 +16,7 @@
  */
 #include "projectdirectorieswidget.h"
 #include "ui_projectdirectorieswidget.h"
-#include "compilersetdirectorieswidget.h"
+#include "directorylistwidget.h"
 #include "../project.h"
 #include "../mainwindow.h"
 
@@ -26,13 +26,13 @@ ProjectDirectoriesWidget::ProjectDirectoriesWidget(const QString &name, const QS
 {
     ui->setupUi(this);
 
-    mBinDirWidget = new CompilerSetDirectoriesWidget(iconsManager);
+    mBinDirWidget = new DirectoryListWidget(iconsManager);
     ui->tabDirs->addTab(mBinDirWidget,tr("Binaries"));
-    mLibDirWidget = new CompilerSetDirectoriesWidget(iconsManager);
+    mLibDirWidget = new DirectoryListWidget(iconsManager);
     ui->tabDirs->addTab(mLibDirWidget,tr("Libraries"));
-    mIncludeDirWidget = new CompilerSetDirectoriesWidget(iconsManager);
+    mIncludeDirWidget = new DirectoryListWidget(iconsManager);
     ui->tabDirs->addTab(mIncludeDirWidget,tr("Includes"));
-    mResourceDirWidget = new CompilerSetDirectoriesWidget(iconsManager);
+    mResourceDirWidget = new DirectoryListWidget(iconsManager);
     ui->tabDirs->addTab(mResourceDirWidget,tr("Resources"));
 }
 

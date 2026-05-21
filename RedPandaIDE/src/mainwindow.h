@@ -42,6 +42,8 @@
 #include "problems/competitivecompenionhandler.h"
 #include "utils/parsemacros.h"
 #include "utils/file.h"
+#include "settings/toolchain.h"
+#include "settings/buildconfig.h"
 
 
 QT_BEGIN_NAMESPACE
@@ -137,6 +139,8 @@ public:
     void updateFileTypeActions(const Editor *e);
     void updateCompilerSet();
     void updateCompilerSet(const Editor* e);
+    void updateToolchainCombo();
+    void updateBuildConfigCombo();
     void updateDebuggerSettings();
     void updateActionIcons();
     void checkSyntaxInBack(Editor* e);
@@ -304,6 +308,8 @@ private:
     void maximizeEditor();
     QStringList getBinDirsForCurrentEditor();
     QStringList getDefaultCompilerSetBinDirs();
+    PToolchain resolveProjectToolchain() const;
+    PBuildConfiguration resolveProjectBuildConfig(const Toolchain& tc) const;
     void openShell(const QString& folder, const QString& shellCommand, const QStringList& binDirs);
     QAction* createAction(const QString& text,
                           QWidget* parent,
@@ -343,6 +349,7 @@ private:
     void changeEditorActionParent(QAction *action, const QString& groupName);
     void backupMenuForEditor(QMenu* menu, QList<QAction *> &backup);
     void validateCompilerSet(int index);
+    void validateCurrentToolchain();
 
     void updateProblemSetName();
     void saveProblemSet(const QString& filePath);
@@ -461,6 +468,9 @@ private slots:
 
     // qt will auto bind slots with the prefix "on_"
     void onCompilerSetChanged(int index);
+
+    void onToolchainChanged(int index);
+    void onBuildConfigChanged(int index);
 
     void on_actionCompile_triggered();
 
@@ -913,7 +923,8 @@ private:
     QList<QAction *> mMenuExportBackup;
     QList<QAction *> mMenuMoveCaretBackup;
 
-    QComboBox *mCompilerSet;
+    QComboBox *mToolchainCombo;
+    QComboBox *mBuildConfigCombo;
     CompilerManager *mCompilerManager;
     Debugger *mDebugger;
     CPUDialog *mCPUDialog;

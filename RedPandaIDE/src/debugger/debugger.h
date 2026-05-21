@@ -57,6 +57,7 @@ using PDebugConfig=std::shared_ptr<DebugConfig>;
 class DebuggerClient;
 class DebugTarget;
 class Editor;
+class Toolchain;
 
 using PDebugReader = std::shared_ptr<DebuggerClient>;
 
@@ -70,7 +71,7 @@ public:
     Debugger& operator= (const Debugger&) = delete;
     // Play/pause
     bool startClient(
-            int compilerSetIndex,
+            const Toolchain& toolchain,
             const QString& inferior,
             bool inferiorHasSymbols,
             bool inferiorHasBreakpoints,

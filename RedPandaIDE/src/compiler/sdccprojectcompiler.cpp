@@ -42,7 +42,7 @@ void SDCCProjectCompiler::createStandardMakeFile()
 {
     QFile file(mProject->makeFileName());
     newMakeFile(file);
-    QString suffix = compilerSet()->executableSuffix();
+    QString suffix = mToolchain->executableSuffix;
     if (suffix == SDCC_IHX_SUFFIX) {
         writeln(file,"$(BIN_TAR): $(OBJ)");
         writeln(file,"\t$(CC) $(LIBS) -o $(BIN_ARG) $(LINKOBJ)");
@@ -139,7 +139,7 @@ void SDCCProjectCompiler::writeMakeDefines(QFile &file)
         }
     }
 
-    QString cc = extractFileName(compilerSet()->CCompiler());
+    QString cc = extractFileName(mToolchain->ccompiler);
 
     QStringList cCompileArguments = getCCompileArguments(mOnlyCheckSyntax);
     QStringList libraryArguments = getLibraryArguments(FileType::Project);
@@ -300,12 +300,12 @@ bool SDCCProjectCompiler::prepareForCompile()
     log(tr("Compiling project changes..."));
     log("--------");
     log(tr("- Project Filename: %1").arg(mProject->filename()));
-    log(tr("- Compiler Set Name: %1").arg(compilerSet()->name()));
+    log(tr("- Compiler Set Name: %1").arg(mToolchain->name));
     log("");
 
     buildMakeFile();
 
-    mCompiler = compilerSet()->make();
+    mCompiler = mToolchain->make;
 
     if (!fileExists(mCompiler)) {
         throw CompileError(

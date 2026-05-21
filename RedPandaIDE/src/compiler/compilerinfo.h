@@ -3,8 +3,11 @@
 
 #include <QString>
 #include <QMap>
+#include <QSet>
 #include <memory>
+#include <functional>
 #define COMPILER_CLANG "Clang"
+#define COMPILER_APPLECLANG "AppleClang"
 #define COMPILER_GCC "GCC"
 #define COMPILER_GCC_UTF8 "GCC_UTF8"
 #ifdef ENABLE_SDCC
@@ -81,6 +84,7 @@
 enum class CompilerType {
     GCC,
     Clang,
+    AppleClang,
 #ifdef ENABLE_SDCC
     SDCC,
 #endif
@@ -94,25 +98,52 @@ enum class CompilerOptionType {
     Number
 };
 
-using CompileOptionChoiceList = QList<QPair<QString,QString>>;
+enum class CompilerOptionLevel {
+    Toolchain,      // belongs to Toolchain (e.g. language standard)
+    BuildConfig,    // belongs to BuildConfiguration (e.g. optimization level)
+    Both            // can be set at both levels, BuildConfig overrides
+};
 
-typedef struct {
+struct CompilerOptionChoice {
+    QString value;
+    QString label;
+    QSet<CompilerType> availableFor;   // empty = available for all
+    QString minVersion;                // empty = no version limit
+    QString fallbackValue;             // empty = no simple fallback
+
+    CompilerOptionChoice() = default;
+    CompilerOptionChoice(const QString& label_, const QString& value_)
+        : value(value_), label(label_) {}
+};
+
+using CompileOptionChoiceList = QList<CompilerOptionChoice>;
+
+class Toolchain;  // forward declaration
+
+struct CompilerOption {
     QString key;
     QString name; // "Generate debugging info"
     QString section; // "C options"
-    bool isC;
-    bool isCpp; // True (C++ option?) - can be both C and C++ option...
-    bool isLinker; // Is it a linker param
+    bool isC = false;
+    bool isCpp = false; // True (C++ option?) - can be both C and C++ option...
+    bool isLinker = false; // Is it a linker param
     QString setting; // "-g3"
-    CompilerOptionType type;
+    CompilerOptionType type = CompilerOptionType::Checkbox;
     CompileOptionChoiceList choices; // replaces "Yes/No" standard choices (max 30 different choices)
     /* for spin control */
-    int scale; //Scale
+    int scale = 1; //Scale
     QString suffix;  //suffix
-    int defaultValue;
-    int minValue;
-    int maxValue;
-} CompilerOption;
+    int defaultValue = 0;
+    int minValue = 0;
+    int maxValue = 0;
+
+    // Custom fallback function for complex resolution logic
+    using FallbackFunc = std::function<QString(const Toolchain&, const QString&)>;
+    FallbackFunc fallbackFunc;
+
+    // Which level this option belongs to (for UI filtering)
+    CompilerOptionLevel level = CompilerOptionLevel::BuildConfig;
+};
 
 using PCompilerOption = std::shared_ptr<CompilerOption>;
 

@@ -24,7 +24,7 @@ namespace Ui {
 class ProjectMakefileWidget;
 }
 
-class CompilerSetDirectoriesWidget;
+class DirectoryListWidget;
 class ProjectMakefileWidget : public SettingsWidget
 {
     Q_OBJECT
@@ -35,7 +35,7 @@ public:
 
 private:
     Ui::ProjectMakefileWidget *ui;
-    CompilerSetDirectoriesWidget * mIncludesDirWidget;
+    DirectoryListWidget * mIncludesDirWidget;
 
     // SettingsWidget interface
 protected:

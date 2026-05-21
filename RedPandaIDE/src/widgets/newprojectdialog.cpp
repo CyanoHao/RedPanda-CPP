@@ -121,10 +121,10 @@ void NewProjectDialog::addTemplate(const QString &filename)
         return;
     PProjectTemplate t = std::make_shared<ProjectTemplate>();
     t->readTemplateFile(filename);
-    PCompilerSet pSet=pSettings->compilerSets().defaultSet();
-    if (pSet) {
+    PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+    if (tc) {
 #ifdef ENABLE_SDCC
-        if (pSet->compilerType()==CompilerType::SDCC) {
+        if (tc->compilerType == CompilerType::SDCC) {
             if (t->options().type==ProjectType::MicroController)
                 mTemplates.append(t);
         } else

@@ -356,11 +356,14 @@ int main(int argc, char *argv[])
         auto settings = std::make_unique<Settings>(settingFilename);
         //load settings
         pSettings = settings.get();
-        if (firstRun) {
-            pSettings->compilerSets().findSets();
-            pSettings->compilerSets().saveSets();
-        }
         pSettings->load();
+        if (firstRun) {
+            if (pSettings->toolchainManager().size() == 0) {
+                pSettings->toolchainManager().discover();
+            }
+            QString configDir = pSettings->dirs().config(DirSettings::DataType::None);
+            pSettings->toolchainManager().save(configDir + "/toolchains.json");
+        }
         if (firstRun) {
             //set theme
             ChooseThemeDialog themeDialog;

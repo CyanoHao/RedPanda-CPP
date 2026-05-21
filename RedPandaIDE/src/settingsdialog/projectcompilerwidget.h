@@ -21,6 +21,12 @@
 #include <QWidget>
 #include "settingswidget.h"
 
+class Toolchain;
+class BuildConfiguration;
+
+using PToolchain = std::shared_ptr<Toolchain>;
+using PBuildConfiguration = std::shared_ptr<BuildConfiguration>;
+
 namespace Ui {
 class ProjectCompilerWidget;
 }
@@ -49,8 +55,12 @@ protected:
     // SettingsWidget interface
 public:
     void init() override;
+private:
+    PToolchain currentToolchain() const;
+    void populateBuildConfigCombo(const PToolchain& tc);
 private slots:
-    void on_cbCompilerSet_currentIndexChanged(int index);
+    void on_cbToolchain_currentIndexChanged(int index);
+    void on_cbBuildConfig_currentIndexChanged(int index);
     void on_cbEncoding_currentTextChanged(const QString &arg1);
     void on_cbEncodingDetails_currentTextChanged(const QString &arg1);
 };

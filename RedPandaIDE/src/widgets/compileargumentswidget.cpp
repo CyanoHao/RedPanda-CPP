@@ -108,7 +108,8 @@ QMap<QString, QString> CompileArgumentsWidget::arguments( bool includeUnset) con
     return args;
 }
 
-void CompileArgumentsWidget::resetUI(PCompilerSet pSet, const QMap<QString,QString>& options)
+void CompileArgumentsWidget::resetUI(CompilerType compilerType, const QMap<QString,QString>& options,
+                                     OptionLevelFilter filter)
 {
     QTabWidget* pTab = this;
     while (pTab->count()>0) {
@@ -119,11 +120,22 @@ void CompileArgumentsWidget::resetUI(PCompilerSet pSet, const QMap<QString,QStri
             delete p;
         }
     }
-    if (!pSet)
-        return;
-    mCompilerType = pSet->compilerType();
+    mCompilerType = compilerType;
 
     foreach (const PCompilerOption &pOption, CompilerInfoManager::getCompilerOptions(mCompilerType)) {
+        // Apply level filter
+        if (filter != OptionLevelFilter::All) {
+            CompilerOptionLevel level = pOption->level;
+            if (filter == OptionLevelFilter::Toolchain) {
+                if (level != CompilerOptionLevel::Toolchain
+                    && level != CompilerOptionLevel::Both)
+                    continue;
+            } else if (filter == OptionLevelFilter::BuildConfig) {
+                if (level != CompilerOptionLevel::BuildConfig
+                    && level != CompilerOptionLevel::Both)
+                    continue;
+            }
+        }
         QWidget* pWidget = nullptr;
         for (int i=0;i<pTab->count();i++) {
             if (pOption->section == pTab->tabText(i)) {
@@ -156,9 +168,9 @@ void CompileArgumentsWidget::resetUI(PCompilerSet pSet, const QMap<QString,QStri
             QComboBox* pCombo = new QComboBox(pWidget);
             pCombo->addItem("","");
             for (int i=0;i<pOption->choices.length();i++) {
-                const QPair<QString,QString> &choice = pOption->choices[i];
-                pCombo->addItem(choice.first,choice.second);
-                if (options.value(pOption->key,"") == choice.second)
+                const CompilerOptionChoice &choice = pOption->choices[i];
+                pCombo->addItem(choice.label,choice.value);
+                if (options.value(pOption->key,"") == choice.value)
                     pCombo->setCurrentIndex(i+1);
             }
             pLayout->addWidget(pCombo,row,2);

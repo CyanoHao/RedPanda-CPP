@@ -78,7 +78,19 @@ std::shared_ptr<Project> Project::load(const QString &filename, EditorManager *e
                                                                parent);
     project->open();
     project->mModified = false;
-    resetCppParser(project->mParser, project->mOptions.compilerSet);
+    PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+    if (tc) {
+        QList<BuildConfiguration> configs = pSettings->buildConfigManager().configsFor(tc->compilerType);
+        QString activeName = pSettings->buildConfigManager().activeConfigName();
+        for (const BuildConfiguration& cfg : configs) {
+            if (cfg.name == activeName) {
+                resetCppParser(project->mParser, *tc, cfg);
+                break;
+            }
+        }
+        if (!configs.isEmpty())
+            resetCppParser(project->mParser, *tc, configs.first());
+    }
     return project;
 }
 
@@ -102,7 +114,19 @@ std::shared_ptr<Project> Project::create(
     project->mParser->setEnabled(false);
     if (!project->assignTemplate(pTemplate,useCpp))
         return std::shared_ptr<Project>();
-    resetCppParser(project->mParser, project->mOptions.compilerSet);
+    PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+    if (tc) {
+        QList<BuildConfiguration> configs = pSettings->buildConfigManager().configsFor(tc->compilerType);
+        QString activeName = pSettings->buildConfigManager().activeConfigName();
+        for (const BuildConfiguration& cfg : configs) {
+            if (cfg.name == activeName) {
+                resetCppParser(project->mParser, *tc, cfg);
+                break;
+            }
+        }
+        if (!configs.isEmpty())
+            resetCppParser(project->mParser, *tc, configs.first());
+    }
 
     project->mModified = true;
     ini.SaveFile(project->mFilename.toLocal8Bit());
@@ -139,11 +163,9 @@ QString Project::outputFilename() const
         switch(mOptions.type) {
 #ifdef ENABLE_SDCC
         case ProjectType::MicroController: {
-            PCompilerSet pSet=pSettings->compilerSets().getSet(mOptions.compilerSet);
-            if (pSet)
-                exeFileName = changeFileExt(extractFileName(mFilename),pSet->executableSuffix());
-            else
-                exeFileName = changeFileExt(extractFileName(mFilename),SDCC_HEX_SUFFIX);
+            PToolchain tc = resolveToolchain();
+            QString suffix = tc ? tc->executableSuffix : SDCC_HEX_SUFFIX;
+            exeFileName = changeFileExt(extractFileName(mFilename), suffix);
             }
             break;
 #endif
@@ -867,11 +889,11 @@ void Project::associateEditorToUnit(Editor *editor, PProjectUnit unit)
 
 bool Project::setCompileOption(const QString &key, const QString &value)
 {
-    PCompilerSet pSet = pSettings->compilerSets().getSet(mOptions.compilerSet);
-    if (!pSet)
+    PToolchain tc = resolveToolchain();
+    if (!tc)
         return false;
-    PCompilerOption op = CompilerInfoManager::getCompilerOption(
-                pSet->compilerType(), key);
+    CompilerType ct = tc->compilerType;
+    PCompilerOption op = CompilerInfoManager::getCompilerOption(ct, key);
     if (!op)
         return false;
     mOptions.compilerOptions.insert(key,value);
@@ -925,6 +947,70 @@ void Project::setCompilerSet(int compilerSetIndex)
     }
 }
 
+PToolchain Project::resolveToolchain() const
+{
+    // Priority 1: toolchainId direct lookup
+    QString tid = mOptions.toolchainId;
+    if (!tid.isEmpty()) {
+        PToolchain tc = pSettings->toolchainManager().findById(tid);
+        if (tc)
+            return tc;
+    }
+
+    // Priority 2: default toolchain
+    return pSettings->toolchainManager().defaultToolchain();
+}
+
+PBuildConfiguration Project::resolveBuildConfig() const
+{
+    PToolchain tc = resolveToolchain();
+    if (!tc)
+        return std::make_shared<BuildConfiguration>();
+
+    // Try buildConfigName first
+    QString name = mOptions.buildConfigName;
+    if (!name.isEmpty()) {
+        QList<BuildConfiguration> configs = pSettings->buildConfigManager().configsFor(tc->compilerType);
+        for (const BuildConfiguration& cfg : configs) {
+            if (cfg.name == name)
+                return std::make_shared<BuildConfiguration>(cfg);
+        }
+    }
+
+    // Fallback to active config
+    QString activeName = pSettings->buildConfigManager().activeConfigName();
+    if (!activeName.isEmpty()) {
+        QList<BuildConfiguration> configs = pSettings->buildConfigManager().configsFor(tc->compilerType);
+        for (const BuildConfiguration& cfg : configs) {
+            if (cfg.name == activeName)
+                return std::make_shared<BuildConfiguration>(cfg);
+        }
+    }
+
+    // Final fallback: first config
+    QList<BuildConfiguration> configs = pSettings->buildConfigManager().configsFor(tc->compilerType);
+    if (!configs.isEmpty())
+        return std::make_shared<BuildConfiguration>(configs.first());
+
+    return std::make_shared<BuildConfiguration>();
+}
+
+void Project::setToolchainId(const QString& id)
+{
+    if (mOptions.toolchainId != id) {
+        mOptions.toolchainId = id;
+        setModified(true);
+    }
+}
+
+void Project::setBuildConfigName(const QString& name)
+{
+    if (mOptions.buildConfigName != name) {
+        mOptions.buildConfigName = name;
+        setModified(true);
+    }
+}
+
 bool Project::assignTemplate(const std::shared_ptr<ProjectTemplate> aTemplate, bool useCpp)
 {
     if (!aTemplate) {
@@ -935,7 +1021,11 @@ bool Project::assignTemplate(const std::shared_ptr<ProjectTemplate> aTemplate, b
     mRootNode = makeProjectNode();
     rebuildNodes();
     mOptions = aTemplate->options();
-    mOptions.compilerSet = pSettings->compilerSets().defaultIndex();
+    mOptions.compilerSet = 0;
+    PToolchain defaultTc = pSettings->toolchainManager().defaultToolchain();
+    if (defaultTc) {
+        mOptions.toolchainId = defaultTc->id;
+    }
     mOptions.isCpp = useCpp;
     updateCompilerSetting();
     mOptions.icon = aTemplate->icon();
@@ -1200,6 +1290,8 @@ void Project::saveOptions()
     ini.SetLongValue("Project","IncludeVersionInfo", mOptions.includeVersionInfo);
     ini.SetLongValue("Project","SupportXPThemes", mOptions.supportXPThemes);
     ini.SetLongValue("Project","CompilerSet", mOptions.compilerSet);
+    ini.SetValue("Project","ToolchainId", toByteArray(mOptions.toolchainId));
+    ini.SetValue("Project","BuildConfigName", toByteArray(mOptions.buildConfigName));
     ini.Delete("Project","CompilerSettings"); // remove old compiler settings
     ini.Delete("CompilerSettings",nullptr); // remove old compiler settings
     foreach (const QString& key, mOptions.compilerOptions.keys()) {
@@ -2008,81 +2100,25 @@ void Project::loadOptions(SimpleIni& ini)
         mFolders = fromByteArray(ini.GetValue("Project", "Folders", "")).split(";", Qt::SkipEmptyParts);
         mOptions.includeVersionInfo = ini.GetBoolValue("Project", "IncludeVersionInfo", false);
         mOptions.supportXPThemes = ini.GetBoolValue("Project", "SupportXPThemes", false);
-        mOptions.compilerSet = ini.GetLongValue("Project", "CompilerSet", pSettings->compilerSets().defaultIndex());
+        mOptions.compilerSet = ini.GetLongValue("Project", "CompilerSet", 0);
+        mOptions.toolchainId = fromByteArray(ini.GetValue("Project", "ToolchainId", ""));
+        mOptions.buildConfigName = fromByteArray(ini.GetValue("Project", "BuildConfigName", ""));
+
         mOptions.modelType = (ProjectModelType)ini.GetLongValue("Project", "ModelType", (int)ProjectModelType::Custom);
         mOptions.classBrowserType = (ProjectClassBrowserType)ini.GetLongValue("Project", "ClassBrowserType", (int)ProjectClassBrowserType::CurrentFile);
 
-        if (mOptions.compilerSet >= (int)pSettings->compilerSets().size()
-                || mOptions.compilerSet < 0) { // TODO: change from indices to names
-            QMessageBox::critical(
-                        nullptr,
-                        tr("Compiler not found"),
-                        tr("The compiler set you have selected for this project, no longer exists.")
-                        +"<BR />"
-                        +tr("It will be substituted by the global compiler set."),
-                        QMessageBox::Ok
-                                  );
-            setCompilerSet(pSettings->compilerSets().defaultIndex());
-            saveOptions();
+        if (mOptions.compilerSet < 0) {
+            mOptions.compilerSet = 0;
         }
 
-        PCompilerSet pSet = pSettings->compilerSets().getSet(mOptions.compilerSet);
-        if (pSet) {
-            QByteArray oldCompilerOptions = ini.GetValue("Project", "CompilerSettings", "");
-            if (!oldCompilerOptions.isEmpty()) {
-                //version 2 compatibility
-                // test if it is created by old dev-c++
-                SimpleIni::TNamesDepend oKeys;
-                ini.GetAllKeys("Project", oKeys);
-                bool isNewDev=false;
-                for(const SimpleIni::Entry& entry:oKeys) {
-                    QString key(entry.pItem);
-                    if (key=="UsePrecompiledHeader"
-                            || key == "CompilerSetType"
-                            || key == "StaticLink"
-                            || key == "AddCharset"
-                            || key == "ExecEncoding"
-                            || key == "Encoding"
-                            || key == "UseUTF8") {
-                        isNewDev = true;
-                        break;
-                    }
-                }
-                if (!isNewDev && oldCompilerOptions.length()>=25) {
-                    char t = oldCompilerOptions[18];
-                    oldCompilerOptions[18]=oldCompilerOptions[21];
-                    oldCompilerOptions[21]=t;
-                }
-                for (int i=0;i<oldCompilerOptions.length();i++) {
-                    QString key = CompilerSets::getKeyFromCompilerCompatibleIndex(i);
-                    PCompilerOption pOption = CompilerInfoManager::getCompilerOption(
-                                pSet->compilerType(), key);
-                    if (pOption) {
-                        int val = CompilerSet::charToValue(oldCompilerOptions[i]);
-                        if (pOption->choices.isEmpty()) {
-                            if (val>0)
-                                mOptions.compilerOptions.insert(key,COMPILER_OPTION_ON);
-                            else
-                                mOptions.compilerOptions.insert(key,"");
-                        } else {
-                            if (val>0 && val <= pOption->choices.length())
-                                mOptions.compilerOptions.insert(key,pOption->choices[val-1].second);
-                            else
-                                mOptions.compilerOptions.insert(key,"");
-                        }
-                    }
-                }
-            } else {
-                //version 3
-                SimpleIni::TNamesDepend oKeys;
-                ini.GetAllKeys("CompilerSettings", oKeys);
-                for(const SimpleIni::Entry& entry:oKeys) {
-                    QString key(entry.pItem);
-                    mOptions.compilerOptions.insert(
-                                    key,
-                                    ini.GetValue("CompilerSettings", entry.pItem, ""));
-                }
-            }
+        // Read compiler options (version 3+ format)
+        SimpleIni::TNamesDepend oKeys;
+        ini.GetAllKeys("CompilerSettings", oKeys);
+        for(const SimpleIni::Entry& entry:oKeys) {
+            QString key(entry.pItem);
+            mOptions.compilerOptions.insert(
+                            key,
+                            ini.GetValue("CompilerSettings", entry.pItem, ""));
         }
 
         mOptions.staticLink = ini.GetBoolValue("Project", "StaticLink", true);
@@ -2229,10 +2265,17 @@ void Project::updateFolderNode(PProjectModelNode node)
 
 void Project::updateCompilerSetting()
 {
-    PCompilerSet defaultSet = pSettings->compilerSets().getSet(mOptions.compilerSet);
-    if (defaultSet) {
-        mOptions.staticLink = defaultSet->staticLink();
-        mOptions.compilerOptions = defaultSet->compileOptions();
+    PToolchain tc = resolveToolchain();
+    PBuildConfiguration cfg = resolveBuildConfig();
+    if (tc && cfg) {
+        // Merge toolchain and build config compiler options
+        mOptions.compilerOptions = tc->compilerOptions;
+        for (auto it = cfg->compilerOptions.begin(); it != cfg->compilerOptions.end(); ++it)
+            mOptions.compilerOptions[it.key()] = it.value();
+
+        // Map linkModel to staticLink
+        LinkModel model = cfg->linkModelOverride.value_or(tc->defaultLinkModel);
+        mOptions.staticLink = (model == LinkModel::Static || model == LinkModel::StaticPIE);
     } else {
         mOptions.staticLink = false;
     }
@@ -2260,9 +2303,9 @@ QString Project::fileSystemNodeFolderPath(const PProjectModelNode &node)
 QStringList Project::binDirs()
 {
     QStringList lst = options().binDirs;
-    PCompilerSet compilerSet = pSettings->compilerSets().getSet(options().compilerSet);
-    if (compilerSet) {
-        lst.append(compilerSet->binDirs());
+    PToolchain tc = resolveToolchain();
+    if (tc) {
+        lst.append(tc->binDirs);
     }
     return lst;
 }

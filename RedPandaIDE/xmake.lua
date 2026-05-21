@@ -111,12 +111,14 @@ target("RedPandaIDE")
         "src/utils/escape.cpp",
         "src/utils/file.cpp",
         "src/utils/font.cpp",
+        "src/utils/llvm-triple.cpp",
         "src/utils/os.cpp",
         "src/utils/parsearg.cpp",
         "src/utils/parser.cpp",
         "src/utils/parsemacros.cpp",
         "src/utils/pe.cpp",
         "src/utils/terminal.cpp",
+        "src/utils/toolchain.cpp",
         "src/utils/ui.cpp")
 
     add_moc_classes(

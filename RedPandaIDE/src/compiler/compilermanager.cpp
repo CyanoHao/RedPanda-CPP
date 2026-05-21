@@ -84,7 +84,7 @@ bool CompilerManager::running() const
 
 void CompilerManager::compile(const QString& filename, FileType fileType, const QByteArray& encoding, bool rebuild, CppCompileType compileType)
 {
-    if (!pSettings->compilerSets().defaultSet()) {
+    if (!pSettings->toolchainManager().defaultToolchain()) {
         QMessageBox::critical(mMainWindow,
                               tr("No compiler set"),
                               tr("No compiler set is configured.")+tr("Can't start debugging."));
@@ -99,7 +99,8 @@ void CompilerManager::compile(const QString& filename, FileType fileType, const 
         mCompileIssueCount = 0;
         //deleted when thread finished
 #ifdef ENABLE_SDCC
-        if (pSettings->compilerSets().defaultSet()->compilerType()==CompilerType::SDCC) {
+        PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+        if (tc && tc->compilerType == CompilerType::SDCC) {
             mCompiler = new SDCCFileCompiler(filename,encoding,compileType,false);
         } else
 #endif
@@ -127,7 +128,7 @@ void CompilerManager::compile(const QString& filename, FileType fileType, const 
 
 void CompilerManager::compileProject(std::shared_ptr<Project> project, bool rebuild)
 {
-    if (!pSettings->compilerSets().defaultSet()) {
+    if (!pSettings->toolchainManager().defaultToolchain()) {
         QMessageBox::critical(mMainWindow,
                               tr("No compiler set"),
                               tr("No compiler set is configured.")+tr("Can't start debugging."));
@@ -161,7 +162,7 @@ void CompilerManager::compileProject(std::shared_ptr<Project> project, bool rebu
 
 void CompilerManager::cleanProject(std::shared_ptr<Project> project)
 {
-    if (!pSettings->compilerSets().defaultSet()) {
+    if (!pSettings->toolchainManager().defaultToolchain()) {
         QMessageBox::critical(mMainWindow,
                               tr("No compiler set"),
                               tr("No compiler set is configured.")+tr("Can't start debugging."));
@@ -197,7 +198,7 @@ void CompilerManager::cleanProject(std::shared_ptr<Project> project)
 
 void CompilerManager::buildProjectMakefile(std::shared_ptr<Project> project)
 {
-    if (!pSettings->compilerSets().defaultSet()) {
+    if (!pSettings->toolchainManager().defaultToolchain()) {
         QMessageBox::critical(mMainWindow,
                               tr("No compiler set"),
                               tr("No compiler set is configured.")+tr("Can't start debugging."));
@@ -216,7 +217,7 @@ void CompilerManager::buildProjectMakefile(std::shared_ptr<Project> project)
 
 void CompilerManager::checkSyntax(const QString &filename, const QByteArray& encoding, const QString &content, std::shared_ptr<Project> project)
 {
-    if (!pSettings->compilerSets().defaultSet()) {
+    if (!pSettings->toolchainManager().defaultToolchain()) {
         QMessageBox::critical(mMainWindow,
                               tr("No compiler set"),
                               tr("No compiler set is configured.")+tr("Can't start debugging."));
@@ -282,7 +283,8 @@ void CompilerManager::run(
 #ifdef Q_OS_WIN
         if (pSettings->executor().enableVirualTerminalSequence())
             execArgs << "--enable-virtual-terminal-sequence";
-        QString triplet = pSettings->compilerSets().defaultSet()->dumpMachine();
+        PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+        QString triplet = tc ? tc->dumpMachine : QString();
         if (triplet.contains("-linux-"))
             execArgs << "--run-in-wsl";
         QString sharedMemoryId = QUuid::createUuid().toString();

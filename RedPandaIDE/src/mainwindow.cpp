@@ -201,13 +201,20 @@ MainWindow::MainWindow(QWidget *parent)
     mVisitHistoryManager->load();
 
     //toolbar takes the owner
-    mCompilerSet = new QComboBox(this);
-    mCompilerSet->setMinimumWidth(200);
-    mCompilerSet->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    ui->toolbarCompilerSet->insertWidget(ui->actionCompiler_Options, mCompilerSet);
+    mToolchainCombo = new QComboBox(this);
+    mToolchainCombo->setMinimumWidth(150);
+    mToolchainCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    ui->toolbarCompilerSet->insertWidget(ui->actionCompiler_Options, mToolchainCombo);
+    connect(mToolchainCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &MainWindow::onToolchainChanged);
+
+    mBuildConfigCombo = new QComboBox(this);
+    mBuildConfigCombo->setMinimumWidth(120);
+    mBuildConfigCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    ui->toolbarCompilerSet->insertWidget(ui->actionCompiler_Options, mBuildConfigCombo);
     ui->toolbarCompilerSet->insertSeparator(ui->actionCompiler_Options);
-    connect(mCompilerSet,QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &MainWindow::onCompilerSetChanged);
+    connect(mBuildConfigCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &MainWindow::onBuildConfigChanged);
     //updateCompilerSet();
 
     mCompilerManager = new CompilerManager(this);
@@ -857,43 +864,43 @@ void MainWindow::updateCompileActions(const Editor *e)
         bool canDebug = false;
         bool canCompile = false;
         bool canGenerateAssembly=false;
-        PCompilerSet set=pSettings->compilerSets().getSet(mCompilerSet->currentIndex());
-        if (set) {
+        PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+        if (tc) {
             if (e) {
                 if (!e->inProject()) {
                     FileType fileType = e->fileType();
                     switch(fileType) {
                     case FileType::CSource:
-                        canCompile = set->canCompileC();
+                        canCompile = tc->canCompileC();
                         //qDebug()<<(int)set->compilerType();
 #ifdef ENABLE_SDCC
-                        if (set->compilerType()!=CompilerType::SDCC)
+                        if (tc->compilerType != CompilerType::SDCC)
 #endif
                         {
                             canGenerateAssembly = canCompile;
                             canRun = canCompile ;
                         }
                         //qDebug()<<canCompile<<canRun;
-                        canDebug = set->canDebug();
+                        canDebug = tc->canDebug();
                         break;
                     case FileType::CppSource:
-                        canCompile = set->canCompileCPP();
+                        canCompile = tc->canCompileCpp();
                         canGenerateAssembly = canCompile;
                         canRun = canCompile;
-                        canDebug = set->canDebug();
+                        canDebug = tc->canDebug();
                         break;
                     case FileType::GAS:
-                        if (set->compilerType()==CompilerType::GCC) {
+                        if (tc->compilerType == CompilerType::GCC) {
                             canCompile = true;
                             canRun = canCompile;
-                            canDebug = set->canDebug();
+                            canDebug = tc->canDebug();
                         }
                         break;
                     case FileType::NASM:
                         if (fileExists(pSettings->compile().NASMPath())){
                             canCompile = true;
                             canRun = canCompile;
-                            canDebug = set->canDebug();
+                            canDebug = tc->canDebug();
                         }
                         break;
                     default:
@@ -909,7 +916,7 @@ void MainWindow::updateCompileActions(const Editor *e)
                 canCompile = true;
                 canRun = (mProject->options().type !=ProjectType::DynamicLib)
                         && (mProject->options().type !=ProjectType::StaticLib);
-                canDebug = set->canDebug() && canRun;
+                canDebug = tc->canDebug() && canRun;
                 if (e) {
                     FileType fileType = e->fileType();
                     if (fileType == FileType::CSource
@@ -2046,32 +2053,46 @@ void MainWindow::updateCompilerSet()
 
 void MainWindow::updateCompilerSet(const Editor *e)
 {
-    mCompilerSet->blockSignals(true);
-    mCompilerSet->clear();
-    QIcon errorIcon = mIconsManager->getIcon(IconsManager::ACTION_MISC_CROSS);
-    for (size_t i=0;i<pSettings->compilerSets().size();i++) {
-        PCompilerSet set=pSettings->compilerSets().getSet(i);
-        if (set->findErrors().isEmpty())
-            mCompilerSet->addItem(set->name());
-        else
-            mCompilerSet->addItem(errorIcon, set->name());
-    }
-    int index=pSettings->compilerSets().defaultIndex();
-    if (mProject) {
-        if ( !e || e->inProject()) {
-            index = mProject->options().compilerSet;
-        } else if (e->syntaxer()->language()==QSynedit::ProgrammingLanguage::Makefile
-                   && mProject->directory() == extractFileDir(e->filename())) {
-            index = mProject->options().compilerSet;
-        }
+    updateToolchainCombo();
+    updateBuildConfigCombo();
+}
 
-        if (index < 0 || index>=mCompilerSet->count()) {
-            index = pSettings->compilerSets().defaultIndex();
-        }
+void MainWindow::updateToolchainCombo()
+{
+    mToolchainCombo->blockSignals(true);
+    mToolchainCombo->clear();
+    ToolchainManager& tm = pSettings->toolchainManager();
+    for (int i = 0; i < tm.size(); i++) {
+        mToolchainCombo->addItem(tm.toolchains()[i].name);
     }
-    mCompilerSet->setCurrentIndex(index);
-    mCompilerSet->blockSignals(false);
-    mCompilerSet->update();
+    int index = tm.defaultIndex();
+    if (index < 0 || index >= mToolchainCombo->count())
+        index = 0;
+    mToolchainCombo->setCurrentIndex(index);
+    mToolchainCombo->blockSignals(false);
+}
+
+void MainWindow::updateBuildConfigCombo()
+{
+    mBuildConfigCombo->blockSignals(true);
+    mBuildConfigCombo->clear();
+    PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+    if (tc) {
+        BuildConfigManager& bm = pSettings->buildConfigManager();
+        QList<BuildConfiguration> configs = bm.configsFor(tc->compilerType);
+        for (const auto& cfg : configs) {
+            mBuildConfigCombo->addItem(cfg.name);
+        }
+        QString activeName = bm.activeConfigName();
+        int idx = 0;
+        if (!activeName.isEmpty()) {
+            for (int i = 0; i < configs.size(); i++) {
+                if (configs[i].name == activeName) { idx = i; break; }
+            }
+        }
+        mBuildConfigCombo->setCurrentIndex(idx);
+    }
+    mBuildConfigCombo->blockSignals(false);
 }
 
 void MainWindow::updateDebuggerSettings()
@@ -2119,12 +2140,6 @@ void MainWindow::updateActionIcons()
     }
     foreach (QToolButton* btn, ui->panelProblemCaseInfo->findChildren<QToolButton *>()) {
         btn->setIconSize(iconSize);
-    }
-
-    for(int i=0;i<mCompilerSet->count();i++) {
-        if (!mCompilerSet->itemIcon(i).isNull()) {
-            mCompilerSet->setItemIcon(i, mIconsManager->getIcon(IconsManager::ACTION_MISC_CROSS));
-        }
     }
 
     ui->tabExplorer->setIconSize(iconSize);
@@ -2340,14 +2355,13 @@ void MainWindow::checkSyntaxInBack(Editor *e)
     clearIssues();
     CompileTarget target =getCompileTarget();
     if (target ==CompileTarget::Project) {
-        int index = mProject->options().compilerSet;
-        PCompilerSet set = pSettings->compilerSets().getSet(index);
-        if (!set || !CompilerInfoManager::supportSyntaxCheck(set->compilerType()))
+        PToolchain tc = resolveProjectToolchain();
+        if (!tc || !CompilerInfoManager::supportSyntaxCheck(tc->compilerType))
             return;
         mCompilerManager->checkSyntax(e->filename(), e->fileEncoding(), e->text(), mProject);
     } else {
-        PCompilerSet set = pSettings->compilerSets().defaultSet();
-        if (!set || !CompilerInfoManager::supportSyntaxCheck(set->compilerType()))
+        PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+        if (!tc || !CompilerInfoManager::supportSyntaxCheck(tc->compilerType))
             return;
         mCompilerManager->checkSyntax(e->filename(),e->fileEncoding(),e->text(), nullptr);
     }
@@ -2421,27 +2435,27 @@ bool MainWindow::compile(bool rebuild, CppCompileType compileType)
                     return false;
             }
             if (mCompileSuccessionTask) {
-                PCompilerSet compilerSet=pSettings->compilerSets().defaultSet();
+                PToolchain tc = pSettings->toolchainManager().defaultToolchain();
                 if (editor->inProject())
-                    compilerSet = pSettings->compilerSets().getSet(mProject->options().compilerSet);
-                if (compilerSet)  {
-                    CompilerSet::CompilationStage stage;
+                    tc = resolveProjectToolchain();
+                if (tc)  {
+                    CompilationStage stage;
                     switch(compileType) {
                     case CppCompileType::GenerateAssemblyOnly:
-                        stage = CompilerSet::CompilationStage::CompilationProperOnly;
+                        stage = CompilationStage::CompilationProperOnly;
                         break;
                     case CppCompileType::GenerateGimpleOnly:
-                        stage = CompilerSet::CompilationStage::GenerateGimple;
+                        stage = CompilationStage::GenerateGimple;
                         break;
                     case CppCompileType::PreprocessOnly:
-                        stage = CompilerSet::CompilationStage::PreprocessingOnly;
+                        stage = CompilationStage::PreprocessingOnly;
                         break;
                     default:
-                        stage = CompilerSet::CompilationStage::GenerateExecutable;
+                        stage = CompilationStage::GenerateExecutable;
                         break;
                     }
-                    mCompileSuccessionTask->execName = compilerSet->getOutputFilename(editor->filename(),stage);
-                    mCompileSuccessionTask->isExecutable = compilerSet->isOutputExecutable(stage);
+                    mCompileSuccessionTask->execName = tc->getOutputFilename(editor->filename(),stage);
+                    mCompileSuccessionTask->isExecutable = Toolchain::isOutputExecutable(stage);
                 } else {
                     mCompileSuccessionTask->execName = changeFileExt(editor->filename(),DEFAULT_EXECUTABLE_SUFFIX);
                     mCompileSuccessionTask->isExecutable = true;
@@ -2484,7 +2498,7 @@ void MainWindow::runExecutable(
     } else {
         if (!filename.isEmpty() &&
                 ( compareFileModifiedTime(filename,exeName)>=0
-                  || compareFileModifiedTime(exeName, pSettings->compilerSets().defaultIndexTimestamp())<=0 )) {
+                  || compareFileModifiedTime(exeName, pSettings->toolchainManager().defaultIndexTimestamp())<=0 )) {
             doCompileRun(runType);
             return;
         }
@@ -2562,18 +2576,18 @@ void MainWindow::runExecutable(RunType runType)
             if (editor->modified() || editor->isNew()) {
                 if (!editor->save(false,false))
                     return;
-            }
-            QStringList binDirs = getDefaultCompilerSetBinDirs();
-            QString exeName;
-            PCompilerSet compilerSet =pSettings->compilerSets().defaultSet();
-            bool isExecutable;
-            if (compilerSet) {
-                exeName = compilerSet->getOutputFilename(editor->filename());
-                isExecutable = compilerSet->isOutputExecutable();
-            } else {
-                exeName = changeFileExt(editor->filename(), DEFAULT_EXECUTABLE_SUFFIX);
-                isExecutable = true;
-            }
+        }
+        QStringList binDirs = getDefaultCompilerSetBinDirs();
+        QString exeName;
+        PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+        bool isExecutable;
+        if (tc) {
+            exeName = tc->getOutputFilename(editor->filename());
+            isExecutable = Toolchain::isOutputExecutable(CompilationStage::GenerateExecutable);
+        } else {
+            exeName = changeFileExt(editor->filename(), DEFAULT_EXECUTABLE_SUFFIX);
+            isExecutable = true;
+        }
             if (isExecutable)
                 runExecutable(exeName,editor->filename(),runType,binDirs);
             else if (runType==RunType::Normal) {
@@ -2594,8 +2608,8 @@ void MainWindow::debug()
     if (mCompilerManager->compiling())
         return;
     mCompilerManager->stopPausing();
-    PCompilerSet compilerSet = pSettings->compilerSets().defaultSet();
-    if (!compilerSet) {
+    PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+    if (!tc) {
         QMessageBox::critical(pMainWindow,
                               tr("No compiler set"),
                               tr("No compiler set is configured.")+"<BR/>"+tr("Can't start debugging."));
@@ -2609,9 +2623,9 @@ void MainWindow::debug()
     QSet<QString> unitFiles;
     switch(getCompileTarget()) {
     case CompileTarget::Project: {
-        compilerSet=pSettings->compilerSets().getSet(mProject->options().compilerSet);
-        if (!compilerSet)
-            compilerSet = pSettings->compilerSets().defaultSet();
+        tc = resolveProjectToolchain();
+        if (!tc)
+            tc = pSettings->toolchainManager().defaultToolchain();
         binDirs = mProject->binDirs();
         // Check if we enabled proper options
         debugEnabled = mProject->getCompileOption(CC_CMD_OPT_DEBUG_INFO) == COMPILER_OPTION_ON;
@@ -2716,8 +2730,9 @@ void MainWindow::debug()
             inferiorHasSymbols = false;
         }
         QDir::fromNativeSeparators(inferior);
-        if (!mDebugger->startClient(
-                    mProject->options().compilerSet,
+        PToolchain tc = resolveProjectToolchain();
+        if (!tc || !mDebugger->startClient(
+                    *tc,
                     inferior,
                     inferiorHasSymbols,
                     debugInferiorhasBreakpoint(),
@@ -2734,11 +2749,19 @@ void MainWindow::debug()
     }
         break;
     case CompileTarget::File: {
-            binDirs = compilerSet->binDirs();
+            if (!tc)
+                tc = pSettings->toolchainManager().defaultToolchain();
+            binDirs = tc->binDirs;
 
             // Check if we enabled proper options
-            debugEnabled = compilerSet->getCompileOptionValue(CC_CMD_OPT_DEBUG_INFO) == COMPILER_OPTION_ON;
-            stripEnabled = compilerSet->getCompileOptionValue(LINK_CMD_OPT_STRIP_EXE) == COMPILER_OPTION_ON;
+            QMap<QString,QString> options = tc->compilerOptions;
+            QList<BuildConfiguration> configs = pSettings->buildConfigManager().configsFor(tc->compilerType);
+            if (!configs.isEmpty()) {
+                for (auto it = configs.first().compilerOptions.begin(); it != configs.first().compilerOptions.end(); ++it)
+                    options[it.key()] = it.value();
+            }
+            debugEnabled = options.value(CC_CMD_OPT_DEBUG_INFO) == COMPILER_OPTION_ON;
+            stripEnabled = options.value(LINK_CMD_OPT_STRIP_EXE) == COMPILER_OPTION_ON;
             if (stripEnabled || !debugEnabled) {
                 if (QMessageBox::question(this,
                                       tr("Correct compile settings for debug"),
@@ -2775,11 +2798,11 @@ void MainWindow::debug()
                 }
 
                 // Did we compiled?
-                PCompilerSet compilerSet =pSettings->compilerSets().defaultSet();
+                PToolchain compileTc = pSettings->toolchainManager().defaultToolchain();
                 bool isExecutable;
-                if (compilerSet) {
-                    filePath = compilerSet->getOutputFilename(e->filename());
-                    isExecutable = compilerSet->isOutputExecutable();
+                if (compileTc) {
+                    filePath = compileTc->getOutputFilename(e->filename());
+                    isExecutable = Toolchain::isOutputExecutable(CompilationStage::GenerateExecutable);
                 } else {
                     filePath = changeFileExt(e->filename(), DEFAULT_EXECUTABLE_SUFFIX);
                     isExecutable = true;
@@ -2803,7 +2826,7 @@ void MainWindow::debug()
                     return;
                 } else if (
                            compareFileModifiedTime(e->filename(),filePath)>=0
-                           || compareFileModifiedTime(filePath, pSettings->compilerSets().defaultIndexTimestamp())<=0 ) {
+                            || compareFileModifiedTime(filePath, pSettings->toolchainManager().defaultIndexTimestamp())<=0 ) {
                     mCompileSuccessionTask=std::make_shared<CompileSuccessionTask>();
                     mCompileSuccessionTask->type = CompileSuccessionTaskType::Debug;
                     mCompileSuccessionTask->binDirs = binDirs;
@@ -2813,8 +2836,9 @@ void MainWindow::debug()
 
                 prepareDebugger();
                 QString newFilePath =QDir::fromNativeSeparators(debugFile.filePath());
-                if (!mDebugger->startClient(
-                            pSettings->compilerSets().defaultIndex(),
+                PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+                if (!tc || !mDebugger->startClient(
+                            *tc,
                             newFilePath,
                             true,
                             debugInferiorhasBreakpoint(),
@@ -3475,7 +3499,11 @@ void MainWindow::scanActiveProject(bool parse)
 
     //UpdateClassBrowsing;
     if (parse) {
-        resetCppParser(mProject->cppParser(), mProject->options().compilerSet);
+        PToolchain tc = resolveProjectToolchain();
+        if (tc) {
+            PBuildConfiguration cfg = resolveProjectBuildConfig(*tc);
+            resetCppParser(mProject->cppParser(), *tc, *cfg);
+        }
         mProject->resetParserProjectFiles();
         CppParser::parseFileListNonBlocking(mProject->cppParser());
     } else {
@@ -3718,8 +3746,8 @@ void MainWindow::newEditor(const QString& suffix)
             filename = QString("untitled%1").arg(getNewFileNumber());
             if (suffix.isEmpty()) {
                 if (pSettings->editor().defaultFileCpp()) {
-                    PCompilerSet compilerSet = pSettings->compilerSets().defaultSet();
-                    if (compilerSet && !compilerSet->canCompileCPP()) {
+                    PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+                    if (tc && !tc->canCompileCpp()) {
                         filename+=".c";
                     } else {
                         filename+=".cpp";
@@ -3937,9 +3965,30 @@ QStringList MainWindow::getBinDirsForCurrentEditor()
 
 QStringList MainWindow::getDefaultCompilerSetBinDirs()
 {
-    if (pSettings->compilerSets().defaultSet())
-        return pSettings->compilerSets().defaultSet()->binDirs();
+    PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+    if (tc)
+        return tc->binDirs;
     return QStringList();
+}
+
+PToolchain MainWindow::resolveProjectToolchain() const
+{
+    if (!mProject)
+        return pSettings->toolchainManager().defaultToolchain();
+    return mProject->resolveToolchain();
+}
+
+PBuildConfiguration MainWindow::resolveProjectBuildConfig(const Toolchain& tc) const
+{
+    QList<BuildConfiguration> configs = pSettings->buildConfigManager().configsFor(tc.compilerType);
+    QString activeName = pSettings->buildConfigManager().activeConfigName();
+    for (const BuildConfiguration& cfg : configs) {
+        if (cfg.name == activeName)
+            return std::make_shared<BuildConfiguration>(cfg);
+    }
+    if (!configs.isEmpty())
+        return std::make_shared<BuildConfiguration>(configs.first());
+    return std::make_shared<BuildConfiguration>();
 }
 
 void MainWindow::openShell(const QString &folder, const QString &shellCommand, const QStringList& binDirs)
@@ -5965,7 +6014,7 @@ void MainWindow::showEvent(QShowEvent *)
     ui->tabMessages->setCurrentIndex(settings.bottomPanelIndex());
     ui->tabExplorer->setCurrentIndex(settings.leftPanelIndex());
     ui->debugViews->setCurrentIndex(settings.debugPanelIndex());
-    validateCompilerSet(pSettings->compilerSets().defaultIndex());
+    validateCurrentToolchain();
 }
 
 void MainWindow::hideEvent(QHideEvent *)
@@ -6042,37 +6091,51 @@ void MainWindow::on_actionOptions_triggered()
 
 void MainWindow::onCompilerSetChanged(int index)
 {
-    if (index<0)
+    // Kept for backward compatibility with auto-bound slots.
+    // Not connected to any widget anymore.
+    Q_UNUSED(index);
+}
+
+void MainWindow::onToolchainChanged(int index)
+{
+    if (index < 0)
         return;
-    Editor *e = mEditorManager->getEditor();
     updateCompileActions();
-    if ( mProject && (!e || e->inProject())
-         ) {
-        if (index==mProject->options().compilerSet)
-            return;
-        if(QMessageBox::warning(
-                    e,
-                    tr("Change Project Compiler Set"),
-                    tr("Change the project's compiler set will lose all custom compiler set options.")
-                    +"<br />"
-                    + tr("Do you really want to do that?"),
-                    QMessageBox::Yes | QMessageBox::No,
-                    QMessageBox::No) != QMessageBox::Yes) {
-            mCompilerSet->setCurrentIndex(mProject->options().compilerSet);
-            //ui->actionRebuild->trigger();
-            return;
-        }
-        mProject->setCompilerSet(index);
+
+    Editor *e = mEditorManager->getEditor();
+
+    pSettings->toolchainManager().setDefaultIndex(index);
+    pSettings->toolchainManager().save(
+        pSettings->dirs().config(DirSettings::DataType::None) + "/toolchains.json");
+
+    // Update project's toolchainId if a project is active
+    if (mProject && (!e || e->inProject())) {
+        QString tid = mToolchainCombo->currentData().toString();
+        mProject->setToolchainId(tid);
         mProject->saveOptions();
-        scanActiveProject(true);
-        return;
     }
 
-    pSettings->compilerSets().setDefaultIndex(index);
-    pSettings->compilerSets().saveDefaultIndex();
-
+    updateBuildConfigCombo();
     reparseNonProjectEditors();
-    validateCompilerSet(index);
+    validateCurrentToolchain();
+}
+
+void MainWindow::onBuildConfigChanged(int index)
+{
+    if (index < 0)
+        return;
+    updateCompileActions();
+
+    PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+    if (tc) {
+        BuildConfigManager& bm = pSettings->buildConfigManager();
+        QList<BuildConfiguration> configs = bm.configsFor(tc->compilerType);
+        if (index < configs.size()) {
+            bm.setActiveConfig(configs[index].name);
+            bm.save(pSettings->dirs().config(DirSettings::DataType::None)
+                    + "/build_configs.json");
+        }
+    }
 }
 
 void MainWindow::logToolsOutput(const QString& msg)
@@ -6181,7 +6244,8 @@ void MainWindow::onCompileFinished(QString filename, bool isCheckSyntax)
 
 
     if (isCheckSyntax) {
-        if (!CompilerInfoManager::supportSyntaxCheck(pSettings->compilerSets().defaultSet()->compilerType())) {
+        PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+        if (!CompilerInfoManager::supportSyntaxCheck(tc ? tc->compilerType : CompilerType::Unknown)) {
             QDir dir(extractFileDir(filename));
 #ifdef Q_OS_WIN
             QFile::remove(dir.absoluteFilePath("a.exe"));
@@ -7928,23 +7992,41 @@ void MainWindow::setProjectViewCurrentUnit(std::shared_ptr<ProjectUnit> unit) {
 
 void MainWindow::reparseNonProjectEditors()
 {
+    PToolchain defaultTc = pSettings->toolchainManager().defaultToolchain();
+    PBuildConfiguration defaultCfg;
+    if (defaultTc) {
+        QList<BuildConfiguration> configs = pSettings->buildConfigManager().configsFor(defaultTc->compilerType);
+        QString activeName = pSettings->buildConfigManager().activeConfigName();
+        for (const BuildConfiguration& cfg : configs) {
+            if (cfg.name == activeName) {
+                defaultCfg = std::make_shared<BuildConfiguration>(cfg);
+                break;
+            }
+        }
+        if (!defaultCfg && !configs.isEmpty())
+            defaultCfg = std::make_shared<BuildConfiguration>(configs.first());
+    }
+    if (!defaultCfg)
+        defaultCfg = std::make_shared<BuildConfiguration>();
+
     if (pSettings->codeCompletion().shareParser()) {
         {
             PCppParser parser{mEditorManager->sharedParser(ParserLanguage::C)};
-            if (parser)
-                resetCppParser(parser);
+            if (parser && defaultTc && defaultCfg)
+                resetCppParser(parser, *defaultTc, *defaultCfg);
         }
         {
             PCppParser parser{mEditorManager->sharedParser(ParserLanguage::CPlusPlus)};
-            if (parser)
-                resetCppParser(parser);
+            if (parser && defaultTc && defaultCfg)
+                resetCppParser(parser, *defaultTc, *defaultCfg);
         }
     } else {
         for (int i=0;i<mEditorManager->pageCount();i++) {
             Editor* e=(*mEditorManager)[i];
             if (!e->inProject()) {
                 if (!pSettings->codeCompletion().shareParser()) {
-                    resetCppParser(e->parser());
+                    if (defaultTc && defaultCfg)
+                        resetCppParser(e->parser(), *defaultTc, *defaultCfg);
                 }
             }
         }
@@ -8099,18 +8181,19 @@ void MainWindow::backupMenuForEditor(QMenu *menu, QList<QAction *> &backup)
 
 void MainWindow::validateCompilerSet(int index)
 {
-    PCompilerSet set = pSettings->compilerSets().getSet(index);
-    if (set) {
-        QStringList errors = set->findErrors();
-        if (!errors.isEmpty()) {
-            mCompilerSet->setItemIcon(index, mIconsManager->getIcon(IconsManager::ACTION_MISC_CROSS));
-            QMessageBox::warning(this,
-                                 tr("Error in Compiler Set"),
-                                 tr("Current Compiler set has the following critical error: \n\n")
-                                 +errors.join("\n"));
-        } else {
-            mCompilerSet->setItemIcon(index, QIcon());
-        }
+    // Kept for backward compatibility, now delegates to new method
+    Q_UNUSED(index);
+    validateCurrentToolchain();
+}
+
+void MainWindow::validateCurrentToolchain()
+{
+    PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+    if (tc && !tc->isValid()) {
+        QMessageBox::warning(this,
+                             tr("Warning: Toolchain"),
+                             tr("The current toolchain has missing compiler executables.\n"
+                                "Please check the toolchain settings."));
     }
 }
 
@@ -9229,7 +9312,7 @@ QMap<QString, QString> MainWindow::macroVariables()
         {"DATETIME", QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss")}
     };
 
-    PCompilerSet compilerSet = pSettings->compilerSets().defaultSet();
+    PToolchain compilerSet = pSettings->toolchainManager().defaultToolchain();
     if (compilerSet) {
         // Only provide the first cpp include dir
         if (compilerSet->defaultCppIncludeDirs().count() > 0)
@@ -9246,9 +9329,9 @@ QMap<QString, QString> MainWindow::macroVariables()
 
     if (e != nullptr && !e->inProject()) { // Non-project editor macros
         QString exeSuffix;
-        PCompilerSet compilerSet = pSettings->compilerSets().defaultSet();
+        PToolchain compilerSet = pSettings->toolchainManager().defaultToolchain();
         if (compilerSet) {
-            exeSuffix = compilerSet->executableSuffix();
+            exeSuffix = compilerSet->executableSuffix;
         } else {
             exeSuffix = DEFAULT_EXECUTABLE_SUFFIX;
         }

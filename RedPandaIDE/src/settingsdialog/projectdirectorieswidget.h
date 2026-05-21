@@ -24,7 +24,7 @@ namespace Ui {
 class ProjectDirectoriesWidget;
 }
 
-class CompilerSetDirectoriesWidget;
+class DirectoryListWidget;
 class ProjectDirectoriesWidget : public SettingsWidget
 {
     Q_OBJECT
@@ -35,10 +35,10 @@ public:
 
 private:
     Ui::ProjectDirectoriesWidget *ui;
-    CompilerSetDirectoriesWidget *mBinDirWidget;
-    CompilerSetDirectoriesWidget *mLibDirWidget;
-    CompilerSetDirectoriesWidget *mIncludeDirWidget;
-    CompilerSetDirectoriesWidget *mResourceDirWidget;
+    DirectoryListWidget *mBinDirWidget;
+    DirectoryListWidget *mLibDirWidget;
+    DirectoryListWidget *mIncludeDirWidget;
+    DirectoryListWidget *mResourceDirWidget;
 
     // SettingsWidget interface
 protected:

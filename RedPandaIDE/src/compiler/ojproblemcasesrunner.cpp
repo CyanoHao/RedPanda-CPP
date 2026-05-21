@@ -70,8 +70,9 @@ void OJProblemCasesRunner::runCase(int index,POJProblemCase problemCase)
     QString path = env.value("PATH");
     QStringList pathAdded;
     bool writeChannelClosed = false;
-    if (pSettings->compilerSets().defaultSet()) {
-        foreach(const QString& dir, pSettings->compilerSets().defaultSet()->binDirs()) {
+    PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+    if (tc) {
+        foreach(const QString& dir, tc->binDirs) {
             pathAdded.append(dir);
         }
     }

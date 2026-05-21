@@ -22,6 +22,8 @@
 #include "../common.h"
 #include "../parser/cppparser.h"
 #include "../utils/file.h"
+#include "../settings/toolchain.h"
+#include "../settings/buildconfig.h"
 
 class Project;
 class Compiler : public QThread
@@ -65,8 +67,10 @@ protected:
     virtual int getColunmnFromOutputLine(QString &line);
     virtual CompileIssueType getIssueTypeFromOutputLine(QString &line);
 
+    void resolveToolchain();
+    void mergeCompileOptions();
+
 protected:
-    virtual PCompilerSet compilerSet();
     virtual bool prepareForCompile() = 0;
     virtual QByteArray pipedText();
     virtual bool prepareForRebuild() = 0;
@@ -108,6 +112,10 @@ protected:
     bool mSetLANG;
     PCppParser mParserForFile;
     bool mForceEnglishOutput;
+    PToolchain mToolchain;
+    PBuildConfiguration mBuildConfig;
+    QMap<QString,QString> mMergedOptions;
+    bool mResolved;
 
 private:
     bool mStop;

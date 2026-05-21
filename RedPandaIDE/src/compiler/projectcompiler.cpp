@@ -236,10 +236,10 @@ void ProjectCompiler::writeMakeDefines(QFile &file, bool &genModuleDef)
     }
     log("");
 
-    QString cxx = extractFileName(compilerSet()->cppCompiler());
-    QString cc = extractFileName(compilerSet()->CCompiler());
+    QString cxx = extractFileName(mToolchain->cppCompiler);
+    QString cc = extractFileName(mToolchain->ccompiler);
 #ifdef Q_OS_WIN
-    QString windres = extractFileName(compilerSet()->resourceCompiler());
+    QString windres = extractFileName(mToolchain->resourceCompiler);
 #endif
 
     // Get list of applicable flags
@@ -255,8 +255,8 @@ void ProjectCompiler::writeMakeDefines(QFile &file, bool &genModuleDef)
 #if defined(ARCH_X86_64) || defined(ARCH_X86)
     QStringList nasmArguments ;
 #ifdef Q_OS_WIN
-    if (cCompileArguments.contains("-m32") || QString("i686").compare(compilerSet()->target(), Qt::CaseInsensitive)==0
-            || QString("i386").compare(compilerSet()->target(), Qt::CaseInsensitive)==0) {
+    if (cCompileArguments.contains("-m32") || QString("i686").compare(mToolchain->target, Qt::CaseInsensitive)==0
+            || QString("i386").compare(mToolchain->target, Qt::CaseInsensitive)==0) {
         nasmArguments += {"-f","elf32"};
     } else if (cCompileArguments.contains("-m64")) {
         nasmArguments += {"-f","elf64"};
@@ -464,7 +464,7 @@ void ProjectCompiler::writeMakeObjFilesRules(QFile &file)
             // Or roll our own
         } else {
             QString encodingStr;
-            if (compilerSet()->supportConvertingCharset() && mProject->options().addCharset) {
+            if (mToolchain->supportConvertingCharset() && mProject->options().addCharset) {
                 QByteArray defaultSystemEncoding = pCharsetInfoManager->getDefaultSystemEncoding();
                 QByteArray encoding = mProject->options().execEncoding;
                 QByteArray targetEncoding;
@@ -610,12 +610,12 @@ bool ProjectCompiler::prepareForCompile()
     log(tr("Compiling project changes..."));
     log("--------");
     log(tr("- Project Filename: %1").arg(mProject->filename()));
-    log(tr("- Compiler Set Name: %1").arg(compilerSet()->name()));
+    log(tr("- Compiler Set Name: %1").arg(mToolchain->name));
     log("");
 
     buildMakeFile();
 
-    mCompiler = compilerSet()->make();
+    mCompiler = mToolchain->make;
 
     if (!fileExists(mCompiler)) {
         throw CompileError(

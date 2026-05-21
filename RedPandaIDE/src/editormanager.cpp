@@ -247,14 +247,14 @@ void EditorManager::doRemoveEditor(Editor *e)
 CompilerType EditorManager::getCompilerTypeForEditor(const Editor *e) const
 {
     if (e) {
-        PCompilerSet pSet;
+        PToolchain tc;
         if (e->inProject() && pMainWindow->project()) {
-            pSet = pSettings->compilerSets().getSet(pMainWindow->project()->options().compilerSet);
+            tc = pMainWindow->project()->resolveToolchain();
         } else if (!e->inProject()) {
-            pSet = pSettings->compilerSets().defaultSet();
+            tc = pSettings->toolchainManager().defaultToolchain();
         }
-        if (pSet)
-            return pSet->compilerType();
+        if (tc)
+            return tc->compilerType;
     }
     return CompilerType::Unknown;
 }
@@ -298,8 +298,21 @@ void EditorManager::onEditorShown(Editor *e)
             if (pSettings->codeCompletion().clearWhenEditorHidden()
                 && pSettings->codeCompletion().shareParser()
                 && !e->inProject()) {
-                if (e->needReparse())
-                    resetCppParser(e->parser());
+                if (e->needReparse()) {
+                    PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+                    if (tc) {
+                        QList<BuildConfiguration> configs = pSettings->buildConfigManager().configsFor(tc->compilerType);
+                        QString activeName = pSettings->buildConfigManager().activeConfigName();
+                        for (const BuildConfiguration& cfg : configs) {
+                            if (cfg.name == activeName) {
+                                resetCppParser(e->parser(), *tc, cfg);
+                                break;
+                            }
+                        }
+                        if (!configs.isEmpty())
+                            resetCppParser(e->parser(), *tc, configs.first());
+                    }
+                }
             }
             e->reparseIfNeeded();
         }
@@ -455,7 +468,19 @@ PCppParser EditorManager::sharedParser(ParserLanguage language)
                     std::bind(
                         &EditorManager::getContentFromOpenedEditor,this,
                         std::placeholders::_1, std::placeholders::_2));
-        resetCppParser(parser);
+        PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+        if (tc) {
+            QList<BuildConfiguration> configs = pSettings->buildConfigManager().configsFor(tc->compilerType);
+            QString activeName = pSettings->buildConfigManager().activeConfigName();
+            for (const BuildConfiguration& cfg : configs) {
+                if (cfg.name == activeName) {
+                    resetCppParser(parser, *tc, cfg);
+                    break;
+                }
+            }
+            if (!configs.isEmpty())
+                resetCppParser(parser, *tc, configs.first());
+        }
         parser->setEnabled(true);
         mSharedParsers.insert(language,parser);
     }
@@ -485,7 +510,19 @@ PCppParser EditorManager::createParserForEditor(Editor *editor)
             parser->setLanguage(editor->calcParserLanguage());
             parser->setOnGetFileStream(std::bind(&EditorManager::getContentFromOpenedEditor,
                                                  this, std::placeholders::_1, std::placeholders::_2));
-            resetCppParser(parser);
+            PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+            if (tc) {
+                QList<BuildConfiguration> configs = pSettings->buildConfigManager().configsFor(tc->compilerType);
+                QString activeName = pSettings->buildConfigManager().activeConfigName();
+                for (const BuildConfiguration& cfg : configs) {
+                    if (cfg.name == activeName) {
+                        resetCppParser(parser, *tc, cfg);
+                        break;
+                    }
+                }
+                if (!configs.isEmpty())
+                    resetCppParser(parser, *tc, configs.first());
+            }
             parser->setEnabled(true);
             return parser;
         }

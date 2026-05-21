@@ -89,7 +89,19 @@ EditorColorSchemeWidget::EditorColorSchemeWidget(ColorManager *colorManager, con
         buffer=ui->editDemo->content();
            return true;
     });
-    resetCppParser(parser);
+    PToolchain tc = pSettings->toolchainManager().defaultToolchain();
+    if (tc) {
+        QList<BuildConfiguration> configs = pSettings->buildConfigManager().configsFor(tc->compilerType);
+        QString activeName = pSettings->buildConfigManager().activeConfigName();
+        for (const BuildConfiguration& cfg : configs) {
+            if (cfg.name == activeName) {
+                resetCppParser(parser, *tc, cfg);
+                break;
+            }
+        }
+        if (!configs.isEmpty())
+            resetCppParser(parser, *tc, configs.first());
+    }
     parser->setEnabled(true);
     ui->editDemo->setCppParser(parser);
     ui->editDemo->replaceContent(

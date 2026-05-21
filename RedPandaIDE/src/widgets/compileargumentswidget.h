@@ -20,22 +20,26 @@
 #include <QMap>
 #include <QTabWidget>
 #include "../settings.h"
-
-namespace Ui {
-class CompileArgumentsWidget;
-}
+#include "../compiler/compilerinfo.h"
 
 class CompileArgumentsWidget : public QTabWidget
 {
     Q_OBJECT
 
 public:
+    enum class OptionLevelFilter {
+        All,        // show all options
+        Toolchain,  // show Toolchain + Both level options
+        BuildConfig // show BuildConfig + Both level options
+    };
+
     explicit CompileArgumentsWidget(QWidget *parent = nullptr);
     ~CompileArgumentsWidget();
 
     QMap<QString, QString> arguments(bool includeUnset) const;
 
-    void resetUI(PCompilerSet pSet, const QMap<QString,QString>& options);
+    void resetUI(CompilerType compilerType, const QMap<QString,QString>& options,
+                 OptionLevelFilter filter = OptionLevelFilter::All);
 
     void setBoolArgument(const QString &argKey, bool checked);
 

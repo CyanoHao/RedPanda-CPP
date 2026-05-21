@@ -34,6 +34,8 @@
 #include "../editormanager.h"
 #include "../parser/cppparser.h"
 #include "../autolinkmanager.h"
+#include "../settings/buildconfigmanager.h"
+#include "../settings/toolchainmanager.h"
 #include "qt_utils/charsetinfo.h"
 #include "../project.h"
 
@@ -48,10 +50,53 @@ Compiler::Compiler(const QString &filename, bool onlyCheckSyntax):
     mForceEnglishOutput{false}
 {
     mParserForFile = nullptr;
+    mResolved = false;
+}
+
+void Compiler::resolveToolchain()
+{
+    if (mResolved)
+        return;
+    mResolved = true;
+
+    // Tier 1: Project toolchainId direct lookup
+    if (mProject) {
+        QString tid = mProject->options().toolchainId;
+        if (!tid.isEmpty()) {
+            mToolchain = pSettings->toolchainManager().findById(tid);
+        }
+    }
+
+    // Tier 2: Default Toolchain + first BuildConfig
+    if (!mToolchain) {
+        mToolchain = pSettings->toolchainManager().defaultToolchain();
+    }
+
+    if (mToolchain) {
+        QList<BuildConfiguration> configs =
+            pSettings->buildConfigManager().configsFor(mToolchain->compilerType);
+        if (!configs.isEmpty())
+            mBuildConfig = std::make_shared<BuildConfiguration>(configs.first());
+    }
+
+    if (!mBuildConfig)
+        mBuildConfig = std::make_shared<BuildConfiguration>();
+
+    mergeCompileOptions();
+}
+
+void Compiler::mergeCompileOptions()
+{
+    mMergedOptions.clear();
+    if (mToolchain)
+        mMergedOptions = mToolchain->compilerOptions;
+    for (auto it = mBuildConfig->compilerOptions.begin(); it != mBuildConfig->compilerOptions.end(); ++it)
+        mMergedOptions[it.key()] = it.value();
 }
 
 void Compiler::run()
 {
+    resolveToolchain();
     emit compileStarted();
     auto action = finally([this]{
         emit compileFinished(mFilename);
@@ -219,17 +264,6 @@ CompileIssueType Compiler::getIssueTypeFromOutputLine(QString &line)
     return result;
 }
 
-PCompilerSet Compiler::compilerSet()
-{
-    if (mProject) {
-        int index = mProject->options().compilerSet;
-        PCompilerSet set = pSettings->compilerSets().getSet(index);
-        if (set)
-            return set;
-    }
-    return pSettings->compilerSets().defaultSet();
-}
-
 QByteArray Compiler::pipedText()
 {
     return QByteArray();
@@ -375,11 +409,11 @@ QStringList Compiler::getCharsetArgument(const QByteArray& encoding,FileType fil
                         parsedFiles);
         }
     }
-    if ((forceExecUTF8 || compilerSet()->autoAddCharsetParams()) && encoding != ENCODING_ASCII
-            && compilerSet()->supportConvertingCharset()) {
+    if ((forceExecUTF8 || mBuildConfig->autoAddCharsetParams) && encoding != ENCODING_ASCII
+            && mToolchain->supportConvertingCharset()) {
         QString encodingName;
         QString execEncodingName;
-        QString compilerSetExecCharset = compilerSet()->execCharset();
+        QString compilerSetExecCharset = mBuildConfig->execCharset;
         QString systemEncodingName = pCharsetInfoManager->getDefaultSystemEncoding();
         if (encoding == ENCODING_SYSTEM_DEFAULT) {
             encodingName = systemEncodingName;
@@ -417,10 +451,10 @@ QStringList Compiler::getCharsetArgument(const QByteArray& encoding,FileType fil
 QStringList Compiler::getCppGccImportStdSources(bool checkSyntax)
 {
     QStringList result;
-    if (!checkSyntax && compilerSet()->getCompileOptionValue(CC_CMD_OPT_ENABLE_GCC_IMPORT_STD) == COMPILER_OPTION_ON) {
+    if (!checkSyntax && mMergedOptions.value(CC_CMD_OPT_ENABLE_GCC_IMPORT_STD) == COMPILER_OPTION_ON) {
         // libstdc++ extends `import std` to C++20
         // FIXME: use robust method to check C++ standard version
-        const QString &std = compilerSet()->getCompileOptionValue(CC_CMD_OPT_STD);
+        const QString &std = mMergedOptions.value(CC_CMD_OPT_STD);
         if (std.startsWith("c++2") || std.startsWith("gnu++2")) {
             result += {"-fsearch-include-path", "bits/std.cc", "bits/std.compat.cc"};
         }
@@ -431,6 +465,11 @@ QStringList Compiler::getCppGccImportStdSources(bool checkSyntax)
 QStringList Compiler::getCCompileArguments(bool checkSyntax)
 {
     QStringList result;
+
+    if (mToolchain->compilerType == CompilerType::Clang && !mToolchain->clangTarget.isEmpty()) {
+        result << "--target=" + mToolchain->clangTarget;
+    }
+
     if (checkSyntax) {
         result << "-fsyntax-only";
     }
@@ -439,12 +478,12 @@ QStringList Compiler::getCCompileArguments(bool checkSyntax)
     if (mProject && !mProject->options().compilerOptions.isEmpty()) {
         compileOptions = mProject->options().compilerOptions;
     } else {
-        compileOptions = compilerSet()->compileOptions();
+        compileOptions = mMergedOptions;
     }
     foreach (const QString& key, compileOptions.keys()) {
         if (compileOptions[key]=="")
             continue;
-        PCompilerOption pOption = CompilerInfoManager::getCompilerOption(compilerSet()->compilerType(), key);
+        PCompilerOption pOption = CompilerInfoManager::getCompilerOption(mToolchain->compilerType, key);
         if (pOption && pOption->isC && !pOption->isLinker) {
             if (pOption->type == CompilerOptionType::Checkbox)
                 result << pOption->setting;
@@ -465,8 +504,8 @@ QStringList Compiler::getCCompileArguments(bool checkSyntax)
 
     QMap<QString, QString> macros = pMainWindow->macroVariables();
 
-    if (compilerSet()->useCustomCompileParams() && !compilerSet()->customCompileParams().isEmpty()) {
-        result << parseArguments(compilerSet()->customCompileParams(), macros, true);
+    if (!mBuildConfig->customCompileParams.isEmpty()) {
+        result << parseArguments(mBuildConfig->customCompileParams, macros, true);
     }
 
     if (mProject) {
@@ -486,6 +525,11 @@ QStringList Compiler::getCCompileArguments(bool checkSyntax)
 QStringList Compiler::getCppCompileArguments(bool checkSyntax)
 {
     QStringList result;
+
+    if (mToolchain->compilerType == CompilerType::Clang && !mToolchain->clangTarget.isEmpty()) {
+        result << "--target=" + mToolchain->clangTarget;
+    }
+
     if (checkSyntax) {
         result << "-fsyntax-only";
     }
@@ -493,12 +537,12 @@ QStringList Compiler::getCppCompileArguments(bool checkSyntax)
     if (mProject && !mProject->options().compilerOptions.isEmpty()) {
         compileOptions = mProject->options().compilerOptions;
     } else {
-        compileOptions = compilerSet()->compileOptions();
+        compileOptions = mMergedOptions;
     }
     foreach (const QString& key, compileOptions.keys()) {
         if (compileOptions[key]=="")
             continue;
-        PCompilerOption pOption = CompilerInfoManager::getCompilerOption(compilerSet()->compilerType(), key);
+        PCompilerOption pOption = CompilerInfoManager::getCompilerOption(mToolchain->compilerType, key);
         if (pOption && pOption->isCpp && !pOption->isLinker) {
             if (pOption->type == CompilerOptionType::Checkbox)
                 result << pOption->setting;
@@ -518,8 +562,8 @@ QStringList Compiler::getCppCompileArguments(bool checkSyntax)
     }
 
     QMap<QString, QString> macros = pMainWindow->macroVariables();
-    if (compilerSet()->useCustomCompileParams() && !compilerSet()->customCompileParams().isEmpty()) {
-        result << parseArguments(compilerSet()->customCompileParams(), macros, true);
+    if (!mBuildConfig->customCompileParams.isEmpty()) {
+        result << parseArguments(mBuildConfig->customCompileParams, macros, true);
     }
     if (mProject) {
         QString s = mProject->options().cppCompilerCmd;
@@ -539,7 +583,7 @@ QStringList Compiler::getCppCompileArguments(bool checkSyntax)
 QStringList Compiler::getCIncludeArguments()
 {
     QStringList result;
-    foreach (const QString& folder,compilerSet()->CIncludeDirs()) {
+    foreach (const QString& folder,mToolchain->cIncludeDirs) {
         result << "-I" + folder;
     }
     return result;
@@ -560,7 +604,7 @@ QStringList Compiler::getProjectIncludeArguments()
 QStringList Compiler::getCppIncludeArguments()
 {
     QStringList result;
-    foreach (const QString& folder,compilerSet()->CppIncludeDirs()) {
+    foreach (const QString& folder,mToolchain->cppIncludeDirs) {
         result << "-I" + folder;
     }
     return result;
@@ -571,7 +615,7 @@ QStringList Compiler::getLibraryArguments(FileType fileType)
     QStringList result;
 
     //Add libraries
-    foreach (const QString& folder, compilerSet()->libDirs()) {
+    foreach (const QString& folder, mToolchain->libDirs) {
         result << "-L" + folder;
     }
 
@@ -610,12 +654,12 @@ QStringList Compiler::getLibraryArguments(FileType fileType)
     if (mProject && !mProject->options().compilerOptions.isEmpty()) {
         compileOptions = mProject->options().compilerOptions;
     } else {
-        compileOptions = compilerSet()->compileOptions();
+        compileOptions = mMergedOptions;
     }
     foreach (const QString& key, compileOptions.keys()) {
         if (compileOptions[key]=="")
             continue;
-        PCompilerOption pOption = CompilerInfoManager::getCompilerOption(compilerSet()->compilerType(), key);
+        PCompilerOption pOption = CompilerInfoManager::getCompilerOption(mToolchain->compilerType, key);
         if (pOption && pOption->isLinker) {
             if (pOption->type == CompilerOptionType::Checkbox)
                 result << pOption->setting;
@@ -635,9 +679,9 @@ QStringList Compiler::getLibraryArguments(FileType fileType)
     }
 
     // Add global compiler linker extras
-    if (compilerSet()->useCustomLinkParams() && !compilerSet()->customLinkParams().isEmpty()) {
+    if (!mBuildConfig->customLinkParams.isEmpty()) {
         QMap<QString, QString> macros = pMainWindow->macroVariables();
-        QStringList params = parseArguments(compilerSet()->customLinkParams(), macros, true);
+        QStringList params = parseArguments(mBuildConfig->customLinkParams, macros, true);
         if (!params.isEmpty()) {
             foreach(const QString& param, params)
                 result << param;
@@ -659,7 +703,15 @@ QStringList Compiler::getLibraryArguments(FileType fileType)
         if (mProject->options().staticLink)
             result << "-static";
     } else {
-        if (compilerSet()->staticLink()) {
+        bool isStatic = false;
+        if (mBuildConfig->linkModelOverride.has_value()) {
+            isStatic = (*mBuildConfig->linkModelOverride == LinkModel::Static ||
+                        *mBuildConfig->linkModelOverride == LinkModel::StaticPIE);
+        } else {
+            isStatic = (mToolchain->defaultLinkModel == LinkModel::Static ||
+                        mToolchain->defaultLinkModel == LinkModel::StaticPIE);
+        }
+        if (isStatic) {
             result << "-static";
         }
     }
@@ -727,11 +779,11 @@ void Compiler::runCommand(const QString &cmd, const QStringList &arguments, cons
     bool errorOccurred = false;
     process.setProgram(cmd);
     QString cmdDir = extractFileDir(cmd);
-    bool compilerErrorUTF8=compilerSet()->isCompilerUsingUTF8();
-    bool outputUTF8=compilerSet()->isCompilerUsingUTF8();
+    bool compilerErrorUTF8=mToolchain->isCompilerUsingUTF8();
+    bool outputUTF8=mToolchain->isCompilerUsingUTF8();
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
 #ifdef Q_OS_WIN
-    QStringList binDirs=compilerSet()->binDirs();
+    QStringList binDirs=mToolchain->binDirs;
     if (!cmdDir.isEmpty())
         binDirs.insert(0, cmdDir);
     QString windir = env.value("windir");
@@ -749,7 +801,7 @@ void Compiler::runCommand(const QString &cmd, const QStringList &arguments, cons
         env.insert("PATH",path);
     }
 #endif
-    if (compilerSet() && compilerSet()->supportNLS() && compilerSet()->forceEnglishOutput()) {
+    if (mToolchain && mToolchain->supportNLS() && mToolchain->forceEnglishOutput) {
         env.insert("LANGUAGE", "");
         env.insert("LC_ALL", "C"); // https://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap07.html#tag_07_02
     }

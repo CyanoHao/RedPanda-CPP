@@ -18,7 +18,8 @@
 #include "settingsdialog.h"
 #include "ui_settingsdialog.h"
 #include "settingswidget.h"
-#include "compilersetoptionwidget.h"
+#include "toolchainsettingswidget.h"
+#include "buildconfigsettingswidget.h"
 #include "compilerautolinkwidget.h"
 #include "compilernasmwidget.h"
 #include "compilergaswidget.h"
@@ -168,7 +169,10 @@ PSettingsDialog SettingsDialog::optionDialog(ColorManager *colorManager, IconsMa
             &SettingsDialog::closeAndQuit);
     dialog->addWidget(widget);
 
-    widget = new CompilerSetOptionWidget(tr("Compiler Set"),tr("Compiler"),iconsManager);
+    widget = new ToolchainSettingsWidget(tr("Toolchains"),tr("Compiler"),iconsManager);
+    dialog->addWidget(widget);
+
+    widget = new BuildConfigSettingsWidget(tr("Build Configurations"),tr("Compiler"),iconsManager);
     dialog->addWidget(widget);
 
     widget = new CompilerAutolinkWidget(tr("Auto Link"),tr("Compiler"),iconsManager);
