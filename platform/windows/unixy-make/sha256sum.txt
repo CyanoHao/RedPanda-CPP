@@ -1,0 +1,8 @@
+0679c5c6fbb247d1c1cd32c5eb9b5d72d86a22e513e166151869e5cef2aca7f6  assets/32/cygwin-devel-2.5.2-1.tar.xz
+c1601f10d6d3c143a43e2012a91252c7e5817c69ddc051d0306ca81f4265a3ab  assets/64/cygwin-devel-2.5.2-1.tar.xz
+b5b14added7d78a8d1ca70b5cb75fef57ce2197264f4f5835326b0df22ac9f22  assets/binutils-2.25.1.tar.bz2
+b8cc24c9574d809e7279c3be349795c5d5ceb6fdf19ca709f80cde50e47de314  assets/busybox-1.36.1.tar.bz2
+d352e2efe9369b6c6e664540752d78f9f1a8da42f431458f8a4900e1fb614408  assets/cygwin-cygwin-2_5_2-release.tar.gz
+530cea139d82fe542b358961130c69cfde8b3d14556370b65823d2f91f0ced87  assets/gcc-5.5.0.tar.xz
+dd16fb1d67bfab79a72f5e8390735c49e3e8e70b4945a15ab1f81ddb78658fb3  assets/make-4.4.1.tar.gz
+d4775e381202c5ecea7dbb21a1f247e4b3506509cb7d8b01bee6d83ee538e62c  assets/mingw-w64-v4.0.5.tar.bz2

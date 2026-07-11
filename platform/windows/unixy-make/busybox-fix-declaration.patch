@@ -1,0 +1,26 @@
+diff --git a/include/libbb.h b/include/libbb.h
+index cca33a177..b2f7c5026 100644
+--- a/include/libbb.h
++++ b/include/libbb.h
+@@ -1084,6 +1084,9 @@ char *safe_gethostname(void) FAST_FUNC;
+ /* Convert each alpha char in str to lower-case */
+ char* str_tolower(char *str) FAST_FUNC;
+ 
++#define utoa bb_utoa
++#define itoa bb_itoa
++
+ char *utoa(unsigned n) FAST_FUNC;
+ char *itoa(int n) FAST_FUNC;
+ /* Returns a pointer past the formatted number, does NOT null-terminate */
+diff --git a/include/platform.h b/include/platform.h
+index ea0512f36..071c506b4 100644
+--- a/include/platform.h
++++ b/include/platform.h
+@@ -465,7 +465,6 @@ typedef unsigned smalluint;
+ #if defined(__CYGWIN__)
+ # undef HAVE_CLEARENV
+ # undef HAVE_FDPRINTF
+-# undef HAVE_MEMRCHR
+ # undef HAVE_PTSNAME_R
+ # undef HAVE_STRVERSCMP
+ # undef HAVE_UNLOCKED_LINE_OPS

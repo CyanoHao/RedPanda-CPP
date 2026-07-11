@@ -1,0 +1,13 @@
+diff --git a/winsup/cygwin/Makefile.in b/winsup/cygwin/Makefile.in
+index 70da06fdf..e604bccd6 100644
+--- a/winsup/cygwin/Makefile.in
++++ b/winsup/cygwin/Makefile.in
+@@ -675,7 +675,7 @@ $(TEST_DLL_NAME): $(LDSCRIPT) dllfixdbg $(DLL_OFILES) $(LIBSERVER) $(LIBC) $(LIB
+ 	-e $(DLL_ENTRY) $(DEF_FILE) $(DLL_OFILES) $(VERSION_OFILES) \
+ 	$(MALLOC_OBJ) $(LIBSERVER) $(LIBM) $(LIBC) \
+ 	-lgcc $(DLL_IMPORTS) -Wl,-Map,cygwin.map
+-	@$(word 2,$^) $(OBJDUMP) $(OBJCOPY) $@ ${patsubst %0.dll,%1.dbg,$@}
++	@$(STRIP) -p $@
+ 	@ln -f $@ new-$(DLL_NAME)
+ 
+ # Rule to build libcygwin.a

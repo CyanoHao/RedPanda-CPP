@@ -1,0 +1,226 @@
+#!/bin/bash
+
+set -euxo pipefail
+
+# 2026-01-01T00:00:00+00:00
+export SOURCE_DATE_EPOCH=1767225600
+
+# cygwin /proc/version
+export USER=builder
+export HOSTNAME=redpanda-cpp
+
+PROJECT_ROOT=$PWD
+
+function extract {
+  local directory=$1
+  local tarball=$2
+  mkdir -p $directory
+  tar --no-same-owner --strip-components=1 -C $directory -xf $tarball
+}
+
+function extract_source {
+  extract /tmp/build/make assets/make-4.4.1.tar.gz
+  extract /tmp/build/busybox-x86_64 assets/busybox-1.36.1.tar.bz2
+  patch -Np1 -d /tmp/build/busybox-x86_64 <busybox-fix-declaration.patch
+  extract /tmp/build/busybox-i686 assets/busybox-1.36.1.tar.bz2
+  patch -Np1 -d /tmp/build/busybox-i686 <busybox-fix-declaration.patch
+
+  extract /tmp/build/binutils assets/binutils-2.25.1.tar.bz2
+  extract /tmp/build/cygwin assets/cygwin-cygwin-2_5_2-release.tar.gz
+  patch -Np1 -d /tmp/build/cygwin <cygwin-fix-reproducible-build.patch
+  # also avoid dllfixdbg disturbing timestamp
+  patch -Np1 -d /tmp/build/cygwin <cygwin-strip-dll.patch
+  extract /tmp/build/gcc assets/gcc-5.5.0.tar.xz
+  extract /tmp/build/mingw-w64 assets/mingw-w64-v4.0.5.tar.bz2
+}
+
+function extract_cygwin_bootstrap {
+  extract /usr/local/x86_64-pc-cygwin assets/64/cygwin-devel-2.5.2-1.tar.xz
+  extract /usr/local/i686-pc-cygwin assets/32/cygwin-devel-2.5.2-1.tar.xz
+}
+
+function build_binutils {
+  local arch=$1
+  mkdir -p /tmp/build/binutils/build-$arch
+  pushd /tmp/build/binutils/build-$arch
+  ../configure \
+    --prefix=/usr/local \
+    --target=$arch-pc-cygwin \
+    --disable-shared \
+    --enable-static \
+    CFLAGS='-O2' \
+    CXXFLAGS='-O2'
+  make -j
+  make install-strip
+  popd
+}
+
+function build_mingw_header_x86_64 {
+  mkdir -p /tmp/build/mingw-w64/mingw-w64-headers/build-x86_64
+  pushd /tmp/build/mingw-w64/mingw-w64-headers/build-x86_64
+  ../configure \
+    --prefix=/usr/local/x86_64-pc-cygwin \
+    --host=x86_64-pc-cygwin \
+    --enable-w32api \
+    --with-default-win32-winnt=0x0502
+  make -j
+  make install-strip
+  popd
+}
+
+function build_mingw_header_i686 {
+  mkdir -p /tmp/build/mingw-w64/mingw-w64-headers/build-i686
+  pushd /tmp/build/mingw-w64/mingw-w64-headers/build-i686
+  ../configure \
+    --prefix=/usr/local/i686-pc-cygwin \
+    --host=i686-pc-cygwin \
+    --enable-w32api \
+    --with-default-win32-winnt=0x0501
+  make -j
+  make install-strip
+  popd
+}
+
+function build_gcc_host {
+  local arch=$1
+  mkdir -p /tmp/build/gcc/build-$arch
+  pushd /tmp/build/gcc/build-$arch
+  ../configure \
+    --prefix=/usr/local \
+    --target=$arch-pc-cygwin \
+    --enable-languages=c,c++ \
+    --disable-lto \
+    --disable-shared \
+    --enable-static \
+    CFLAGS='-O2' \
+    CXXFLAGS='-O2'
+  make all-host -j
+  make install-strip-host
+  popd
+}
+
+function build_mingw_lib_x86_64 {
+  mkdir -p /tmp/build/mingw-w64/mingw-w64-crt/build-x86_64
+  pushd /tmp/build/mingw-w64/mingw-w64-crt/build-x86_64
+  ../configure \
+    --prefix=/usr/local/x86_64-pc-cygwin \
+    --host=x86_64-pc-cygwin \
+    --disable-lib32 \
+    --enable-lib64 \
+    --enable-w32api \
+    --with-default-win32-winnt=0x0502
+  make -j
+  make install-strip
+  popd
+}
+
+function build_mingw_lib_i686 {
+  mkdir -p /tmp/build/mingw-w64/mingw-w64-crt/build-i686
+  pushd /tmp/build/mingw-w64/mingw-w64-crt/build-i686
+  ../configure \
+    --prefix=/usr/local/i686-pc-cygwin \
+    --host=i686-pc-cygwin \
+    --enable-lib32 \
+    --disable-lib64 \
+    --enable-w32api \
+    --with-default-win32-winnt=0x0501
+  make -j
+  make install-strip
+  popd
+}
+
+function build_gcc_target {
+  local arch=$1
+  pushd /tmp/build/gcc/build-$arch
+  make all-target -j
+  make install-strip-target
+  popd
+}
+
+function build_cygwin {
+  local arch=$1
+  mkdir -p /tmp/build/cygwin/build-$arch
+  pushd /tmp/build/cygwin/build-$arch
+  ../configure \
+    --prefix=/usr/local/$arch-pc-cygwin \
+    --target=$arch-pc-cygwin \
+    --with-cross-bootstrap \
+    CFLAGS='-O2' \
+    CXXFLAGS='-O2' \
+    CXXFLAGS_FOR_TARGET='-O2 -Wl,--no-insert-timestamp'
+  # winsup cannot `install-strip`
+  make -j
+  make install
+  popd
+}
+
+function build_make {
+  local arch=$1
+  mkdir -p /tmp/build/make/build-$arch
+  pushd /tmp/build/make/build-$arch
+  ../configure \
+    --prefix= \
+    --host=$arch-pc-cygwin \
+    CFLAGS='-O2'
+  make -j
+  make DESTDIR=$PROJECT_ROOT/xp/destdir-$arch install-strip
+  popd
+
+  mkdir -p xp/destdir-$arch/share/licenses/make
+  cp /tmp/build/make/COPYING xp/destdir-$arch/share/licenses/make
+}
+
+function build_busybox {
+  local arch=$1
+  pushd /tmp/build/busybox-$arch
+  make allnoconfig
+  for config in \
+    ASH RM \
+    LFS TIME64
+  do
+    sed -i 's/^# CONFIG_'$config' is not set$/CONFIG_'$config'=y/' .config
+  done
+  CROSS_COMPILE=$arch-pc-cygwin- make -j
+  CROSS_COMPILE=$arch-pc-cygwin- ./make_single_applets.sh
+  cp busybox_RM $PROJECT_ROOT/xp/destdir-$arch/bin/rm.exe
+  cp busybox_SH_IS_ASH $PROJECT_ROOT/xp/destdir-$arch/bin/sh.exe
+  popd
+
+  mkdir -p xp/destdir-$arch/share/licenses/busybox
+  cp /tmp/build/busybox-$arch/LICENSE xp/destdir-$arch/share/licenses/busybox
+}
+
+function copy_cygwin_runtime {
+  local arch=$1
+  mkdir -p xp/destdir-$arch/bin
+  cp /usr/local/$arch-pc-cygwin/bin/cygwin1.dll xp/destdir-$arch/bin
+
+  mkdir -p xp/destdir-$arch/share/licenses/cygwin
+  cp /tmp/build/cygwin/winsup/COPYING{,.LIB} xp/destdir-$arch/share/licenses/cygwin
+}
+
+./dep.sh
+extract_source
+extract_cygwin_bootstrap
+
+build_binutils x86_64
+build_mingw_header_x86_64
+build_gcc_host x86_64
+build_mingw_lib_x86_64
+build_gcc_target x86_64
+build_cygwin x86_64
+
+build_make x86_64
+build_busybox x86_64
+copy_cygwin_runtime x86_64
+
+build_binutils i686
+build_mingw_header_i686
+build_gcc_host i686
+build_mingw_lib_i686
+build_gcc_target i686
+build_cygwin i686
+
+build_make i686
+build_busybox i686
+copy_cygwin_runtime i686
